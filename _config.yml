@@ -5,9 +5,7 @@ locale: it_IT
 description: Personal Blog of Francesco Guardiani, Web Developer
 logo: site-logo.png
 search: true
-url: http://slinkydeveloper.github.io
 url: https://slinkydeveloper.github.io
-url: http://localhost:4000
 
 # Jekyll configuration
 
