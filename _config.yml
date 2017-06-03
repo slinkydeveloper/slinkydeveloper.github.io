@@ -1,10 +1,12 @@
 # Site wide configuration
 
-title: Site Title
-locale: en_US
-description: Describe your website here.
+title: Slinky's corner
+locale: it_IT
+description: Personal Blog of Francesco Guardiani, Web Developer
 logo: site-logo.png
 search: true
+url: http://slinkydeveloper.github.io
+url: https://slinkydeveloper.github.io
 url: http://localhost:4000
 
 # Jekyll configuration
@@ -33,27 +35,28 @@ mathjax: true
 include: [".htaccess"]
 exclude: ["lib", "config.rb", "Capfile", "config", "log", "Rakefile", "Rakefile.rb", "tmp", ".less", "*.sublime-project", "*.sublime-workspace", "test", "spec", "Gruntfile.js", "package.json", "node_modules", "Gemfile", "Gemfile.lock", "LICENSE", "README.md", "vendor"]
 
+comments: false
 
 # Site owner
 owner:
-  name: Your Name
-  avatar: bio-photo.jpg
-  email: you@email.com
+  name: Francesco Guardiani
+  avatar: me.jpg
+  email: francescoguard@gmail.com
   disqus-shortname:
-  twitter: #username
-  facebook: #username
-  github: #username
-  stackexchange: #http://stackoverflow.com/users/123456/username
-  linkedin: #username
+  twitter: SlinkyGuardiani
+  facebook: francesco.guardiani.3
+  github: slinkydeveloper
+  stackexchange: https://stackoverflow.com/users/2399055/francesco-guardiani
+  linkedin: francesco-guardiani-99668375
   instagram: #username
   flickr: #username
   tumblr: #username
   pinterest: #username
   weibo: #userid
   google:
-    plus: #username
-    analytics:
-    verify:
-    ad-client:
+    plus: 117650556041064471956
+    analytics: UA-39408029-2
+    verify: vVzCEwY1zMHI_Ma9Lvmdk_3NTZpGzEgt2rcQfm-4VRs
+    ad-client: ca-pub-2426543620858617
     ad-slot:
   bing-verify:
