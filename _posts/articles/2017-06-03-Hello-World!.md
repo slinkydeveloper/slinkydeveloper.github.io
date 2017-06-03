@@ -6,7 +6,7 @@ modified: 2017-06-03T13:32:44+01:00
 categories: articles
 tags: []
 share: true
-ads:true
+ads: true
 ---
 This is one of my favourite sentences. Really, when you read hello world on console you know that you have taken the correct path to reach your objective. I read this sentence a lot of times in my console, and every time I'm comforting read it. It gives me the power to write `"hello world" + name`.
 
