@@ -6,7 +6,7 @@ modified: 2017-06-03T19:30:00+01:00
 categories: articles
 tags: [swagger, openapi, web development, web api, backend, frontend]
 share: true
-ads: true
+ads: false
 ---
 
 You can see Web API Specifications like Javadoc: you can't use a Java library without Javadoc! Web API spec are "Javadocs" of web services. But there's one big difference: you can write your Web API Spec before start writing your server. It generates a big difference inside development process. I will introduce you to this magic world.
