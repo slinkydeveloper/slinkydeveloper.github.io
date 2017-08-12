@@ -2,19 +2,19 @@
 layout: post
 title: My GSoC 2017 - Requests validation
 excerpt: "At the beginning, there was the requests validation"
-modified: 2017-08-08T11:27:06+02:00
+modified: 2017-08-08T18:49:49+02:00
 categories: articles
 tags: [web development, gsoc 2017, vertx, vertx web, http, validation]
 share: true
 ads: false
 ---
 
-HTTP request validation it's a critical component of my project. HTTP requests validation needs to work well to get working all layers upon. I love to call that _vertx-web validation framework_ (I love the word framework)
+HTTP request validation it's a critical component of my project. HTTP requests validation needs to work well to get working all layers upon. I love to call that _vertx-web validation framework_ (I love the word framework :heart_eyes:)
 
 ## Structure of Validation framework
 The validation framework is located inside maven module `vertx-web` and package `io.vertx.ext.web.validation`. Following the Vert.x rules, there are Java interfaces for polyglot vertx-web interface and classes inside `io.vertx.ext.web.validation.impl` that implements the logic of the validation.
 
-`HTTPRequestValidationHandler` and `OpenAPI3RequestValidationHandler` (request validator for OAS3) subclass `BaseValidationHandler`, the base class for validation. This class contains a list for `ParameterValidationRule` for every `ParameterLocation` (query, path, header, cookie, form body). Every `ParameterValidationRule` contains a `ParameterTypeValidation`. To simplify things:
+`HTTPRequestValidationHandler` and `OpenAPI3RequestValidationHandler` (request validator for OAS3) subclass `BaseValidationHandler`, the base class for validation. This class contains a map with parameter names as keys and `ParameterValidationRule` instances as values for every parameter location (query, path, header, cookie, form inside body). Every `ParameterValidationRule` contains a `ParameterTypeValidation`. To simplify things:
 
 * `BaseValidationHandler` validates the request, in fact it iterates through parameters and calls `ParameterValidationRule` methods
 * `ParameterValidationRule` abstracts a parameter and validates if parameter exists, if can be empty, ...
@@ -63,7 +63,7 @@ User can declare arrays and objects as parameters. The `ObjectTypeValidator`/`Ar
 The serialization methods are implemented as subclasses of `ContainerDeserializer` and there are some prebuilt instances in enum `ContainerSerializationStyle`. Of course, user can use static methods inside `ObjectTypeValidator.ObjectTypeValidatorFactory` and `ArrayTypeValidator.ArrayTypeValidatorFactory` to build this validators, define its serialization style and add the "nested" validators.
 
 ## `HTTPRequestValidationHandler`
-When user wants to validate a request without creating a api specification, he can use the `HTTPRequestValidationHandler`. This class exposes methods to add validators without care about `ParameterValidationRule`, because they are automatically generated. For every parameter location `HTTPRequestValidationHandler` exposes three methods:
+To start validate the requests, developers can use the `HTTPRequestValidationHandler`. This class exposes methods to add validators without care about `ParameterValidationRule`, because they are automatically generated. For every parameter location `HTTPRequestValidationHandler` exposes three methods:
 
 * `add*Param`: to add a parameter with type taken from `ParameterType` enum
 * `add*ParamWithPattern`: to add a string parameter with a pattern
