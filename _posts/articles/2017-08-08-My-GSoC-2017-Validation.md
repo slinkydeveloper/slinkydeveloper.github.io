@@ -21,7 +21,7 @@ The validation framework is located inside maven module `vertx-web` and package 
 * `ParameterTypeValidator` abstracts the parameter type and validates the type
 
 <figure>
-  <img src="{{ site.url }}/images/vertx-web-validation-structure.png" alt="image">
+  <a href="{{ site.url }}/images/vertx-web-validation-structure.png" class="image-popup"><img src="{{ site.url }}/images/vertx-web-validation-structure.png" alt="image"></a>
   <figcaption>An example of BaseValidationHandler instance</figcaption>
 </figure>
 

@@ -32,7 +32,7 @@ $mfp-iframe-ratio:                    9/16;                       // Ratio of if
 
 // Image-type options
 $mfp-include-image-type:              true;                       // Enable Image-type popups
-$mfp-image-background:                transparent;
+$mfp-image-background:                white;
 $mfp-image-padding-top:               40px;                       // Image padding top
 $mfp-image-padding-bottom:            40px;                       // Image padding bottom
 $mfp-include-mobile-layout-for-image: true;                       // Removes paddings from top and bottom
@@ -43,4 +43,4 @@ $mfp-caption-subtitle-color:          #BDBDBD;                    // Caption sub
 .mfp-counter { font-family: $alt-font; }                          // Caption font family
 
 // A11y
-$mfp-use-visuallyhidden:              false; 
+$mfp-use-visuallyhidden:              false;
