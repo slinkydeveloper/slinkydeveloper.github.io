@@ -6,7 +6,7 @@ modified: 2017-09-25T10:51:22+02:00
 categories: articles
 tags: [web development, vertx, vertx web, routing, data structures, tree, skiplist]
 share: true
-ads: false
+ads: true
 ---
 
 One of the most important features of web frameworks is performance and the routing process can become an important performance killer. I'm going to introduce you a comparison between the list (in particular the skip list) and the tree as data structure for web framework's routers.

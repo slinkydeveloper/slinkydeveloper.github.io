@@ -6,7 +6,7 @@ modified: 2017-08-08T18:49:49+02:00
 categories: articles
 tags: [web development, gsoc 2017, vertx, vertx web, http, validation]
 share: true
-ads: false
+ads: true
 ---
 
 HTTP request validation it's a critical component of my project. HTTP requests validation needs to work well to get working all layers upon. I love to call that _vertx-web validation framework_ (I love the word framework :heart_eyes:)

@@ -6,7 +6,7 @@ modified: 2017-08-19T10:33:41+02:00
 categories: articles
 tags: [web development, gsoc 2017, vertx, vertx web, openapi, openapi3, generator, slush-vertx]
 share: true
-ads: false
+ads: true
 ---
 
 [`slush-vertx`](https://github.com/pmlopes/slush-vertx) is a project created by [Paulo Lopes](https://www.jetdrone.xyz) born to simplify build tools configurations for Vert.x. I totally refactored `slush-vertx` to create a multi purpose code generator for simplify various configurations of Vert.x powered projects.

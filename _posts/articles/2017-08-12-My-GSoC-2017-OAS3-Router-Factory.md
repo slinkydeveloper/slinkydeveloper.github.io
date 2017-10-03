@@ -6,7 +6,7 @@ modified: 2017-08-12T17:14:56+02:00
 categories: articles
 tags: [web development, gsoc 2017, vertx, vertx web, openapi, openapi3, router factory, factory]
 share: true
-ads: false
+ads: true
 ---
 
 The support to OpenAPI 3 it's located in maven package `vertx-web-api-contract-openapi`, and most classes extends/subclass from interfaces/classes inside maven package `vertx-web-api-contract-common` (the package designed to contain all API Specs standards common classes). Most important interfaces of `vertx-web-api-contract-openapi` are:

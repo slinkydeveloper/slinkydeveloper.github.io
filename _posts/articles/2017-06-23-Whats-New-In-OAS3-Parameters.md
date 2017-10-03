@@ -6,7 +6,7 @@ modified: 2017-06-23T23:36:44+02:00
 categories: articles
 tags: [swagger, openapi, openapi3, web development, web api]
 share: true
-ads: false
+ads: true
 ---
 
 OpenAPI 3 Parameter Object it's totally different from old OpenAPI 2. It gives the power to describe complex parameters, using the power of Schema object. I will introduce to you this breaking changes
