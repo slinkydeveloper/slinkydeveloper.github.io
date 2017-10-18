@@ -4,7 +4,7 @@ title: My GSoC 2017 - OpenAPI 3 Vert.x support
 excerpt: "Good library it's all about good interface"
 modified: 2017-08-12T17:14:56+02:00
 categories: articles
-tags: [web development, gsoc 2017, vertx, vertx web, openapi, openapi3, router factory, factory]
+tags: [web development, gsoc 2017, gsoc, vertx, vertx web, openapi, openapi3, router factory, factory]
 share: true
 ads: true
 ---
