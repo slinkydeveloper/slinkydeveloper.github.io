@@ -47,8 +47,35 @@ $(document).ready(function() {
       tError: '<a href="%url%">Image #%curr%</a> could not be loaded.',
     },
     removalDelay: 300, // Delay in milliseconds before popup is removed
-    // Class that is added to body when popup is open. 
+    // Class that is added to body when popup is open.
     // make it unique to apply your CSS animations just to this exact popup
     mainClass: 'mfp-fade'
   });
 });
+
+var clippyAgent;
+
+/* Clippy <3 */
+clippy.load('Clippy', function (agent) {
+  clippyAgent = agent;
+  $(window).trigger("clippy_loaded", [agent]);
+});
+
+/* Clippy functions */
+function onOverPost() {
+  var randomApprovalAnimation = ["Congratulate", "GetTechy", "Wave", "CheckingSomething", "GetAttention"];
+  if (clippyAgent) {
+    clippyAgent.play(randomApprovalAnimation[Math.floor(Math.random() * randomApprovalAnimation.length)])
+  }
+}
+
+function clippySay(phrase) {
+  if (clippyAgent)
+    clippyAgent.speak(phrase);
+  onOverPost()
+}
+
+function clippyPlay(anim) {
+  if (clippyAgent)
+    clippyAgent.play(anim);
+}

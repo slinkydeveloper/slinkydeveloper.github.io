@@ -2,6 +2,7 @@
 layout: post
 title: Hello world!
 excerpt: "Hello to everybody! This is my brand new blog!"
+clippy: Yee!
 modified: 2017-06-03T13:32:44+01:00
 categories: articles
 tags: []

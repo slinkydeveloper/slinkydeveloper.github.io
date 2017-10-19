@@ -2,6 +2,7 @@
 layout: post
 title: My GSoC 2017 - Requests validation
 excerpt: "At the beginning, there was the requests validation"
+clippy: This was my work, years ago...
 modified: 2017-08-08T18:49:49+02:00
 categories: articles
 tags: [web development, gsoc 2017, gsoc, vertx, vertx web, http, validation]

@@ -2,6 +2,7 @@
 layout: post
 title: My GSoC 2017 - Slush-vertx
 excerpt: "Scaffolder for Slush-vertx project"
+clippy: I help devs too!
 modified: 2017-08-19T10:33:41+02:00
 categories: articles
 tags: [web development, gsoc 2017, gsoc, vertx, vertx web, openapi, openapi3, generator, slush-vertx]

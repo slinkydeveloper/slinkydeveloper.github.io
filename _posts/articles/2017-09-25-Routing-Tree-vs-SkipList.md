@@ -2,6 +2,7 @@
 layout: post
 title: Tree vs SkipList routing
 excerpt: "How we can improve speed of web frameworks"
+clippy: I love the Xmas tree!
 modified: 2017-09-25T10:51:22+02:00
 categories: articles
 tags: [web development, vertx, vertx web, routing, data structures, tree, skiplist]

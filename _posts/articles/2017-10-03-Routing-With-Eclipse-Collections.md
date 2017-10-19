@@ -2,6 +2,7 @@
 layout: post
 title: Routing with Eclipse Collections
 excerpt: "Eclipse Collections are so fast!"
+clippy: "Maybe you want to try Clippy collections?"
 modified: 2017-10-03T10:10:30+02:00
 categories: articles
 tags: [web development, vertx, vertx web, routing, data structures, tree, skiplist, eclipse collections, fast list]
