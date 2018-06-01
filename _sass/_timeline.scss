@@ -21,6 +21,10 @@ $content-width: 450px;
 .timeline{
   color: $text-color;
 
+  a {
+    color: $text-color;
+  }
+
   h1,
   ul li .content h2{
     text-shadow: 1px 1px 1px rgba(56, 56, 56, 0.5);
@@ -69,6 +73,7 @@ $content-width: 450px;
       }
 
       .content{
+
         background: $content-background-color;
         position: relative;
         top: 7px;
