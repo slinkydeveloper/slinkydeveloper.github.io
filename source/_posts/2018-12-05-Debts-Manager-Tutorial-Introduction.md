@@ -50,7 +50,7 @@ Okay I admit it, I'm lazy :smile: I tested only the minimum features! I built th
 
 ## Tutorial parts
 
-1. **Contract design**: Design the OpenAPI 3 contract
+1. **{% post_link Debts-Manager-Tutorial-Contract-Design 'Contract design' %}**: Design the OpenAPI 3 contract
 2. **Vert.x Web API Contract & Service**: Setup Vert.x project and bind Vert.x Event Bus services
 3. **Persistence**: Design and implement persistence
 4. **Event Sourcing**: Develop the read model and CQRS
