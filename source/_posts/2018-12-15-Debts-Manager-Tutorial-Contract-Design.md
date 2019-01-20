@@ -9,6 +9,8 @@ Hi guys! Welcome back to this tutorial!
 
 In this second chapter of Debts Manager Tutorial I would like to show you how I have designed the REST API of Debts Manager. I'm going to follow the _API First_ approach, documenting all aspects of the API Design with OpenAPI 3.
 
+This post doesn't aim to provide you a full guide of how to design REST APIs: if you want more resources to learn it, [look at the end of this post](#Some-resources-to-learn-Web-API-Design-and-OpenAPI)
+
 ## Analysis
 
 The REST APIs, in contrast with RPC, are driven by the data the services wants to expose. In the previous chapter I gave you an idea of the entities we must expose. Now I tabulate these and the relative operations on it.
@@ -464,4 +466,4 @@ You can find the complete OpenAPI definition here: [/src/main/resources/debts_ma
 
 After you learnt how to design a REST API, approacching to OpenAPI is very simple. The operation definition is very intuitive because of 1:1 mapping with HTTP (methods, parameters, status codes, content types and so on). The tricky and magic part, for me, is definining and organizing the JSON Schemas. When you define simple models, you tend to put everything inside the same file. But when you raise the complexity using composed schemas, you get flooded by smaller and unclear schemas. My suggestion for you is to document the schemas with `title` and `description` keywords and organize these in multiple files.
 
-In next chapter I'm going to bootstrap the project with [pmlopes' Vert.x Starter](https://vertx-starter.jetdrone.xyz/#maven) and start writing first Vert.x code, stay tuned!
+In next chapter I'm going to bootstrap the project and start writing first Vert.x code, stay tuned!
