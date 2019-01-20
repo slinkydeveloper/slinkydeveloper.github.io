@@ -38,7 +38,7 @@ For persistence I choose PostgreSQL to store my data. The application stores int
 
 The DB access is provided by the blazing fast [reactive-pg-client library](https://github.com/reactiverse/reactive-pg-client)
 
-The application stores the _transactions_ between users (events). You can use it as a log of various bills, but you also want to look at a summary of various credits/debits between connected users. To build it, we need to aggregate various transactions into one single structure that I call _status_. Every user has a status and is represented as a map with users as keys and total debts\credits as values. This map is built incrementally every time a user adds/modifies/removes a transaction and is stored in a Redis cache.
+The application stores the _transactions_ between users (events). You can use it as a log of various bills, but you also want to look at a summary of various credits/debits between connected users. To build it, I aggregate the various transactions into one single structure that I call _status_. Every user has a status and is represented as a map with users as keys and total credits/debits as values. This map is built incrementally every time a user adds/modifies/removes a transaction and is stored in a Redis cache.
 
 ### Web API
 
