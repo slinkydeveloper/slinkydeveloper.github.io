@@ -464,4 +464,4 @@ You can find the complete OpenAPI definition here: [/src/main/resources/debts_ma
 
 After you learnt how to design a REST API, approacching to OpenAPI is very simple. The operation definition is very intuitive because of 1:1 mapping with HTTP (methods, parameters, status codes, content types and so on). The tricky and magic part, for me, is definining and organizing the JSON Schemas. When you define simple models, you tend to put everything inside the same file. But when you raise the complexity using composed schemas, you get flooded by smaller and unclear schemas. My suggestion for you is to document the schemas with `title` and `description` keywords and organize these in multiple files.
 
-In next chapter I'm going to bootstrap the project and start writing first Vert.x code, stay tuned!
+In next chapter I'm going to bootstrap the project with [pmlopes' Vert.x Starter](https://vertx-starter.jetdrone.xyz/#maven) and start writing first Vert.x code, stay tuned!
