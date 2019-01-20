@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Debts Manager tutorial Part 1: Introduction"
+title: "Debts Manager Tutorial Part 1: Introduction"
 excerpt: "Tutorial to build a complete Web API with Vert.x"
 clippy: "Part 1 - Introduction"
 modified: 2018-12-13T09:10:00+02:00
