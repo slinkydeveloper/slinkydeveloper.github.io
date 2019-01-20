@@ -1,0 +1,19 @@
+{&quot;name&quot;:&quot;Slinky&apos;s Corner&quot;,&quot;short_name&quot;:&quot;Slinky&apos;s Corner&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;/android-chrome-192x192.png&quot;,&quot;sizes&quot;:&quot;192x192&quot;,&quot;type&quot;:&quot;image/png&quot;},{&quot;src&quot;:&quot;/android-chrome-384x384.png&quot;,&quot;sizes&quot;:&quot;384x384&quot;,&quot;type&quot;:&quot;image/png&quot;}],&quot;theme_color&quot;:&quot;#ffffff&quot;,&quot;background_color&quot;:&quot;#ffffff&quot;,&quot;display&quot;:&quot;standalone&quot;}<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
