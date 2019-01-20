@@ -1,0 +1,54 @@
+scheme: Gemini
+language: en
+
+menu:
+  home: / || home
+  about: /about/ || user
+  archives: /archives/ || archive
+  tags: /tags/ || tags
+
+post_meta:
+  updated_at:
+    enabled: false
+
+excerpt_description: true
+
+favicon:
+  small: /images/favicon-16x16.png
+  medium: /images/favicon-32x32.png
+  apple_touch_icon: /images/apple-touch-icon.png
+  safari_pinned_tab: /images/safari-pinned-tab.svg
+  android_manifest: /images/manifest.json
+  #ms_browserconfig: /images/browserconfig.xml
+
+social:
+  GitHub: https://github.com/slinkydeveloper || github
+  E-Mail: mailto:francescoguard@gmail.com || envelope
+  Twitter: https://twitter.com/SlinkyGuardiani || twitter
+  StackOverflow: https://stackoverflow.com/users/2399055/francesco-guardiani || stack-overflow
+
+# Local search
+# Dependencies: https://github.com/theme-next/hexo-generator-searchdb
+local_search:
+  enable: true
+  # if auto, trigger search by changing input
+  # if manual, trigger search by pressing enter key or search button
+  trigger: auto
+  # show top n results per article, show all results by setting to -1
+  top_n_per_article: 1
+  # unescape html strings to the readable one
+  unescape: false
+
+fancybox: true
+
+vendors:
+  fancybox: //cdn.jsdelivr.net/npm/fancybox@3.0.0/dist/js/jquery.fancybox.pack.js
+  fancybox_css: //cdn.jsdelivr.net/npm/fancybox@3.0.0/dist/css/jquery.fancybox.min.css
+
+cheers_enabled: false
+
+custom_file_path:
+  head: source/_data/head.swig
+  styles: source/_data/styles.styl
+
+google_analytics: UA-39408029-2
