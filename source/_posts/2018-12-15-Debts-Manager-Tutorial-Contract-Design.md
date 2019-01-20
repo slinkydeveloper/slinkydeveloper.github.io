@@ -456,7 +456,7 @@ securitySchemes:
 I give you a couple of useful links:
 
 * [Rest API Tutorial](https://www.restapitutorial.com/): Very simple and coincise tutorial for newbies of REST APIs world
-* [http://apistylebook.com/](http://apistylebook.com/): Collection of API styleguides from different IT companies
+* [API Stylebook](http://apistylebook.com/): Collection of API styleguides from different IT companies
 * [OpenAPI Specification repository](https://github.com/OAI/OpenAPI-Specification/): Contains the spec and examples
 * [OpenAPI Directory](https://apis.guru/browse-apis/): Collection of OpenAPIs of different public APIs
 
