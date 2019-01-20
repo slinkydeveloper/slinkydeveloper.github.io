@@ -93,3 +93,5 @@ githubEmojis:
   inject: true
   styles:
   customEmojis:
+
+public_dir: docs
