@@ -303,6 +303,12 @@ I want to expose an endpoint to retrieve all registered users and an endpoint to
 /users:
   get:
     operationId: getUsers
+    parameters:
+      - name: filter
+        required: true
+        in: query
+        schema:
+          type: string
     responses:
       '200':
         content:
@@ -340,6 +346,8 @@ I want to expose an endpoint to retrieve all registered users and an endpoint to
     security:
       - loggedUserToken: []
 ```
+
+In `getUsers` we defined a very basic search functionality with the optional query parameter `filter`
 
 In `getConnectedUser` I prefeered to define the request schema directly inside the request body definition because It's a schema strictly related to this operation and It isn't parent of any other schema.
 
