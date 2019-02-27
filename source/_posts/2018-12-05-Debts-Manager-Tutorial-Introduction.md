@@ -51,12 +51,13 @@ Okay I admit it, I'm lazy :smile: I tested only the minimum features! I built th
 ## Tutorial parts
 
 1. **{% post_link Debts-Manager-Tutorial-Contract-Design 'Contract design' %}**: Design the OpenAPI 3 contract
-2. **Vert.x Web API Contract & Service**: Setup Vert.x project and bind Vert.x Event Bus services
+2. **{% post_link Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service Vert.x Web API Contract & Service %}**: Setup Vert.x project and bind Vert.x Event Bus services
 3. **Persistence**: Design and implement persistence
 4. **Event Sourcing**: Develop the read model and CQRS
-5. **Testing**: Spin up test containers and write clean assertions
-6. **BONUS: Deploy to OpenShift**
-7. **BONUS: Refactor to microservices using Vert.x Event Bus**
+5. **Implement services logic**: Implement the services
+6. **Testing**: Spin up test containers and write clean assertions
+7. **BONUS: Deploy to OpenShift**
+8. **BONUS: Refactor to microservices using Vert.x Event Bus**
 
 Stay tuned for next chapter! And give me feedback about this tutorial!
 
