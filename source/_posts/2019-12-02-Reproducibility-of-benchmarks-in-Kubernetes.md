@@ -9,7 +9,7 @@ Hi everybody! Today I'm going to talk you about how I've managed to run a benchm
 
 ## Reproducibility: What and Why
 
-**Reproducibility** means that different runs of the same benchmark, testing the same system, running in the same environment, should lead to same results.
+**Reproducibility** means that different runs of the same benchmark, testing the same system, running in the same environment, should lead to similar results.
 
 This is one of the most important traits that every benchmark should respect, because without it, the test can't be trusted.
 
@@ -19,7 +19,7 @@ You can't really answer that question, because your benchmark is not reproducibl
 
 Making the test reproducible, for a good part, depends on the environment where you run the test. 
 
-Kubernetes is a virtualized environment designed to scale up & down workloads, depending on resource demands. So it can arbitrarily schedule your application to run where it wants, imposing precise cpu/memory resources. I'll show you how what countermeasures I've took in my methodology to run benchmarks **inside** K8s to prevent such problems.
+Kubernetes is a virtualized environment designed to scale up & down workloads, depending on resource demands. So it can arbitrarily schedule your application to run where it wants, imposing precise cpu/memory resources. I'll show you   what countermeasures I've took in my methodology to run benchmarks **inside** K8s to prevent such problems.
 
 ## System under test: Knative Eventing
 
@@ -53,7 +53,14 @@ The cluster where I'm running the tests is composed by three bare metal machines
 
 The question that arises is: what metric should be used to determine reproducibility? A wise answer could be that the standard deviation of the metric used to determine a performance improvement should be used to determine reproducibility. 
 
-In my case I'm going to use standard deviation of the **percentiles** of E2E latency (from sender to receiver) across several runs. Lower is the standard deviation, more the test is reproducible.
+In my case I'm going to use standard deviation of the **percentiles** of E2E latency (from sender to receiver) across several runs. The lower is the standard deviation, more reproducible is the test.
+
+To improve reproducibility, I'll start by configuring and running the test 5 times, to calculate a baseline standard deviation. Then I'll show you the tweaks I've made to reduce the standard deviation to an acceptable value:
+
+1. Configure the test to don't blow up the system
+1. Pin containers to nodes
+1. Restart the system after each run
+1. Configure the resource limits
 
 ## Step 1: Configure the test to don't blow up the system
 
@@ -201,7 +208,7 @@ kubectl wait pod -n kafka --for=condition=Ready --all
 
 
 
-## Step 4? Configure the resource limits
+## Step 4: Configure the resource limits
 
 As explained at beginning of this post, Kubernetes is designed to scale up & down workloads. What if the scheduler decides to schedule up and down our benchmark resources while the test is running? The benchmark needs to have granted the resources it needs & these should not change while is running. To do so, resource `request` & `limits` must be configured the same for every test and SUT, like: 
 
@@ -209,10 +216,10 @@ As explained at beginning of this post, Kubernetes is designed to scale up & dow
 resources:
   requests:
     cpu: 16
-    memory: 8Gi
+    memory: "8Gi"
   limits:
     cpu: 16
-    memory: 8Gi
+    memory: "8Gi"
 ```
 
 This leads Kubernetes to schedule pods with QoS class [`Guaranteed`](https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-guaranteed), so it can't scale up & down resources.
@@ -235,7 +242,7 @@ Luckily there is a way to force the CPU pinning, enabling the [static CPU manage
 ```yaml
 systemReserved:
   cpu: "1"
-  memory: 1Gi
+  memory: "1Gi"
 ```
 
 ## Results
