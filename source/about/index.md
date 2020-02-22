@@ -5,11 +5,29 @@ date: 2019-01-20 15:51:24
 
 {% raw %}
 <div class="timeline-container">
+
+	<div class="timeline-item" date-is='From August 2019'>
+		<h1>Software Engineer at Red Hat</h1>
+		<p>
+      Joined the <a href="https://www.openshift.com/learn/topics/serverless">Openshift Cloud Functions</a> team to focus on Serverless technologies and Event Driven FaaS applications, with a particular focus on <a href="https://knative.dev/">Knative</a> and <a href="https://cloudevents.io/">CloudEvents</a>
+		</p>
+	</div>
+
+	<div class="timeline-item" date-is='July 2019'>
+		<h1>BSc IT Engineering at Politecnico di Milano</h1>
+	</div>
+
+	<div class="timeline-item" date-is='March - June 2019'>
+		<h1>Software Engineer Intern at Red Hat</h1>
+		<p>
+      Joined in Vert.x team in <a href="https://redhat.com">Red Hat</a> to help development and maintenance of different Vert.x stack components, in particular, related to Vert.x Web. I worked on a research project, involving the community, aimed to improve the developer experience of our APIs, with a particular focus on API Gateways use case. I also did different improvements to our code generator for various language integrations. 
+		</p>
+	</div>
 	
 	<div class="timeline-item" date-is='March - May 2018'>
 		<h1>IT Engineer Intern at Credimi SPA</h1>
 		<p>
-      Joined in tech team of <a href="https://credimi.com">Credimi SPA</a> with Scala, Akka, Lagom, Apache Kafka & Camunda
+      Joined in tech team of <a href="https://credimi.com">Credimi SPA</a>, working with Scala, Akka, Lagom, Apache Kafka & Camunda
 		</p>
 	</div>
 	
