@@ -42,13 +42,13 @@ local_search:
 fancybox: true
 
 vendors:
-  fancybox: //cdn.jsdelivr.net/npm/fancybox@3.0.0/dist/js/jquery.fancybox.pack.js
-  fancybox_css: //cdn.jsdelivr.net/npm/fancybox@3.0.0/dist/css/jquery.fancybox.min.css
-
-cheers_enabled: false
+  fancybox: //cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js
+  fancybox_css: //cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css
 
 custom_file_path:
   head: source/_data/head.swig
-  styles: source/_data/styles.styl
+  style: source/_data/styles.styl
 
-google_analytics: UA-39408029-2
+google_analytics:
+  tracking_id: UA-39408029-2
+  only_pageview: false
