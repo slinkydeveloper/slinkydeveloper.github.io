@@ -149,7 +149,16 @@ Following the above approach, host has always the full control of process resour
 Markus and I built a prototype of the host and of the 2 controllers, a simple pod spawner and the [Memcached example](https://sdk.operatorframework.io/docs/golang/quickstart/) from operator-sdk. You can find all the code here: https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc
 
 We made our host with Rust and [Wasmer](https://github.com/wasmerio/wasmer/), a popular Wasm engine supporting different compilation backends and with several language bindings. We implemented the controllers with Rust using a hacked version of [`kube-rs` client](https://github.com/clux/kube-rs).
-The host logic is pretty simple: when it starts, it reads the contents of the specified dir, looking for `.yaml` containing the module manifests. For each module, it compiles the module and runs it in a separate thread invoking the `run` exported function. The module, through the custom ABI we designed, can interact with Kubernetes to start watching resources and react on the events.
+The host logic is pretty simple: when it starts, it reads the contents of the specified dir, looking for `.yaml` containing the module manifests. An example manifest:
+
+```yaml
+name: memcached
+abi: rust_v1alpha1
+```
+
+`name` is the operator name and `abi` is the abi the host should use to interact with the module. This allows to [support different ABIs](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/blob/ff4e07f2ca29ac7fd913cb3578749d64c25cb048/rust-host/src/abi/mod.rs#L19) at the same time, mainly to overcome the differences between the programming languages and to support old modules running on new host versions.
+
+Then, for each module, it compiles and runs it in a separate thread invoking the `run` exported function. The module, through the custom ABI we designed, can interact with Kubernetes to start watching resources and react on the events.
 
 {% note %}
 The prototype contains several simplifications that we can overcome easily (like watching the modules directory more than loading all the modules once), while others require more engineering as discussed later in this post.
@@ -157,7 +166,7 @@ The prototype contains several simplifications that we can overcome easily (like
 
 ### The ABI
 
-Although the host is designed to [support different ABIs](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/blob/ff4e07f2ca29ac7fd913cb3578749d64c25cb048/rust-host/src/abi/mod.rs#L19), we ended up with a pretty simple ABI that mixes the low level WASI syscalls with a medium level HTTP client proxy functionality:
+In order to create a running prototype, we ended up with a pretty simple ABI that mixes the low level WASI syscalls with a medium level HTTP client proxy functionality:
 
 ```shell
 % wasm-nm memcached.wasm -i
@@ -181,7 +190,7 @@ The exports are `run` to start the controller and `allocate` to allocate memory 
 In Wasm the module obviously cannot access to the host memory, but the host can access to the module memory and copy bytes inside it. Because the Wasm module might have a memory allocator, a GC or any other mechanism to manage memory, the module should export a function that allocates memory to let the host copy bytes back to the module.
 {% endnote %}
 
-`request` is the function to perform a blocking and buffered HTTP request, while all the other imports come from WASI. The user interacts with our hacked version of the Kubernetes client, which under the hood invokes `request` to perform HTTP requests more than the [`reqwest` crate](https://github.com/seanmonstar/reqwest). Another huge difference is that all our APIs are blocking, that is there is no `async/await` support in our Wasm modules, I'll cover this limitation later. 
+`request` is the function to perform a **blocking and buffered** HTTP request, while all the other imports come from WASI. The user interacts with our hacked version of the Kubernetes client, which under the hood invokes `request` to perform HTTP requests more than the [`reqwest` crate](https://github.com/seanmonstar/reqwest). Another huge difference is that all our APIs are blocking, that is there is no `async/await` support in our Wasm modules, I'll cover this limitation later. 
 
 The `request` flow should give you the idea of what it takes to implement an ABI:
 
@@ -223,7 +232,7 @@ You can look at the full controller code for the above sample [here](https://git
 
 There are some things we still didn't tested, but that we're willing to do in order to give us a clear idea of how to grow this idea:
 
-* Re-design the ABI to support unbuffered & asynchronous HTTP requests. This requires several additions to both the Wasm engine and the host code, most notably the engine should have the ability to [yield the execution](https://github.com/wasmerio/wasmer/issues/1127) of the code and the module should have an [async executor](https://rust-lang.github.io/async-book/02_execution/04_executor.html) to execute async operations.
+* Re-design the ABI to support unbuffered & asynchronous HTTP requests. This requires several additions to both the Wasm engine and the host code, most notably the engine should have the ability to [yield the execution](https://github.com/wasmerio/wasmer/issues/1127) and the module should have an [async executor](https://rust-lang.github.io/async-book/02_execution/04_executor.html) to execute async operations.
 * The proposed ABI mixes medium level and low level. We want to try to implement an high level function in our ABI for watching Kubernetes resources, in order to register a single watch for all the controllers.
 * The actual ABI doesn't have error management at all, but that shouldn't be hard to implement: the serialized ABI data structures might be enums with error as one of the variants, so then the error is propagated back to the user as a `Result`.  
 
