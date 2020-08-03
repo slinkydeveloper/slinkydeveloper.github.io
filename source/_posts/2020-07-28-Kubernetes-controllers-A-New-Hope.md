@@ -42,12 +42,12 @@ While other projects, like Knative, opt for creating and maintaining their [own 
 These tools usually provides:
 
 * Library to improve the event handling logic: "smart" events queue that dedup events, filtering events, ...
-* A code generator component that, starting from the CRD defined in the code, scaffolds the controller code and the client code to interact with the CRD (this is because Golang doesn't have generics)
+* A code generator component that, starting from the CRD defined in the code, scaffolds the controller code and generates the client code to interact with the CRD (this is because Golang doesn't have generics)
 
-Apart the differences between the tools, they all share the same problem: one CRD maps to one controller that maps to one process that maps to one pod. Every time we want to extend Kubernetes with a new API we add a new process which generates network traffic and waste CPU and memory, even when it's just listening. 
+Apart of the differences between the tools, they all share the same problem: one CRD maps to one controller that maps to one process that maps to one pod. Every time we want to extend Kubernetes with a new API we add a new process which generates network traffic and wastes CPU and memory, even when it's just listening. 
 In short, **We're flooding our Kubernetes clusters with applications that suck resources and remain in idle for most of their time!**
 
-Knative community, with some well crafted engineering, found a solution to package different controllers **at compile time** in the same process. This is fine, but that's still not a solution to the initial problem: we cannot build Kubernetes every time packaging all the controllers we need, we want a solution to dynamically extend the Kubernetes APIs.
+Knative community, like other frameworks, found a solution to package different controllers **at compile time** in the same process. This is fine, but that's still not a solution to the initial problem: we cannot build Kubernetes every time packaging all the controllers we need, we want a solution to dynamically extend the Kubernetes APIs.
 
 ## Extending Kubernetes APIs in process
 
@@ -57,9 +57,10 @@ The idea behind our solution is to create a runtime plugin system where every pl
 
 This plugin system should have certain traits:
 
-* Plugins should be well isolated between them aka no plugin failure/bad behaviour should annoy other plugins
+* Plugins should be well isolated between each other aka no plugin failure/bad behaviour should annoy other plugins
 * The host should be able to control and restrict what the plugin can do
 * Users should be able to develop plugins with different languages
+* The host should be able to load and unload plugins at runtime, without restarting the system
 
 This plugin system may live in a _mega controller_, or it may live directly inside the _kube-controller-manager_, which is the process with all the controllers that manage the Kubernetes built-in building blocks:
 
@@ -71,11 +72,11 @@ The requirements of the plugin system are not trivial, but lucky for us WebAssem
 
 Wasm is an instruction set, targetable from every programming language, that runs in an isolated Virtual Machine. From [webassembly.org](https://webassembly.org/): _"WebAssembly (abbreviated Wasm) is a binary instruction format for a stack-based virtual machine. Wasm is designed as a portable compilation target for programming languages, enabling deployment on the web for client and server applications"_. That sounds like the perfect fit for our idea:
 
-* Because is isolated by default, we define piece by piece all the possible interactions between the plugins (controllers) and the host
+* Because it's isolated by default, we define all the possible interactions between the plugins (controllers) and the host, piece by piece
 * Because it runs in a sandboxed virtual machine, it can easily isolate catastrophic failures and guarantee safe access to specific memory regions
 * Because it's a general purpose instruction set, more similar to an ISA of a modern CPU other than the JVM bytecode, most languages can target it (GC-enabled, dynamic/static typed, ...). 
 
-A list of supported languages is available [here](https://webassembly.org/getting-started/developers-guide/) and [here](https://stackoverflow.com/questions/43540878/what-languages-can-be-compiled-to-webassembly-wasm).
+A list of supported languages is available [here](https://webassembly.org/getting-started/developers-guide/) and [here](https://stackoverflow.com/questions/43540878/what-languages-can-be-compiled-to-webassembly-wasm). Wasm is flexible enough that can be executed with ahead of time (AOT) compilation or with a just in time (JIT) interpreter.
 
 Although WebAssembly sounds like a web, or better a browser technology, in the last years several people are experimenting this technology [outside the browser](https://webassembly.org/docs/use-cases/#outside-the-browser). Most notably, CloudFlare FaaS service called Workers [use Wasm](https://blog.cloudflare.com/introducing-wrangler-cli/) to run C/Rust code using Google's V8 isolations.
 
@@ -134,10 +135,11 @@ Given our knowledge and studies of the current state of art for Wasm ABIs, we fo
 * **Low level ABI**: proxy the syscalls (`epoll`, `read`, `write`, `bind`, ...)
 
 We think that a good solution should mix all these 3 _"levels"_. Some low-level APIs are always necessary for basic things like logging, get configuration from environment, set timeout and so on. Proxying HTTP can be useful to invoke services outside Kubernetes (e.g. to trigger a cloud vendor API to enable a service).
-Exposing the Kubernetes client APIs unlocks a great potential to optimize the controllers, to name few: host need to watch only one time a `ConfigMap` required by all different controllers, a single cache layer can be shared among all controllers watching a specific namespace, RBAC checks can be done directly in the host all the pods, RBAC checks might be done directly on the host side. All these optimizations might incredibly reduce the network and cpu pressure on Kubernetes clusters.
+Exposing the Kubernetes client APIs unlocks a great potential to optimize the controllers, to name few: The host needs to watch only one time a `ConfigMap` required by all different controllers only once, a single cache layer can be shared among all controllers watching the same resources, RBAC checks might be done directly on the host side.
+All these optimizations have the potential to greatly reduce network traffic and general load in a Kubernetes cluster, especially as more and more extensions get added to it.
 
 {% note info %}
-Just as an example, in Knative all the controllers watch a `ConfigMap` called `config-logging` to configure the logging level. Assuming there are 10 Knative controllers in separate processes, all of them needs to do long polling HTTP requests to Kubernetes in order to check for changes and reconfigure logging. With the solution proposed here, we need only one long polling HTTP request, reducing by a factor 10 the network activity and CPU cycles on that particular watch (both server side and client side).
+Just as an example, imagine a system where all the controllers watch a `ConfigMap` called `config-logging` to configure the logging level. Assuming there are controllers in separate processes, all of them needs to do long polling HTTP requests to Kubernetes in order to check for changes and reconfigure logging. With the solution proposed here, we need only one long polling HTTP request, reducing by a factor 10 the network activity and CPU cycles on that particular watch (both server side and client side).
 {% endnote %}
 
 Following the above approach, host has always the full control of process resources (open files, open sockets, etc), we allow the modules to perform only certain operations and, most important, we open up for **huge optimizations**.
@@ -246,7 +248,7 @@ To make things even worse, at the moment there is no way to define imports and e
 While the official Golang distribution [doesn't support](https://github.com/golang/go/issues/25612) definining imports and exports, [TinyGo supports it](https://github.com/tinygo-org/tinygo/tree/master/src/examples/wasm)
 {% endnote %}
 
-Markus managed to run the Memcached operator example of operator-sdk, using NodeJS as a host, hacking the [wasm_exec.js](https://github.com/golang/go/blob/master/misc/wasm/wasm_exec.js) to fix some polyfills. The final module ABI is:
+Markus managed to run the Memcached operator example of operator-sdk, using NodeJS as a host, hacking some polyfills to match the expectations of [wasm_exec.js](https://github.com/golang/go/blob/master/misc/wasm/wasm_exec.js). The final module ABI is:
 
 ```shell
 % wasm-nm test.wasm -i
