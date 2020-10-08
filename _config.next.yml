@@ -52,3 +52,8 @@ custom_file_path:
 google_analytics:
   tracking_id: UA-39408029-2
   only_pageview: false
+
+mermaid:
+  enable: true
+  # Available themes: default | dark | forest | neutral
+  theme: forest

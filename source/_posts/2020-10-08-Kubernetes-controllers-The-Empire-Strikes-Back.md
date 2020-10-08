@@ -70,11 +70,11 @@ This is fine as initial approach, but we soon hit a problem: porting all the exi
 
 ### How `async`/`await` works
 
-Here's for you a little refresh on `async`/`await`:
+Here's for you a little refresh on `async`/`await` from [Asynchronous Programming in Rust book](https://rust-lang.github.io/async-book/01_getting_started/04_async_await_primer.html):
 
-{% note %}
-From [Asynchronous Programming in Rust book](https://rust-lang.github.io/async-book/01_getting_started/04_async_await_primer.html): _async/.await is Rust's built-in tool for writing asynchronous functions that look like synchronous code. async transforms a block of code into a state machine that implements a trait called Future. Whereas calling a blocking function in a synchronous method would block the whole thread, blocked Futures will yield control of the thread, allowing other Futures to run._
-{% endnote %}
+{% cq %}
+async/.await is Rust's built-in tool for writing asynchronous functions that look like synchronous code. async transforms a block of code into a state machine that implements a trait called Future. Whereas calling a blocking function in a synchronous method would block the whole thread, blocked Futures will yield control of the thread, allowing other Futures to run._
+{% endcq %}
 
 Although there are a lot of details about how Rust implements the `async`/`await` feature, I'm gonna try to summarize the concepts we need for this post:
 
@@ -223,8 +223,40 @@ pub extern "C" fn wakeup_future(future_id: u64, ptr: *const u8, len: usize) {
 }
 ```
 
-### The whole flow
+### The full flow
 
+This is a complete flow of an asynchronous ABI method:
+
+@startuml
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 60
+skinparam sequenceParticipant underline
+
+participant "Controller module" as C
+participant "Host" as H
+
+activate C
+C -> H: do_async()
+H -> C: Returns async operation identifier
+C -> C: run_until_stalled()
+deactivate C
+
+H -> C: wakeup_future(id)
+@enduml
+
+{% mermaid sequenceDiagram %}
+participant C as Controller module
+participant H as Host
+Alice->>John: Hello John, how are you?
+loop Healthcheck
+    John->>John: Fight against hypochondria
+end
+Note right of John: Rational thoughts!
+John-->>Alice: Great!
+John->>Bob: How about you?
+Bob-->>John: Jolly good!
+{% endmermaid %}
 
 
 You can find the complete code regarding `async`/`await` support here: [`executor.rs`](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/blob/master/kube-rs/src/abi/executor.rs)
