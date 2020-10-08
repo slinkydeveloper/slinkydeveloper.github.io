@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.0">
+<meta name="generator" content="Hexo 5.2.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
@@ -14,12 +14,14 @@
 <link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
   <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
 
-<script id="hexo-configurations">
+<script class="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"slinkydeveloper.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"slinkydeveloper.com","root":"/","scheme":"Gemini","version":"8.0.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
   </script>
 
   <meta name="description" content="Write beautiful async assertions with Vert.x Futures and Vert.x JUnit 5">
@@ -30,7 +32,7 @@
 <meta property="og:description" content="Write beautiful async assertions with Vert.x Futures and Vert.x JUnit 5">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2018-10-29T13:46:00.000Z">
-<meta property="article:modified_time" content="2020-04-17T17:57:12.230Z">
+<meta property="article:modified_time" content="2020-10-08T14:07:01.911Z">
 <meta property="article:author" content="Software Engineer">
 <meta property="article:tag" content="vertx">
 <meta property="article:tag" content="development">
@@ -38,10 +40,11 @@
 <meta property="article:tag" content="junit5">
 <meta name="twitter:card" content="summary">
 
+
 <link rel="canonical" href="https://slinkydeveloper.com/Assertions-With-Vertx-Futures-And-JUnit5/">
 
 
-<script id="page-configurations">
+<script class="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
@@ -49,8 +52,7 @@
     isPost : true,
     lang   : 'en'
   };
-</script>
-<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.1.0/cookieconsent.min.css" />
+</script><link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.1.0/cookieconsent.min.css" />
 <script src="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.1.0/cookieconsent.min.js"></script>
 <script>
 window.addEventListener("load", function(){
@@ -65,6 +67,7 @@ window.cookieconsent.initialise({
   }
 })});
 </script>
+
   <title>Assertions with Vert.x Futures and JUnit5 | Slinky's corner</title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-39408029-2"></script>
@@ -84,50 +87,62 @@ window.cookieconsent.initialise({
 
   <noscript>
   <style>
-  .use-motion .brand,
+  body { margin-top: 2rem; }
+
   .use-motion .menu-item,
-  .sidebar-inner,
+  .use-motion .sidebar,
   .use-motion .post-block,
   .use-motion .pagination,
   .use-motion .comments,
   .use-motion .post-header,
   .use-motion .post-body,
-  .use-motion .collection-header { opacity: initial; }
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
 
   .use-motion .site-title,
-  .use-motion .site-subtitle {
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
     opacity: initial;
     top: initial;
   }
 
-  .use-motion .logo-line-before i { left: initial; }
-  .use-motion .logo-line-after i { right: initial; }
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
   </style>
 </noscript>
 
 <link rel="alternate" href="/atom.xml" title="Slinky's corner" type="application/atom+xml">
 </head>
 
-<body itemscope itemtype="http://schema.org/WebPage">
-  <div class="container use-motion">
-    <div class="headband"></div>
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
 
+  <main class="main">
     <header class="header" itemscope itemtype="http://schema.org/WPHeader">
       <div class="header-inner"><div class="site-brand-container">
   <div class="site-nav-toggle">
     <div class="toggle" aria-label="Toggle navigation bar">
-      <span class="toggle-line toggle-line-first"></span>
-      <span class="toggle-line toggle-line-middle"></span>
-      <span class="toggle-line toggle-line-last"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
     </div>
   </div>
 
   <div class="site-meta">
 
     <a href="/" class="brand" rel="start">
-      <span class="logo-line-before"><i></i></span>
+      <i class="logo-line"></i>
       <h1 class="site-title">Slinky's corner</h1>
-      <span class="logo-line-after"><i></i></span>
+      <i class="logo-line"></i>
     </a>
       <p class="site-subtitle" itemprop="description">Personal blog of Francesco Guardiani, Software Engineer</p>
   </div>
@@ -141,27 +156,26 @@ window.cookieconsent.initialise({
 
 
 
-
 <nav class="site-nav">
-  <ul id="menu" class="menu">
+  <ul class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+    <a href="/" rel="section"><i class="home fa-fw"></i>Home</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>About</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags</a>
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -180,7 +194,7 @@ window.cookieconsent.initialise({
     <i class="fa fa-search"></i>
   </span>
   <div class="search-input-container">
-    <input autocomplete="off" autocapitalize="off"
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
            placeholder="Searching..." spellcheck="false"
            type="search" class="search-input">
   </div>
@@ -188,9 +202,9 @@ window.cookieconsent.initialise({
     <i class="fa fa-times-circle"></i>
   </span>
 </div>
-<div id="search-result">
-  <div id="no-result">
-    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
   </div>
 </div>
 
@@ -198,6 +212,77 @@ window.cookieconsent.initialise({
   </div>
 
 </div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#assertComplete-and-assertFailure"><span class="nav-number">1.</span> <span class="nav-text">assertComplete() and assertFailure()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Testing-a-Future-chain"><span class="nav-number">2.</span> <span class="nav-text">Testing a Future chain</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Tricks-and-tips"><span class="nav-number">3.</span> <span class="nav-text">Tricks and tips</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Software Engineer</p>
+  <div class="site-description" itemprop="description">Personal blog of Francesco Guardiani, Software Engineer</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">16</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/slinkydeveloper" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;slinkydeveloper" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:francescoguard@gmail.com" title="E-Mail → mailto:francescoguard@gmail.com" rel="noopener" target="_blank"><i class="envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/SlinkyGuardiani" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;SlinkyGuardiani" rel="noopener" target="_blank"><i class="twitter fa-fw"></i>Twitter</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://stackoverflow.com/users/2399055/francesco-guardiani" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;2399055&#x2F;francesco-guardiani" rel="noopener" target="_blank"><i class="stack-overflow fa-fw"></i>StackOverflow</a>
+      </span>
+  </div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
     </header>
 
     
@@ -206,19 +291,24 @@ window.cookieconsent.initialise({
     <span>0%</span>
   </div>
 
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
 
-    <main class="main">
-      <div class="main-inner">
-        <div class="content-wrap">
-          
 
-          <div class="content post posts-expand">
-            
+    <div class="main-inner post posts-expand">
+      
 
-    
+      
+
+  
+
+
+<div class="post-block">
   
   
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
     <link itemprop="mainEntityOfPage" href="https://slinkydeveloper.com/Assertions-With-Vertx-Futures-And-JUnit5/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -235,26 +325,28 @@ window.cookieconsent.initialise({
           Assertions with Vert.x Futures and JUnit5
         </h1>
 
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 29-10-2018 14:46:00" itemprop="dateCreated datePublished" datetime="2018-10-29T14:46:00+01:00">29-10-2018</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 17-04-2020 19:57:12" itemprop="dateModified" datetime="2020-04-17T19:57:12+02:00">17-04-2020</time>
-              </span>
+      <time title="Created: 29-10-2018 14:46:00" itemprop="dateCreated datePublished" datetime="2018-10-29T14:46:00+01:00">29-10-2018</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 08-10-2020 16:07:01" itemprop="dateModified" datetime="2020-10-08T16:07:01+02:00">08-10-2020</time>
+      </span>
 
-          
+  
+</div>
+
             <div class="post-description">Write beautiful async assertions with Vert.x Futures and Vert.x JUnit 5</div>
-
         </div>
       </header>
 
@@ -262,10 +354,8 @@ window.cookieconsent.initialise({
     
     
     <div class="post-body" itemprop="articleBody">
-
-      
-        <p>During development of <a href="https://github.com/slinkydeveloper/vertx-event-manager" target="_blank" rel="noopener">Vert.x event manager library</a> (a blog post about it is coming soon) I wanted to play with new <a href="https://vertx.io/docs/vertx-junit5/java/" target="_blank" rel="noopener"><code>vertx-junit5</code></a> library. I like the new async assertion APIs of <code>vertx-junit5</code>, but I feel very unconfortable using <a href="https://vertx.io/docs/apidocs/io/vertx/junit5/VertxTestContext.html#succeeding-io.vertx.core.Handler-" target="_blank" rel="noopener"><code>VertxTestContext.succeding(Handler)</code></a> when I need to run sequentially different async tasks. With this method, your code rapidly grows in a big callback hell! Plus the interfaces I wanted to test are all in <code>Future</code>s style more than callback style.</p>
-<p>In this post I’m going to explain you two methods I’ve added with a <a href="https://github.com/vert-x3/vertx-junit5/pull/53" target="_blank" rel="noopener">PR</a> that simplify tests with <code>Future</code>s</p>
+        <p>During development of <a target="_blank" rel="noopener" href="https://github.com/slinkydeveloper/vertx-event-manager">Vert.x event manager library</a> (a blog post about it is coming soon) I wanted to play with new <a target="_blank" rel="noopener" href="https://vertx.io/docs/vertx-junit5/java/"><code>vertx-junit5</code></a> library. I like the new async assertion APIs of <code>vertx-junit5</code>, but I feel very unconfortable using <a target="_blank" rel="noopener" href="https://vertx.io/docs/apidocs/io/vertx/junit5/VertxTestContext.html#succeeding-io.vertx.core.Handler-"><code>VertxTestContext.succeding(Handler)</code></a> when I need to run sequentially different async tasks. With this method, your code rapidly grows in a big callback hell! Plus the interfaces I wanted to test are all in <code>Future</code>s style more than callback style.</p>
+<p>In this post I’m going to explain you two methods I’ve added with a <a target="_blank" rel="noopener" href="https://github.com/vert-x3/vertx-junit5/pull/53">PR</a> that simplify tests with <code>Future</code>s</p>
 <h2 id="assertComplete-and-assertFailure"><a href="#assertComplete-and-assertFailure" class="headerlink" title="assertComplete() and assertFailure()"></a><code>assertComplete()</code> and <code>assertFailure()</code></h2><p>The PR adds methods:</p>
 <ul>
 <li><code>Future&lt;T&gt; assertComplete(Future&lt;T&gt; fut)</code></li>
@@ -295,7 +385,7 @@ window.cookieconsent.initialise({
 <h2 id="Tricks-and-tips"><a href="#Tricks-and-tips" class="headerlink" title="Tricks and tips"></a>Tricks and tips</h2><p>The bad thing of future chains is passing values through the chain. Let’s say that in previous example the exception throwed by <code>update()</code> method doesn’t return an exception that contains a super handy method like <code>getEntityId()</code>. But to get the data from db you need the <code>id</code> of your data instance, so how you can solve it?</p>
 <p>You have two ways that really depend on your code style:</p>
 <ul>
-<li><p>If you are a bit more <em>functional</em>, use <a href="https://vertx.io/docs/apidocs/io/vertx/core/CompositeFuture.html#join-io.vertx.core.Future-io.vertx.core.Future-" target="_blank" rel="noopener"><code>CompositeFuture.join()</code></a> to transform a tuple of Futures (one of them already completed with the value you want to pass through the chain) to a single Future that encapsulates both the previous async operation result and the new result. This method works only when you are in a chain of completed handlers because when a future inside <code>CompositeFuture.join()</code> fails, the “join future” is not an instance of <code>CompositeFuture</code> and doesn’t return any information about other joined futures. I prefer to avoid this method, but keep it in mind because you can find it useful sometimes.</p>
+<li><p>If you are a bit more <em>functional</em>, use <a target="_blank" rel="noopener" href="https://vertx.io/docs/apidocs/io/vertx/core/CompositeFuture.html#join-io.vertx.core.Future-io.vertx.core.Future-"><code>CompositeFuture.join()</code></a> to transform a tuple of Futures (one of them already completed with the value you want to pass through the chain) to a single Future that encapsulates both the previous async operation result and the new result. This method works only when you are in a chain of completed handlers because when a future inside <code>CompositeFuture.join()</code> fails, the “join future” is not an instance of <code>CompositeFuture</code> and doesn’t return any information about other joined futures. I prefer to avoid this method, but keep it in mind because you can find it useful sometimes.</p>
 </li>
 <li><p>If you don’t care about functional stuff, just use old but gold <code>AtomicReference</code>s:</p>
 </li>
@@ -310,7 +400,7 @@ window.cookieconsent.initialise({
     
     
 
-      <footer class="post-footer">
+    <footer class="post-footer">
           <div class="post-tags">
               <a href="/tags/vertx/" rel="tag"># vertx</a>
               <a href="/tags/development/" rel="tag"># development</a>
@@ -320,29 +410,28 @@ window.cookieconsent.initialise({
 
         
 
-
-        
-    <div class="post-nav">
-      <div class="post-nav-item">
-    <a href="/Routing-With-Eclipse-Collections/" rel="prev" title="Routing with Eclipse Collections">
-      <i class="fa fa-chevron-left"></i> Routing with Eclipse Collections
-    </a></div>
-      <div class="post-nav-item">
-    <a href="/Debts-Manager-Tutorial-Introduction/" rel="next" title="Debts Manager Tutorial Part 1: Introduction">
-      Debts Manager Tutorial Part 1: Introduction <i class="fa fa-chevron-right"></i>
-    </a></div>
-    </div>
-      </footer>
-    
-  </article>
-  
-  
-  
-
-
-
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Routing-With-Eclipse-Collections/" rel="prev" title="Routing with Eclipse Collections">
+                  <i class="fa fa-chevron-left"></i> Routing with Eclipse Collections
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Debts-Manager-Tutorial-Introduction/" rel="next" title="Debts Manager Tutorial Part 1: Introduction">
+                  Debts Manager Tutorial Part 1: Introduction <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
           </div>
-          
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
 
 <script>
   window.addEventListener('tabs:register', () => {
@@ -351,7 +440,7 @@ window.cookieconsent.initialise({
       activeClass = localStorage.getItem('comments_active') || activeClass;
     }
     if (activeClass) {
-      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
       if (activeTab) {
         activeTab.click();
       }
@@ -360,151 +449,64 @@ window.cookieconsent.initialise({
   if (CONFIG.comments.storage) {
     window.addEventListener('tabs:click', event => {
       if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      let commentClass = event.target.classList[1];
+      const commentClass = event.target.classList[1];
       localStorage.setItem('comments_active', commentClass);
     });
   }
 </script>
 
-        </div>
-          
-  
-  <div class="toggle sidebar-toggle">
-    <span class="toggle-line toggle-line-first"></span>
-    <span class="toggle-line toggle-line-middle"></span>
-    <span class="toggle-line toggle-line-last"></span>
-  </div>
-
-  <aside class="sidebar">
-    <div class="sidebar-inner">
-
-      <ul class="sidebar-nav motion-element">
-        <li class="sidebar-nav-toc">
-          Table of Contents
-        </li>
-        <li class="sidebar-nav-overview">
-          Overview
-        </li>
-      </ul>
-
-      <!--noindex-->
-      <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#assertComplete-and-assertFailure"><span class="nav-number">1.</span> <span class="nav-text">assertComplete() and assertFailure()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Testing-a-Future-chain"><span class="nav-number">2.</span> <span class="nav-text">Testing a Future chain</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Tricks-and-tips"><span class="nav-number">3.</span> <span class="nav-text">Tricks and tips</span></a></li></ol></div>
-      </div>
-      <!--/noindex-->
-
-      <div class="site-overview-wrap sidebar-panel">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
-  <p class="site-author-name" itemprop="name">Software Engineer</p>
-  <div class="site-description" itemprop="description">Personal blog of Francesco Guardiani, Software Engineer</div>
-</div>
-<div class="site-state-wrap motion-element">
-  <nav class="site-state">
-      <div class="site-state-item site-state-posts">
-          <a href="/archives/">
-        
-          <span class="site-state-item-count">16</span>
-          <span class="site-state-item-name">posts</span>
-        </a>
-      </div>
-      <div class="site-state-item site-state-tags">
-            <a href="/tags/">
-          
-        <span class="site-state-item-count">37</span>
-        <span class="site-state-item-name">tags</span></a>
-      </div>
-  </nav>
-</div>
-  <div class="links-of-author motion-element">
-      <span class="links-of-author-item">
-        <a href="https://github.com/slinkydeveloper" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;slinkydeveloper" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="mailto:francescoguard@gmail.com" title="E-Mail → mailto:francescoguard@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="https://twitter.com/SlinkyGuardiani" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;SlinkyGuardiani" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="https://stackoverflow.com/users/2399055/francesco-guardiani" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;2399055&#x2F;francesco-guardiani" rel="noopener" target="_blank"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</a>
-      </span>
-  </div>
-
-
-
-      </div>
-
     </div>
-  </aside>
-  <div id="sidebar-dimmer"></div>
+  </main>
 
+  <footer class="footer">
+    <div class="footer-inner">
+      
 
-      </div>
-    </main>
-
-    <footer class="footer">
-      <div class="footer-inner">
-        
-
-        
+      
 
 <div class="copyright">
   
   &copy; 
   <span itemprop="copyrightYear">2020</span>
   <span class="with-love">
-    <i class="fa fa-user"></i>
+    <i class="fa fa-heart"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">Software Engineer</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
   </div>
 
-        
-
-
-
-
-
-
-
-
-      </div>
-    </footer>
-  </div>
+    </div>
+  </footer>
 
   
-  <script src="/lib/anime.min.js"></script>
-  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
-  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
-  <script src="/lib/velocity/velocity.min.js"></script>
-  <script src="/lib/velocity/velocity.ui.min.js"></script>
-
-<script src="/js/utils.js"></script>
-
-<script src="/js/motion.js"></script>
-
-
-<script src="/js/schemes/pisces.js"></script>
-
-
-<script src="/js/next-boot.js"></script>
-
-
-
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
 
   
 
 
 
 
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
-<script src="/js/local-search.js"></script>
-
-
-
-
-
 
 
 

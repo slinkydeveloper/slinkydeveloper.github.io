@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.0">
+<meta name="generator" content="Hexo 5.2.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
@@ -14,12 +14,14 @@
 <link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
   <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
 
-<script id="hexo-configurations">
+<script class="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"slinkydeveloper.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"slinkydeveloper.com","root":"/","scheme":"Gemini","version":"8.0.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
   </script>
 
   <meta name="description" content="In this blog post I&#39;m gonna show you how I managed to reduce the container image size of an Eclipse Vert.x application, creating a smaller JDK with jdeps and jlink.">
@@ -30,7 +32,7 @@
 <meta property="og:description" content="In this blog post I&#39;m gonna show you how I managed to reduce the container image size of an Eclipse Vert.x application, creating a smaller JDK with jdeps and jlink.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2020-10-08T09:10:25.000Z">
-<meta property="article:modified_time" content="2020-10-08T10:22:41.722Z">
+<meta property="article:modified_time" content="2020-10-08T14:07:01.912Z">
 <meta property="article:author" content="Software Engineer">
 <meta property="article:tag" content="vertx">
 <meta property="article:tag" content="development">
@@ -41,10 +43,11 @@
 <meta property="article:tag" content="jdeps">
 <meta name="twitter:card" content="summary">
 
+
 <link rel="canonical" href="https://slinkydeveloper.com/Vert-x-Container-images-with-jlink/">
 
 
-<script id="page-configurations">
+<script class="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
@@ -52,8 +55,7 @@
     isPost : true,
     lang   : 'en'
   };
-</script>
-<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.1.0/cookieconsent.min.css" />
+</script><link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.1.0/cookieconsent.min.css" />
 <script src="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.1.0/cookieconsent.min.js"></script>
 <script>
 window.addEventListener("load", function(){
@@ -68,6 +70,7 @@ window.cookieconsent.initialise({
   }
 })});
 </script>
+
   <title>Vert.x container images with jlink | Slinky's corner</title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-39408029-2"></script>
@@ -87,50 +90,62 @@ window.cookieconsent.initialise({
 
   <noscript>
   <style>
-  .use-motion .brand,
+  body { margin-top: 2rem; }
+
   .use-motion .menu-item,
-  .sidebar-inner,
+  .use-motion .sidebar,
   .use-motion .post-block,
   .use-motion .pagination,
   .use-motion .comments,
   .use-motion .post-header,
   .use-motion .post-body,
-  .use-motion .collection-header { opacity: initial; }
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
 
   .use-motion .site-title,
-  .use-motion .site-subtitle {
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
     opacity: initial;
     top: initial;
   }
 
-  .use-motion .logo-line-before i { left: initial; }
-  .use-motion .logo-line-after i { right: initial; }
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
   </style>
 </noscript>
 
 <link rel="alternate" href="/atom.xml" title="Slinky's corner" type="application/atom+xml">
 </head>
 
-<body itemscope itemtype="http://schema.org/WebPage">
-  <div class="container use-motion">
-    <div class="headband"></div>
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
 
+  <main class="main">
     <header class="header" itemscope itemtype="http://schema.org/WPHeader">
       <div class="header-inner"><div class="site-brand-container">
   <div class="site-nav-toggle">
     <div class="toggle" aria-label="Toggle navigation bar">
-      <span class="toggle-line toggle-line-first"></span>
-      <span class="toggle-line toggle-line-middle"></span>
-      <span class="toggle-line toggle-line-last"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
     </div>
   </div>
 
   <div class="site-meta">
 
     <a href="/" class="brand" rel="start">
-      <span class="logo-line-before"><i></i></span>
+      <i class="logo-line"></i>
       <h1 class="site-title">Slinky's corner</h1>
-      <span class="logo-line-after"><i></i></span>
+      <i class="logo-line"></i>
     </a>
       <p class="site-subtitle" itemprop="description">Personal blog of Francesco Guardiani, Software Engineer</p>
   </div>
@@ -144,27 +159,26 @@ window.cookieconsent.initialise({
 
 
 
-
 <nav class="site-nav">
-  <ul id="menu" class="menu">
+  <ul class="main-menu menu">
         <li class="menu-item menu-item-home">
 
-    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+    <a href="/" rel="section"><i class="home fa-fw"></i>Home</a>
 
   </li>
         <li class="menu-item menu-item-about">
 
-    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>About</a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags</a>
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -183,7 +197,7 @@ window.cookieconsent.initialise({
     <i class="fa fa-search"></i>
   </span>
   <div class="search-input-container">
-    <input autocomplete="off" autocapitalize="off"
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
            placeholder="Searching..." spellcheck="false"
            type="search" class="search-input">
   </div>
@@ -191,9 +205,9 @@ window.cookieconsent.initialise({
     <i class="fa fa-times-circle"></i>
   </span>
 </div>
-<div id="search-result">
-  <div id="no-result">
-    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
   </div>
 </div>
 
@@ -201,189 +215,18 @@ window.cookieconsent.initialise({
   </div>
 
 </div>
-    </header>
-
-    
-  <div class="back-to-top">
-    <i class="fa fa-arrow-up"></i>
-    <span>0%</span>
-  </div>
-
-
-    <main class="main">
-      <div class="main-inner">
-        <div class="content-wrap">
-          
-
-          <div class="content post posts-expand">
-            
-
-    
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="https://slinkydeveloper.com/Vert-x-Container-images-with-jlink/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Software Engineer">
-      <meta itemprop="description" content="Personal blog of Francesco Guardiani, Software Engineer">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Slinky's corner">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          Vert.x container images with jlink
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 08-10-2020 11:10:25 / Modified: 12:22:41" itemprop="dateCreated datePublished" datetime="2020-10-08T11:10:25+02:00">08-10-2020</time>
-            </span>
-
-          
-            <div class="post-description">In this blog post I'm gonna show you how I managed to reduce the container image size of an Eclipse Vert.x application, creating a smaller JDK with jdeps and jlink.</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-        <p>In this blog post I’m gonna show you how I managed to reduce the container image size of an Eclipse Vert.x application, creating a smaller JDK with <code>jdeps</code> and <code>jlink</code>.</p>
-<p>The application is the data plane of <a href="https://github.com/knative-sandbox/eventing-kafka-broker" target="_blank" rel="noopener">Knative Eventing Kafka Broker</a>, an implementation of Knative <code>Broker</code> tailored on Kafka.</p>
-<h2 id="Fat-jar"><a href="#Fat-jar" class="headerlink" title="Fat-jar"></a>Fat-jar</h2><p>We didn’t handwritten nor generated a <code>module-info.java</code> for our application, we just ship a fat-jar. To generate a fat-jar, configure the <code>maven-shade-plugin</code>:</p>
-<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.maven.plugins<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>maven-shade-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;maven.shade.plugin.version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">minimizeJar</span>&gt;</span>true<span class="tag">&lt;/<span class="name">minimizeJar</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">executions</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">execution</span>&gt;</span></span><br><span class="line">       <span class="tag">&lt;<span class="name">phase</span>&gt;</span>package<span class="tag">&lt;/<span class="name">phase</span>&gt;</span></span><br><span class="line">       <span class="tag">&lt;<span class="name">goals</span>&gt;</span></span><br><span class="line">         <span class="tag">&lt;<span class="name">goal</span>&gt;</span>shade<span class="tag">&lt;/<span class="name">goal</span>&gt;</span></span><br><span class="line">       <span class="tag">&lt;/<span class="name">goals</span>&gt;</span></span><br><span class="line">       <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">         <span class="tag">&lt;<span class="name">transformers</span>&gt;</span></span><br><span class="line">           <span class="tag">&lt;<span class="name">transformer</span></span></span><br><span class="line"><span class="tag">             <span class="attr">implementation</span>=<span class="string">"org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"</span>&gt;</span></span><br><span class="line">             <span class="tag">&lt;<span class="name">mainClass</span>&gt;</span></span><br><span class="line">               $&#123;main-class&#125;</span><br><span class="line">             <span class="tag">&lt;/<span class="name">mainClass</span>&gt;</span></span><br><span class="line">           <span class="tag">&lt;/<span class="name">transformer</span>&gt;</span></span><br><span class="line">         <span class="tag">&lt;/<span class="name">transformers</span>&gt;</span></span><br><span class="line">       <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;/<span class="name">execution</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;/<span class="name">executions</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="Jdeps"><a href="#Jdeps" class="headerlink" title="Jdeps"></a>Jdeps</h2><p><code>jdeps</code> is the tool you must use to figure which JDK modules you depend on. If you run <code>jdeps</code> just with the fat-jar as argument, you’ll get a list of all the packages in your jar and the JDK modules it depends on:</p>
-<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> jdeps receiver/target/receiver-1.0-SNAPSHOT.jar</span></span><br><span class="line">[...]</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.lang                                          java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.lang.invoke                                   java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.net                                           java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.time                                          java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.time.format                                   java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.util                                          java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.util.concurrent                               java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.util.function                                 java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.util.stream                                   java.base</span><br><span class="line">[...]</span><br></pre></td></tr></table></figure>
-
-<p>Note that <code>jdeps</code> analyzes only the imports so, if you perform some reflections at runtime of JDK classes, they won’t be found by the tool.</p>
-<p>To get an output that you can directly pass to <code>jlink</code>:</p>
-<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> jdeps -q --<span class="built_in">print</span>-module-deps --ignore-missing-deps receiver/target/receiver-1.0-SNAPSHOT.jar</span></span><br><span class="line">java.base,java.compiler,java.naming,java.security.jgss,java.security.sasl,java.sql,jdk.management,jdk.unsupported</span><br></pre></td></tr></table></figure>
-
-<p>This is the list of jdk modules we depend on. Doing a quick check, I’ve found that:</p>
-<ul>
-<li><code>java.base</code> it’s the module that contains all the core features of the jdk</li>
-<li><code>java.compiler</code> contains the compiler types. It’s brought in by Guava and Vert.x CLI feature.</li>
-<li><code>java.naming</code> contains some JNDI types, to perform names lookups. This is required to perform DNS queries by Vert.x</li>
-<li><code>java.security.jgss</code> and <code>java.security.sasl</code> contains some security protocols implementation. They’re used by the Java Kafka client.</li>
-<li><code>java.sql</code> contains JDBC. Jackson databind and Google Gson (that we import transitively via Protobuf json) depends on it because they provide marshallers/unmarshallers for JDBC types.</li>
-<li><code>jdk.management</code> contains some interfaces to manage the JDK. This is used by Micrometer to instrument the JVM and collect metrics.</li>
-<li><code>jdk.unsupported</code> contains <code>sun.misc.Unsafe</code>. Netty and Protobuf use it to perform off-heap allocations.</li>
-</ul>
-<h2 id="Zero-days-since-it-was-DNS"><a href="#Zero-days-since-it-was-DNS" class="headerlink" title="Zero days since it was DNS"></a>Zero days since it was DNS</h2><p>Because some reflection is happening behind the hood to choose the Vert.x DNS resolver, <code>jdeps</code> doesn’t discover the module <code>jdk.naming.dns</code>, that you need in your Vert.x application to enable the DNS.</p>
-<p>To resolve the deps and add the dns module:</p>
-<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">MODS=$(jdeps -q --print-module-deps --ignore-missing-deps receiver/target/receiver-1.0-SNAPSHOT.jar)</span><br><span class="line">echo "Computed mods = '$MODS'"</span><br><span class="line"><span class="meta">#</span><span class="bash"> Patch adding the dns</span></span><br><span class="line">MODS="$MODS,jdk.naming.dns"</span><br></pre></td></tr></table></figure>
-
-<h2 id="Create-the-JDK"><a href="#Create-the-JDK" class="headerlink" title="Create the JDK"></a>Create the JDK</h2><p>Now you just need to invoke <code>jlink</code> to generate your custom JDK:</p>
-<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> jlink --verbose \</span></span><br><span class="line">  --no-header-files \</span><br><span class="line">  --no-man-pages \</span><br><span class="line">  --compress=2 \</span><br><span class="line">  --strip-debug \</span><br><span class="line">  --add-modules "$MODS" \</span><br><span class="line">  --output ./jdk</span><br><span class="line">java.base file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.base.jmod</span><br><span class="line">java.compiler file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.compiler.jmod</span><br><span class="line">java.logging file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.logging.jmod</span><br><span class="line">java.management file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.management.jmod</span><br><span class="line">java.naming file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.naming.jmod</span><br><span class="line">java.security.jgss file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.security.jgss.jmod</span><br><span class="line">java.security.sasl file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.security.sasl.jmod</span><br><span class="line">java.sql file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.sql.jmod</span><br><span class="line">java.transaction.xa file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.transaction.xa.jmod</span><br><span class="line">java.xml file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.xml.jmod</span><br><span class="line">jdk.management file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/jdk.management.jmod</span><br><span class="line">jdk.naming.dns file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/jdk.naming.dns.jmod</span><br><span class="line">jdk.unsupported file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/jdk.unsupported.jmod</span><br><span class="line"></span><br><span class="line">Providers:</span><br><span class="line">  java.base provides java.nio.file.spi.FileSystemProvider used by java.base</span><br><span class="line">  java.naming provides java.security.Provider used by java.base</span><br><span class="line">  java.security.jgss provides java.security.Provider used by java.base</span><br><span class="line">  java.security.sasl provides java.security.Provider used by java.base</span><br><span class="line">  jdk.naming.dns provides javax.naming.spi.InitialContextFactory used by java.naming</span><br><span class="line">  java.management provides javax.security.auth.spi.LoginModule used by java.base</span><br><span class="line">  java.logging provides jdk.internal.logger.DefaultLoggerFinder used by java.base</span><br><span class="line">  jdk.management provides sun.management.spi.PlatformMBeanProvider used by java.management</span><br></pre></td></tr></table></figure>
-
-<p>This command will grab the modules you provided from your local machine and will create a JDK without manual, header files, debug symbols:</p>
-<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">jdk</span><br><span class="line">├── bin</span><br><span class="line">│   ├── java</span><br><span class="line">│   └── keytool</span><br><span class="line">├── conf</span><br><span class="line">│   ├── logging.properties</span><br><span class="line">│   ├── net.properties</span><br><span class="line">│   ├── sdp</span><br><span class="line">│   └── security</span><br><span class="line">[...]</span><br><span class="line">├── lib</span><br><span class="line">[...]</span><br><span class="line">└── release</span><br></pre></td></tr></table></figure>
-
-<h2 id="Complete-script-and-Dockerfile"><a href="#Complete-script-and-Dockerfile" class="headerlink" title="Complete script and Dockerfile"></a>Complete script and Dockerfile</h2><p>This is the complete Dockerfile (simplified) that builds the project and generates the JDK:</p>
-<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ARG</span> JAVA_IMAGE=docker.io/adoptopenjdk:<span class="number">14</span>-jdk-hotspot</span><br><span class="line"><span class="keyword">ARG</span> BASE_IMAGE=docker.io/ubuntu:bionic</span><br><span class="line"></span><br><span class="line"><span class="keyword">FROM</span> $&#123;JAVA_IMAGE&#125; as builder</span><br><span class="line"></span><br><span class="line"><span class="keyword">WORKDIR</span><span class="bash"> /app</span></span><br><span class="line"><span class="bash"></span></span><br><span class="line"><span class="bash"><span class="comment"># https://github.com/AdoptOpenJDK/openjdk-docker/issues/260</span></span></span><br><span class="line"><span class="bash">RUN apt-get update &amp;&amp; apt-get install -y binutils</span></span><br><span class="line"><span class="bash"></span></span><br><span class="line"><span class="bash"><span class="comment"># Copy all my project stuff inside the container</span></span></span><br><span class="line"><span class="bash">COPY . .</span></span><br><span class="line"><span class="bash"></span></span><br><span class="line"><span class="bash"><span class="comment"># Build the project</span></span></span><br><span class="line"><span class="bash">RUN ./mvnw package -DskipTests -Deditorconfig.skip --no-transfer-progress</span></span><br><span class="line"><span class="bash"></span></span><br><span class="line"><span class="bash"><span class="comment"># Generate the sdk using the script (shown below)</span></span></span><br><span class="line"><span class="bash">RUN ./generate_jdk.sh /app/receiver/target/receiver-1.0-SNAPSHOT.jar</span></span><br><span class="line"><span class="bash"></span></span><br><span class="line"><span class="bash"><span class="comment"># Prod image</span></span></span><br><span class="line"><span class="bash">FROM <span class="variable">$&#123;BASE_IMAGE&#125;</span> as running</span></span><br><span class="line"><span class="bash"></span></span><br><span class="line"><span class="bash"><span class="comment"># Create appuser and directories</span></span></span><br><span class="line"><span class="bash">RUN groupadd -g 999 appuser &amp;&amp; useradd -r -u 999 -g appuser appuser &amp;&amp; \</span></span><br><span class="line"><span class="bash">  mkdir /tmp/vertx-cache &amp;&amp; chown -R appuser:appuser /tmp/vertx-cache &amp;&amp; \</span></span><br><span class="line"><span class="bash">  mkdir /app</span></span><br><span class="line"><span class="bash"></span></span><br><span class="line"><span class="bash"><span class="comment"># Copy jar and jdk inside /app</span></span></span><br><span class="line"><span class="bash">COPY --from=builder /app/jdk /app/jdk</span></span><br><span class="line"><span class="bash">COPY --from=builder /app/receiver/target/receiver-1.0-SNAPSHOT.jar /app/app.jar</span></span><br><span class="line"><span class="bash">RUN chown -R appuser:appuser /app</span></span><br><span class="line"><span class="bash"></span></span><br><span class="line"><span class="bash"><span class="comment"># Set appuser and configure PATH</span></span></span><br><span class="line"><span class="bash">USER appuser</span></span><br><span class="line"><span class="bash">WORKDIR /app</span></span><br><span class="line"><span class="bash"><span class="comment"># Add jdk bin to the path, so you can run the java command</span></span></span><br><span class="line"><span class="bash">ENV PATH=<span class="string">"/app/jdk/bin:<span class="variable">$&#123;PATH&#125;</span>"</span></span></span><br></pre></td></tr></table></figure>
-
-<p>And the <code>generate_jdk.sh</code> script:</p>
-<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">!/usr/bin/env sh</span></span><br><span class="line"></span><br><span class="line">if [ $# -eq 0 ]</span><br><span class="line">  then</span><br><span class="line">    echo "No arguments supplied, You must provide the jar"</span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line">echo "Computing mods for $1"</span><br><span class="line">MODS=$(jdeps -q --print-module-deps --ignore-missing-deps "$1" | sed -e 's/^[ \t]*//')</span><br><span class="line">echo "Computed mods = '$MODS'"</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Patch adding the dns</span></span><br><span class="line">MODS="$MODS,jdk.naming.dns"</span><br><span class="line">echo "Patched modules shipped with the generated jdk = '$MODS'"</span><br><span class="line"></span><br><span class="line">jlink --verbose --no-header-files --no-man-pages --compress=2 --strip-debug --add-modules "$MODS" --output /app/jdk</span><br></pre></td></tr></table></figure>
-
-<p>You can run the built container with:</p>
-<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker run imagename java -jar /app/app.jar</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="Conclusions"><a href="#Conclusions" class="headerlink" title="Conclusions"></a>Conclusions</h2><p>Using <code>jdeps</code> and <code>jlink</code> our container image size is 2.5x smaller, which is a great achievement for us. We also plan to reduce it even further, in fact we want to:</p>
-<ul>
-<li>Investigate some modules we depend on, but that we probably don’t need: <code>java.compiler</code> and <code>java.sql</code> are two good candidates.</li>
-<li>Rebase our base image on <code>alpine</code>, which uses <code>musl</code> as libc. Look at <a href="https://openjdk.java.net/projects/portola/" target="_blank" rel="noopener">Project Portola</a> for more details.</li>
-</ul>
-<p>Check out the full PR: <a href="https://github.com/knative-sandbox/eventing-kafka-broker/pull/265" target="_blank" rel="noopener">https://github.com/knative-sandbox/eventing-kafka-broker/pull/265</a></p>
-
-    </div>
-
-    
-    
-    
-
-      <footer class="post-footer">
-          <div class="post-tags">
-              <a href="/tags/vertx/" rel="tag"># vertx</a>
-              <a href="/tags/development/" rel="tag"># development</a>
-              <a href="/tags/container/" rel="tag"># container</a>
-              <a href="/tags/cloud/" rel="tag"># cloud</a>
-              <a href="/tags/java/" rel="tag"># java</a>
-              <a href="/tags/jlink/" rel="tag"># jlink</a>
-              <a href="/tags/jdeps/" rel="tag"># jdeps</a>
-          </div>
-
         
-
-
-        
-    <div class="post-nav">
-      <div class="post-nav-item">
-    <a href="/Kubernetes-controllers-A-New-Hope/" rel="prev" title="Kubernetes Controllers - A new hope">
-      <i class="fa fa-chevron-left"></i> Kubernetes Controllers - A new hope
-    </a></div>
-      <div class="post-nav-item"></div>
-    </div>
-      </footer>
-    
-  </article>
-  
-  
-  
-
-
-
-          </div>
-          
-
-<script>
-  window.addEventListener('tabs:register', () => {
-    let { activeClass } = CONFIG.comments;
-    if (CONFIG.comments.storage) {
-      activeClass = localStorage.getItem('comments_active') || activeClass;
-    }
-    if (activeClass) {
-      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
-      if (activeTab) {
-        activeTab.click();
-      }
-    }
-  });
-  if (CONFIG.comments.storage) {
-    window.addEventListener('tabs:click', event => {
-      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      let commentClass = event.target.classList[1];
-      localStorage.setItem('comments_active', commentClass);
-    });
-  }
-</script>
-
-        </div>
-          
   
   <div class="toggle sidebar-toggle">
-    <span class="toggle-line toggle-line-first"></span>
-    <span class="toggle-line toggle-line-middle"></span>
-    <span class="toggle-line toggle-line-last"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
   </div>
 
   <aside class="sidebar">
-    <div class="sidebar-inner">
 
-      <ul class="sidebar-nav motion-element">
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
         </li>
@@ -393,17 +236,17 @@ window.cookieconsent.initialise({
       </ul>
 
       <!--noindex-->
-      <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Fat-jar"><span class="nav-number">1.</span> <span class="nav-text">Fat-jar</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Jdeps"><span class="nav-number">2.</span> <span class="nav-text">Jdeps</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Zero-days-since-it-was-DNS"><span class="nav-number">3.</span> <span class="nav-text">Zero days since it was DNS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Create-the-JDK"><span class="nav-number">4.</span> <span class="nav-text">Create the JDK</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Complete-script-and-Dockerfile"><span class="nav-number">5.</span> <span class="nav-text">Complete script and Dockerfile</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Conclusions"><span class="nav-number">6.</span> <span class="nav-text">Conclusions</span></a></li></ol></div>
-      </div>
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Fat-jar"><span class="nav-number">1.</span> <span class="nav-text">Fat-jar</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Jdeps"><span class="nav-number">2.</span> <span class="nav-text">Jdeps</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Zero-days-since-it-was-DNS"><span class="nav-number">3.</span> <span class="nav-text">Zero days since it was DNS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Create-the-JDK"><span class="nav-number">4.</span> <span class="nav-text">Create the JDK</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Complete-script-and-Dockerfile"><span class="nav-number">5.</span> <span class="nav-text">Complete script and Dockerfile</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Conclusions"><span class="nav-number">6.</span> <span class="nav-text">Conclusions</span></a></li></ol></div>
+      </section>
       <!--/noindex-->
 
-      <div class="site-overview-wrap sidebar-panel">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
   <p class="site-author-name" itemprop="name">Software Engineer</p>
   <div class="site-description" itemprop="description">Personal blog of Francesco Guardiani, Software Engineer</div>
 </div>
-<div class="site-state-wrap motion-element">
+<div class="site-state-wrap site-overview-item animated">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
@@ -420,96 +263,255 @@ window.cookieconsent.initialise({
       </div>
   </nav>
 </div>
-  <div class="links-of-author motion-element">
+  <div class="links-of-author site-overview-item animated">
       <span class="links-of-author-item">
-        <a href="https://github.com/slinkydeveloper" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;slinkydeveloper" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+        <a href="https://github.com/slinkydeveloper" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;slinkydeveloper" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
-        <a href="mailto:francescoguard@gmail.com" title="E-Mail → mailto:francescoguard@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+        <a href="mailto:francescoguard@gmail.com" title="E-Mail → mailto:francescoguard@gmail.com" rel="noopener" target="_blank"><i class="envelope fa-fw"></i>E-Mail</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://twitter.com/SlinkyGuardiani" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;SlinkyGuardiani" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+        <a href="https://twitter.com/SlinkyGuardiani" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;SlinkyGuardiani" rel="noopener" target="_blank"><i class="twitter fa-fw"></i>Twitter</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://stackoverflow.com/users/2399055/francesco-guardiani" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;2399055&#x2F;francesco-guardiani" rel="noopener" target="_blank"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</a>
+        <a href="https://stackoverflow.com/users/2399055/francesco-guardiani" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;2399055&#x2F;francesco-guardiani" rel="noopener" target="_blank"><i class="stack-overflow fa-fw"></i>StackOverflow</a>
       </span>
   </div>
 
 
 
-      </div>
-
+      </section>
     </div>
   </aside>
-  <div id="sidebar-dimmer"></div>
+  <div class="sidebar-dimmer"></div>
 
 
-      </div>
-    </main>
+    </header>
 
-    <footer class="footer">
-      <div class="footer-inner">
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://slinkydeveloper.com/Vert-x-Container-images-with-jlink/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Software Engineer">
+      <meta itemprop="description" content="Personal blog of Francesco Guardiani, Software Engineer">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Slinky's corner">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Vert.x container images with jlink
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 08-10-2020 11:10:25 / Modified: 16:07:01" itemprop="dateCreated datePublished" datetime="2020-10-08T11:10:25+02:00">08-10-2020</time>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">In this blog post I'm gonna show you how I managed to reduce the container image size of an Eclipse Vert.x application, creating a smaller JDK with jdeps and jlink.</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>In this blog post I’m gonna show you how I managed to reduce the container image size of an Eclipse Vert.x application, creating a smaller JDK with <code>jdeps</code> and <code>jlink</code>.</p>
+<p>The application is the data plane of <a target="_blank" rel="noopener" href="https://github.com/knative-sandbox/eventing-kafka-broker">Knative Eventing Kafka Broker</a>, an implementation of Knative <code>Broker</code> tailored on Kafka.</p>
+<h2 id="Fat-jar"><a href="#Fat-jar" class="headerlink" title="Fat-jar"></a>Fat-jar</h2><p>We didn’t handwritten nor generated a <code>module-info.java</code> for our application, we just ship a fat-jar. To generate a fat-jar, configure the <code>maven-shade-plugin</code>:</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.maven.plugins<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>maven-shade-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;maven.shade.plugin.version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">minimizeJar</span>&gt;</span>true<span class="tag">&lt;/<span class="name">minimizeJar</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">executions</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">execution</span>&gt;</span></span><br><span class="line">       <span class="tag">&lt;<span class="name">phase</span>&gt;</span>package<span class="tag">&lt;/<span class="name">phase</span>&gt;</span></span><br><span class="line">       <span class="tag">&lt;<span class="name">goals</span>&gt;</span></span><br><span class="line">         <span class="tag">&lt;<span class="name">goal</span>&gt;</span>shade<span class="tag">&lt;/<span class="name">goal</span>&gt;</span></span><br><span class="line">       <span class="tag">&lt;/<span class="name">goals</span>&gt;</span></span><br><span class="line">       <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">         <span class="tag">&lt;<span class="name">transformers</span>&gt;</span></span><br><span class="line">           <span class="tag">&lt;<span class="name">transformer</span></span></span><br><span class="line"><span class="tag">             <span class="attr">implementation</span>=<span class="string">&quot;org.apache.maven.plugins.shade.resource.ManifestResourceTransformer&quot;</span>&gt;</span></span><br><span class="line">             <span class="tag">&lt;<span class="name">mainClass</span>&gt;</span></span><br><span class="line">               $&#123;main-class&#125;</span><br><span class="line">             <span class="tag">&lt;/<span class="name">mainClass</span>&gt;</span></span><br><span class="line">           <span class="tag">&lt;/<span class="name">transformer</span>&gt;</span></span><br><span class="line">         <span class="tag">&lt;/<span class="name">transformers</span>&gt;</span></span><br><span class="line">       <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;/<span class="name">execution</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;/<span class="name">executions</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Jdeps"><a href="#Jdeps" class="headerlink" title="Jdeps"></a>Jdeps</h2><p><code>jdeps</code> is the tool you must use to figure which JDK modules you depend on. If you run <code>jdeps</code> just with the fat-jar as argument, you’ll get a list of all the packages in your jar and the JDK modules it depends on:</p>
+<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> jdeps receiver/target/receiver-1.0-SNAPSHOT.jar</span></span><br><span class="line">[...]</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.lang                                          java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.lang.invoke                                   java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.net                                           java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.time                                          java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.time.format                                   java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.util                                          java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.util.concurrent                               java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.util.function                                 java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.util.stream                                   java.base</span><br><span class="line">[...]</span><br></pre></td></tr></table></figure>
+
+<p>Note that <code>jdeps</code> analyzes only the imports so, if you perform some reflections at runtime of JDK classes, they won’t be found by the tool.</p>
+<p>To get an output that you can directly pass to <code>jlink</code>:</p>
+<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> jdeps -q --print-module-deps --ignore-missing-deps receiver/target/receiver-1.0-SNAPSHOT.jar</span></span><br><span class="line">java.base,java.compiler,java.naming,java.security.jgss,java.security.sasl,java.sql,jdk.management,jdk.unsupported</span><br></pre></td></tr></table></figure>
+
+<p>This is the list of jdk modules we depend on. Doing a quick check, I’ve found that:</p>
+<ul>
+<li><code>java.base</code> it’s the module that contains all the core features of the jdk</li>
+<li><code>java.compiler</code> contains the compiler types. It’s brought in by Guava and Vert.x CLI feature.</li>
+<li><code>java.naming</code> contains some JNDI types, to perform names lookups. This is required to perform DNS queries by Vert.x</li>
+<li><code>java.security.jgss</code> and <code>java.security.sasl</code> contains some security protocols implementation. They’re used by the Java Kafka client.</li>
+<li><code>java.sql</code> contains JDBC. Jackson databind and Google Gson (that we import transitively via Protobuf json) depends on it because they provide marshallers/unmarshallers for JDBC types.</li>
+<li><code>jdk.management</code> contains some interfaces to manage the JDK. This is used by Micrometer to instrument the JVM and collect metrics.</li>
+<li><code>jdk.unsupported</code> contains <code>sun.misc.Unsafe</code>. Netty and Protobuf use it to perform off-heap allocations.</li>
+</ul>
+<h2 id="Zero-days-since-it-was-DNS"><a href="#Zero-days-since-it-was-DNS" class="headerlink" title="Zero days since it was DNS"></a>Zero days since it was DNS</h2><p>Because some reflection is happening behind the hood to choose the Vert.x DNS resolver, <code>jdeps</code> doesn’t discover the module <code>jdk.naming.dns</code>, that you need in your Vert.x application to enable the DNS.</p>
+<p>To resolve the deps and add the dns module:</p>
+<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">MODS=$(jdeps -q --print-module-deps --ignore-missing-deps receiver/target/receiver-1.0-SNAPSHOT.jar)</span><br><span class="line">echo &quot;Computed mods = &#x27;$MODS&#x27;&quot;</span><br><span class="line"><span class="meta">#</span><span class="bash"> Patch adding the dns</span></span><br><span class="line">MODS=&quot;$MODS,jdk.naming.dns&quot;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Create-the-JDK"><a href="#Create-the-JDK" class="headerlink" title="Create the JDK"></a>Create the JDK</h2><p>Now you just need to invoke <code>jlink</code> to generate your custom JDK:</p>
+<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> jlink --verbose \</span></span><br><span class="line">  --no-header-files \</span><br><span class="line">  --no-man-pages \</span><br><span class="line">  --compress=2 \</span><br><span class="line">  --strip-debug \</span><br><span class="line">  --add-modules &quot;$MODS&quot; \</span><br><span class="line">  --output ./jdk</span><br><span class="line">java.base file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.base.jmod</span><br><span class="line">java.compiler file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.compiler.jmod</span><br><span class="line">java.logging file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.logging.jmod</span><br><span class="line">java.management file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.management.jmod</span><br><span class="line">java.naming file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.naming.jmod</span><br><span class="line">java.security.jgss file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.security.jgss.jmod</span><br><span class="line">java.security.sasl file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.security.sasl.jmod</span><br><span class="line">java.sql file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.sql.jmod</span><br><span class="line">java.transaction.xa file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.transaction.xa.jmod</span><br><span class="line">java.xml file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.xml.jmod</span><br><span class="line">jdk.management file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/jdk.management.jmod</span><br><span class="line">jdk.naming.dns file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/jdk.naming.dns.jmod</span><br><span class="line">jdk.unsupported file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/jdk.unsupported.jmod</span><br><span class="line"></span><br><span class="line">Providers:</span><br><span class="line">  java.base provides java.nio.file.spi.FileSystemProvider used by java.base</span><br><span class="line">  java.naming provides java.security.Provider used by java.base</span><br><span class="line">  java.security.jgss provides java.security.Provider used by java.base</span><br><span class="line">  java.security.sasl provides java.security.Provider used by java.base</span><br><span class="line">  jdk.naming.dns provides javax.naming.spi.InitialContextFactory used by java.naming</span><br><span class="line">  java.management provides javax.security.auth.spi.LoginModule used by java.base</span><br><span class="line">  java.logging provides jdk.internal.logger.DefaultLoggerFinder used by java.base</span><br><span class="line">  jdk.management provides sun.management.spi.PlatformMBeanProvider used by java.management</span><br></pre></td></tr></table></figure>
+
+<p>This command will grab the modules you provided from your local machine and will create a JDK without manual, header files, debug symbols:</p>
+<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">jdk</span><br><span class="line">├── bin</span><br><span class="line">│   ├── java</span><br><span class="line">│   └── keytool</span><br><span class="line">├── conf</span><br><span class="line">│   ├── logging.properties</span><br><span class="line">│   ├── net.properties</span><br><span class="line">│   ├── sdp</span><br><span class="line">│   └── security</span><br><span class="line">[...]</span><br><span class="line">├── lib</span><br><span class="line">[...]</span><br><span class="line">└── release</span><br></pre></td></tr></table></figure>
+
+<h2 id="Complete-script-and-Dockerfile"><a href="#Complete-script-and-Dockerfile" class="headerlink" title="Complete script and Dockerfile"></a>Complete script and Dockerfile</h2><p>This is the complete Dockerfile (simplified) that builds the project and generates the JDK:</p>
+<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ARG</span> JAVA_IMAGE=docker.io/adoptopenjdk:<span class="number">14</span>-jdk-hotspot</span><br><span class="line"><span class="keyword">ARG</span> BASE_IMAGE=docker.io/ubuntu:bionic</span><br><span class="line"></span><br><span class="line"><span class="keyword">FROM</span> $&#123;JAVA_IMAGE&#125; as builder</span><br><span class="line"></span><br><span class="line"><span class="keyword">WORKDIR</span><span class="bash"> /app</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># https://github.com/AdoptOpenJDK/openjdk-docker/issues/260</span></span><br><span class="line"><span class="keyword">RUN</span><span class="bash"> apt-get update &amp;&amp; apt-get install -y binutils</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Copy all my project stuff inside the container</span></span><br><span class="line"><span class="keyword">COPY</span><span class="bash"> . .</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Build the project</span></span><br><span class="line"><span class="keyword">RUN</span><span class="bash"> ./mvnw package -DskipTests -Deditorconfig.skip --no-transfer-progress</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Generate the sdk using the script (shown below)</span></span><br><span class="line"><span class="keyword">RUN</span><span class="bash"> ./generate_jdk.sh /app/receiver/target/receiver-1.0-SNAPSHOT.jar</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Prod image</span></span><br><span class="line"><span class="keyword">FROM</span> $&#123;BASE_IMAGE&#125; as running</span><br><span class="line"></span><br><span class="line"><span class="comment"># Create appuser and directories</span></span><br><span class="line"><span class="keyword">RUN</span><span class="bash"> groupadd -g 999 appuser &amp;&amp; useradd -r -u 999 -g appuser appuser &amp;&amp; \</span></span><br><span class="line"><span class="bash">  mkdir /tmp/vertx-cache &amp;&amp; chown -R appuser:appuser /tmp/vertx-cache &amp;&amp; \</span></span><br><span class="line"><span class="bash">  mkdir /app</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Copy jar and jdk inside /app</span></span><br><span class="line"><span class="keyword">COPY</span><span class="bash"> --from=builder /app/jdk /app/jdk</span></span><br><span class="line"><span class="keyword">COPY</span><span class="bash"> --from=builder /app/receiver/target/receiver-1.0-SNAPSHOT.jar /app/app.jar</span></span><br><span class="line"><span class="keyword">RUN</span><span class="bash"> chown -R appuser:appuser /app</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Set appuser and configure PATH</span></span><br><span class="line"><span class="keyword">USER</span> appuser</span><br><span class="line"><span class="keyword">WORKDIR</span><span class="bash"> /app</span></span><br><span class="line"><span class="comment"># Add jdk bin to the path, so you can run the java command</span></span><br><span class="line"><span class="keyword">ENV</span> PATH=<span class="string">&quot;/app/jdk/bin:$&#123;PATH&#125;&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>And the <code>generate_jdk.sh</code> script:</p>
+<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">!/usr/bin/env sh</span></span><br><span class="line"></span><br><span class="line">if [ $# -eq 0 ]</span><br><span class="line">  then</span><br><span class="line">    echo &quot;No arguments supplied, You must provide the jar&quot;</span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line">echo &quot;Computing mods for $1&quot;</span><br><span class="line">MODS=$(jdeps -q --print-module-deps --ignore-missing-deps &quot;$1&quot; | sed -e &#x27;s/^[ \t]*//&#x27;)</span><br><span class="line">echo &quot;Computed mods = &#x27;$MODS&#x27;&quot;</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Patch adding the dns</span></span><br><span class="line">MODS=&quot;$MODS,jdk.naming.dns&quot;</span><br><span class="line">echo &quot;Patched modules shipped with the generated jdk = &#x27;$MODS&#x27;&quot;</span><br><span class="line"></span><br><span class="line">jlink --verbose --no-header-files --no-man-pages --compress=2 --strip-debug --add-modules &quot;$MODS&quot; --output /app/jdk</span><br></pre></td></tr></table></figure>
+
+<p>You can run the built container with:</p>
+<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker run imagename java -jar /app/app.jar</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Conclusions"><a href="#Conclusions" class="headerlink" title="Conclusions"></a>Conclusions</h2><p>Using <code>jdeps</code> and <code>jlink</code> our container image size is 2.5x smaller, which is a great achievement for us. We also plan to reduce it even further, in fact we want to:</p>
+<ul>
+<li>Investigate some modules we depend on, but that we probably don’t need: <code>java.compiler</code> and <code>java.sql</code> are two good candidates.</li>
+<li>Rebase our base image on <code>alpine</code>, which uses <code>musl</code> as libc. Look at <a target="_blank" rel="noopener" href="https://openjdk.java.net/projects/portola/">Project Portola</a> for more details.</li>
+</ul>
+<p>Check out the full PR: <a target="_blank" rel="noopener" href="https://github.com/knative-sandbox/eventing-kafka-broker/pull/265">https://github.com/knative-sandbox/eventing-kafka-broker/pull/265</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/vertx/" rel="tag"># vertx</a>
+              <a href="/tags/development/" rel="tag"># development</a>
+              <a href="/tags/container/" rel="tag"># container</a>
+              <a href="/tags/cloud/" rel="tag"># cloud</a>
+              <a href="/tags/java/" rel="tag"># java</a>
+              <a href="/tags/jlink/" rel="tag"># jlink</a>
+              <a href="/tags/jdeps/" rel="tag"># jdeps</a>
+          </div>
+
         
 
-        
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Kubernetes-controllers-A-New-Hope/" rel="prev" title="Kubernetes Controllers - A new hope">
+                  <i class="fa fa-chevron-left"></i> Kubernetes Controllers - A new hope
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+      
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
 
 <div class="copyright">
   
   &copy; 
   <span itemprop="copyrightYear">2020</span>
   <span class="with-love">
-    <i class="fa fa-user"></i>
+    <i class="fa fa-heart"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">Software Engineer</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
   </div>
 
-        
-
-
-
-
-
-
-
-
-      </div>
-    </footer>
-  </div>
+    </div>
+  </footer>
 
   
-  <script src="/lib/anime.min.js"></script>
-  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
-  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
-  <script src="/lib/velocity/velocity.min.js"></script>
-  <script src="/lib/velocity/velocity.ui.min.js"></script>
-
-<script src="/js/utils.js"></script>
-
-<script src="/js/motion.js"></script>
-
-
-<script src="/js/schemes/pisces.js"></script>
-
-
-<script src="/js/next-boot.js"></script>
-
-
-
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
 
   
 
 
 
 
+  <script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
-<script src="/js/local-search.js"></script>
-
-
-
-
-
 
 
 
