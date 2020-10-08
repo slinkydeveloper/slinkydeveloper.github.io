@@ -21,6 +21,132 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Why use Web API specifications?</title>
+    <url>/Why-Use-API-Specification/</url>
+    <content><![CDATA[<p>You can see Web API Specifications like Javadoc: you can’t use a Java library without Javadoc! Web API spec are “Javadocs” of web services. But there’s one big difference: you can write your Web API Spec before start writing your server. It generates a big difference inside development process. I will introduce you to this magic world.</p>
+<h2 id="Design-Driven-Development"><a href="#Design-Driven-Development" class="headerlink" title="Design Driven Development"></a>Design Driven Development</h2><p>Design Driven Development is the name of technique which consists in: write the Web API spec before start writing any other code. Then, when you start writing code, you already have implemented a “dictionary” of server-client interface, so front-end and back-end developers go straight to implement logic of application. If you choose the right tools, you don’t have to care about:</p>
+<ul>
+<li>What is the correct HTTP Request to do something</li>
+<li>If you have done request with correct and valid parameters</li>
+<li>If logged user has correct requirements to complete the operation requested</li>
+</ul>
+<p>The flexibility of Web API specifications enables this to be used for a lot of use cases:</p>
+<ul>
+<li>Develop a SPA (single page application) with back-end in any language and front-end in Javascript</li>
+<li>Develop a mobile application with back-end in any language and front-end natives</li>
+<li>Develop a web service with backend in every language and auto-generate clients for every language</li>
+</ul>
+<h2 id="Approaches-to-use-Web-API-Specification-in-you-project"><a href="#Approaches-to-use-Web-API-Specification-in-you-project" class="headerlink" title="Approaches to use Web API Specification in you project"></a>Approaches to use Web API Specification in you project</h2><p>Both client and server can be linked to Web API Spec through two different approches:</p>
+<ul>
+<li>Static code generation</li>
+<li>Dynamic code generation</li>
+</ul>
+<p>Static code generation is the most simple to achieve, you can find a code generation library for every language/framework/api specification standard combination. Depending on your project and on library you use it can be useful approach or not. It’s a really interesting approach on client-side, but it lacks of flexibility in server side. Most code generators on server side create a <strong>stub of server code</strong>, with all validation and security routines generated directly from code generator. It can be really useful when you write an Web API Spec that you assert that will <strong>wont’t change</strong> during development of back-end. One important feature of static code generation is represented by performances, so I prefer this for a web service project</p>
+<p>Dynamic code generation is the most interesting for server side of small project. You can change your spec every time you want, and server will generate new validation flow. It’s interesting when you write a client-server complete stack, and you change spec during development.</p>
+<h2 id="Small-projects"><a href="#Small-projects" class="headerlink" title="Small projects"></a>Small projects</h2><p>Do you want to write a magic mobile/web application with a couple of your friends that do something astonishing? Use this tools:</p>
+<ul>
+<li>OpenAPI specification 2 (version 3 is newer, but you can’t find tools related)</li>
+<li>Node.JS backend with dynamic code generation library (I suggest <a href="https://github.com/krakenjs/swaggerize-express/" target="_blank" rel="noopener">swaggerize-express</a>)</li>
+<li>Static client code generators</li>
+<li>Good feeling between you and your friends when you write the spec :)</li>
+</ul>
+]]></content>
+      <tags>
+        <tag>swagger</tag>
+        <tag>openapi</tag>
+        <tag>web development</tag>
+        <tag>web api</tag>
+        <tag>backend</tag>
+        <tag>frontend</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>My GSoC 2017 - Small recap of my summer</title>
+    <url>/My-GSoC-2017-Recap/</url>
+    <content><![CDATA[<p>I love to code, I code for passion and then for work.<br>Lot of people asked me if, excluding money, it’s really interesting to work on an open source project. I found so interesting that I can do that for free and for a lot of reasons: increase skills, help the community, promote myself and work on code that I haven’t wrote!</p>
+<p>Mixing the two things I said, Google Summer of Code is perfect for me!</p>
+<h2 id="Small-story-of-my-GSoC-2017-project"><a href="#Small-story-of-my-GSoC-2017-project" class="headerlink" title="Small story of my GSoC 2017 project"></a>Small story of my GSoC 2017 project</h2><p>As my <a href="https://summerofcode.withgoogle.com/projects/#5472433315250176" target="_blank" rel="noopener">project page</a> says, my  object is implement the api design driven development techniques inside vertx-web. Actually the first idea was to implement OpenAPI 2 (fka Swagger) and RAML, then <a href="https://swagger.io/mulesoft-joins-the-openapi-initiative/" target="_blank" rel="noopener">this happened</a>.</p>
+<p class="image-pull-right">
+<img src="http://2434zd29misd3e4a4f1e73ki-wpengine.netdna-ssl.com/wp-content/uploads/2017/04/SwaggerOnlyBeOne.png" alt="">
+</p>
+
+<p>With OpenAPI 3 at horizon we decided to focus on it, because, as for Swagger 2, OpenAPI 3 have converters from old specification versions to newest one. As my mentor says, we are pioneers of OAS 3 <span class="emoji" alias="smile" style="" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f604.png?v8">&#x1f604;</span>. For OpenAPI 3 parsing, we decided to use <a href="https://github.com/RepreZen/KaiZen-OpenApi-Parser" target="_blank" rel="noopener">Kaizen-OpenAPI-Parser</a> and I often helped this new project with <a href="https://github.com/RepreZen/KaiZen-OpenApi-Parser/pulls?utf8=%E2%9C%93&q=author%3Aslinkydeveloper%20" target="_blank" rel="noopener">pull requests</a>.<br>But I kept the idea to abstract as much as possible the router factory and the validation methods to enable future implementations of new api specification standards. I’ve also created an interface for users to validate HTTP requests without writing an api spec. Also, to complete my work, I wrote a lot of unit tests<br>At the end of implementation of validation and router factory for OAS 3, I wrote a lot of documentation and also a <a href="http://vertx.io/blog/openapi-fka-swagger-3-support-in-eclipse-vert-x-now-in-test-stage/" target="_blank" rel="noopener">blog post on Eclipse Vert.x blog</a></p>
+<p>After the first evaluation phase, I refactored the code splitting it in different maven packages. Then I started focusing on code generation: <a href="https://github.com/swagger-api/swagger-codegen/issues/4669#issuecomment-320597504" target="_blank" rel="noopener">swagger-codegen</a> doesn’t support for now OAS 3, and they don’t know when they will release OAS 3 support, so we decided to create our generator. Basing on <a href="https://github.com/pmlopes/slush-vertx" target="_blank" rel="noopener">my mentor’s project</a>, I started creating the code generator. I’ve done huge changes from original project, to enable it to add different generators to same project and support different languages and package managers. I’ve also take advantage of this work to generate new unit tests for OAS 3 router factory and validation (with a tremendous first run <span class="emoji" alias="cry" style="" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f622.png?v8">&#x1f622;</span>).</p>
+<p class="image-pull-left">
+<img src="/images/80124719.jpg" alt="">
+</p>
+
+<p>I’ve also done other pull requests to vertx-web complementary to my work. I <a href="https://github.com/vert-x3/vertx-web/pull/581" target="_blank" rel="noopener">added a method to get query parameters</a> and I <a href="https://github.com/vert-x3/vertx-web/pull/652" target="_blank" rel="noopener">enabled <code>Route</code> object to contain multiple handlers (like Express middlewares)</a>.</p>
+<p>Before the end of the summer, I will give to Vert.x a set of classes for HTTP requests validation, OAS 3 support and a generator multi-purpose simple to extend with new templates.</p>
+<p>In the next articles I’m going to discuss about all technical things about my project, stay tuned!</p>
+]]></content>
+      <tags>
+        <tag>web development</tag>
+        <tag>gsoc 2017</tag>
+        <tag>gsoc</tag>
+        <tag>vertx</tag>
+        <tag>vertx web</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>My GSoC 2017 - OpenAPI 3 Vert.x support</title>
+    <url>/My-GSoC-2017-OAS3-Router-Factory/</url>
+    <content><![CDATA[<p>The support to OpenAPI 3 it’s located in maven package <code>vertx-web-api-contract-openapi</code>, and most classes extends/subclass from interfaces/classes inside maven package <code>vertx-web-api-contract-common</code> (the package designed to contain all API Specs standards common classes). Most important interfaces of <code>vertx-web-api-contract-openapi</code> are:</p>
+<ul>
+<li>The <code>OpenAPI3ValidationHandler</code> class that fills <a href="https://slinkydeveloper.github.io/articles/My-GSoC-2017-Validation/#structure-of-validation-framework" target="_blank" rel="noopener"><code>BaseValidationHandler</code> maps</a></li>
+<li>The <code>OpenAPI3RouterFactory</code>, the interface that enable users create a router with your API spec</li>
+</ul>
+<p>As I said in a <a href="https://slinkydeveloper.github.io/articles/Whats-New-In-OAS3-Parameters/" target="_blank" rel="noopener">previous blog post</a>, OpenAPI 3 added a lot of new things, in particular about serialization styles and complex form bodies (url encoded and multipart). So when I started working on OpenAPI 3 requests validations, I had to add a lot of things to validation framework that I haven’t expected before.</p>
+<h2 id="The-validation-handler"><a href="#The-validation-handler" class="headerlink" title="The validation handler"></a>The validation handler</h2><p><code>OpenAPI3ValidationHandler</code> is an interface extension of <code>HTTPOperationRequestValidationHandler</code> (located inside <code>vertx-web-api-contract-common</code>), that is an interface extension of <code>ValidationHandler</code>. This class contains all methods to elaborate the <code>Operation</code> object (Java representation of <a href="https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#operationObject" target="_blank" rel="noopener">OAS3 operation object</a>) and the list of <code>Parameter</code> objects (Java representation of <a href="https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#parameterObject" target="_blank" rel="noopener">OAS3 parameter object</a>).</p>
+<p>When constructed, it generates all <code>ParameterValidationRule</code> and <code>ParameterTypeValidator</code> it needs: in fact, <strong>It doesn’t elaborate the api spec nor work with api spec Java models during the validation</strong>. It does everything when It’s constructed, so It iterates through various parameters and It generates objects needed for validation.</p>
+<p class="image-pull-right">
+<img src="/images/messy_code_fry.jpg" alt="">
+</p>
+If you read this class, It seems messy, because It's messy <span class="emoji" alias="smile" style="" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f604.png?v8">&#x1f604;</span>. This is because of complexity of OAS 3, that forced me to write some little tricks to support all things (like for example to manage the `deepObject` serialization style).
+
+<p>To give a quick explanation of how this class elaborates parameters:</p>
+<ol>
+<li>It checks if it’s supported (parameters with <code>allowReserved: true</code> are not supported)</li>
+<li>It checks if the parameter needs a <em>workaround</em> to get validation working and applies the specific <em>workaround</em></li>
+<li>If none workaround is needed, it constructs the correct type validator</li>
+</ol>
+<p>Behind the scenes all the validation work is done by <a href="https://slinkydeveloper.github.io/articles/My-GSoC-2017-Validation/" target="_blank" rel="noopener">validation framework</a></p>
+<h2 id="The-router-factory"><a href="#The-router-factory" class="headerlink" title="The router factory"></a>The router factory</h2><p>The router factory is intended to give the most simple user interface to generate a router based on an API Spec. In fact, it provides this functionalities:</p>
+<ul>
+<li>Async loading of specification and its schema dependencies</li>
+<li>OpenAPI 3 compliant API specification validation (thanks to <a href="https://github.com/RepreZen/KaiZen-OpenApi-Parser" target="_blank" rel="noopener">Kaizen-OpenApi-Parser</a>)</li>
+<li>Load handlers and failure handlers with operationId</li>
+<li>Automatic 501 (Not implemented) response for operations with missing handlers (can be enabled/disabled with <code>mountOperationsWithoutHandlers(boolean)</code>)</li>
+<li>Automatic <code>ValidationException</code> failure handler (can be enabled/disabled with <code>enableValidationFailureHandler()</code> and manually configured with <code>setValidationFailureHandler()</code>)</li>
+<li>Path’s regular expression generation (to support <code>matrix</code> and <code>label</code> style unsupported natively from Vert.x)</li>
+<li>Lazy methods: the generation of the <code>Router</code> is done only when you call <code>getRouter()</code></li>
+<li>Automatic mount of security validation handlers</li>
+</ul>
+<h3 id="Lazy-methods"><a href="#Lazy-methods" class="headerlink" title="Lazy methods"></a>Lazy methods</h3><p>It’s usual to run into problems regards route declaration order. For example if you declare two routes in this order:</p>
+<ol>
+<li><code>GET /hello/{parameter}</code></li>
+<li><code>GET /hello/world</code></li>
+</ol>
+<p>With actual Vert.x <code>Router</code> implementation, <code>/hello/world</code> handler will never called, unless you explicitly call <code>RoutingContext#next()</code> inside <code>/hello/{parameter}</code> handler (that causes <code>Router</code> to run the next route matching the pattern). With lazy methods It’s guaranteed that routes will be loaded with order declared inside API specification.</p>
+<p>I choose lazy methods also for code style reasons, It helps a lot to manage the code of router factory.</p>
+<h2 id="And-the-final-result"><a href="#And-the-final-result" class="headerlink" title="And the final result"></a>And the final result</h2><p>With this tools, user can bring OpenAPI 3 power to its Vert.x server implementation as simple as:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">OpenAPI3RouterFactory.createRouterFactoryFromFile(<span class="keyword">this</span>.vertx, <span class="string">"src/main/resources/petstore.yaml"</span>, ar -&gt; &#123;</span><br><span class="line">            <span class="keyword">if</span> (ar.succeeded()) &#123;</span><br><span class="line">                <span class="comment">// Spec loaded with success</span></span><br><span class="line">                OpenAPI3RouterFactory routerFactory = ar.result();</span><br><span class="line">                </span><br><span class="line">                <span class="comment">// Add some handlers</span></span><br><span class="line">                routerFactory.addHandlerByOperationId(<span class="string">"listPets"</span>, routingContext -&gt; &#123;</span><br><span class="line">                    RequestParameters params = routingContext.get(<span class="string">"parsedParameters"</span>);</span><br><span class="line">                    <span class="comment">// Handle listPets operation</span></span><br><span class="line">                &#125;);</span><br><span class="line">                routerFactory.addFailureHandlerByOperationId(<span class="string">"listPets"</span>, routingContext -&gt; &#123;</span><br><span class="line">                    Throwable failure = routingContext.failure();</span><br><span class="line">                    <span class="comment">// Something really bad happened during listPets handling</span></span><br><span class="line">                &#125;);</span><br><span class="line"></span><br><span class="line">                <span class="comment">// Add a security handler</span></span><br><span class="line">                routerFactory.addSecurityHandler(<span class="string">"api_key"</span>, routingContext -&gt; &#123;</span><br><span class="line">                    <span class="comment">// Handle security here and then call next()</span></span><br><span class="line">                    routingContext.next();</span><br><span class="line">                &#125;);</span><br><span class="line"></span><br><span class="line">                <span class="comment">// Now you have to generate the router</span></span><br><span class="line">                Router router = routerFactory.getRouter();</span><br><span class="line"></span><br><span class="line">                <span class="comment">// Now you can use your Router instance</span></span><br><span class="line">                HttpServer server = vertx.createHttpServer(<span class="keyword">new</span> HttpServerOptions().setPort(<span class="number">8080</span>).setHost(<span class="string">"localhost"</span>));</span><br><span class="line">                server.requestHandler(router::accept).listen();</span><br><span class="line"></span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// Something went wrong during router factory initialization</span></span><br><span class="line">                Throwable exception = ar.cause();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br></pre></td></tr></table></figure>
+
+<p>Next time I’m going to introduce you <code>slush-vertx</code>, a new generator for Vert.x project. Stay tuned!</p>
+]]></content>
+      <tags>
+        <tag>openapi</tag>
+        <tag>web development</tag>
+        <tag>gsoc 2017</tag>
+        <tag>gsoc</tag>
+        <tag>vertx</tag>
+        <tag>vertx web</tag>
+        <tag>openapi3</tag>
+        <tag>router factory</tag>
+        <tag>factory</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>What&#39;s new in OpenAPI Specification 3 - Parameters</title>
     <url>/Whats-New-In-OAS3-Parameters/</url>
     <content><![CDATA[<p>OpenAPI 3 Parameter Object it’s totally different from old OpenAPI 2. It gives the power to describe complex parameters, using the power of Schema object. I will introduce to you this breaking changes</p>
@@ -130,49 +256,48 @@
       <tags>
         <tag>swagger</tag>
         <tag>openapi</tag>
-        <tag>openapi3</tag>
         <tag>web development</tag>
         <tag>web api</tag>
+        <tag>openapi3</tag>
       </tags>
   </entry>
   <entry>
-    <title>Why use Web API specifications?</title>
-    <url>/Why-Use-API-Specification/</url>
-    <content><![CDATA[<p>You can see Web API Specifications like Javadoc: you can’t use a Java library without Javadoc! Web API spec are “Javadocs” of web services. But there’s one big difference: you can write your Web API Spec before start writing your server. It generates a big difference inside development process. I will introduce you to this magic world.</p>
-<h2 id="Design-Driven-Development"><a href="#Design-Driven-Development" class="headerlink" title="Design Driven Development"></a>Design Driven Development</h2><p>Design Driven Development is the name of technique which consists in: write the Web API spec before start writing any other code. Then, when you start writing code, you already have implemented a “dictionary” of server-client interface, so front-end and back-end developers go straight to implement logic of application. If you choose the right tools, you don’t have to care about:</p>
+    <title>My GSoC 2017 - Slush-vertx</title>
+    <url>/My-GSoC-2017-Slush-Vertx/</url>
+    <content><![CDATA[<p><a href="https://github.com/pmlopes/slush-vertx" target="_blank" rel="noopener"><code>slush-vertx</code></a> is a project created by <a href="https://www.jetdrone.xyz" target="_blank" rel="noopener">Paulo Lopes</a> born to simplify build tools configurations for Vert.x. I totally refactored <code>slush-vertx</code> to create a multi purpose code generator for simplify various configurations of Vert.x powered projects.</p>
+<h2 id="Multi-purpose-and-simple-to-enlarge"><a href="#Multi-purpose-and-simple-to-enlarge" class="headerlink" title="Multi purpose and simple to enlarge"></a>Multi purpose and simple to enlarge</h2><p>When I designed the new slush-vertx, I tried to create a Vert.x project generator for every configuration needed, not only an OpenAPI 3 server or OpenAPI 3 client. Another important variable of my project is create a generator that generates code for different languages and different build tools.</p>
+<p>Now <code>slush-vertx</code> It’s like a <em>“code generation hub”</em>: It contains a set of project generators, based on what type of Vert.x project are you going to scaffold. At the moment I’m writing this post, slush-vertx contains:</p>
 <ul>
-<li>What is the correct HTTP Request to do something</li>
-<li>If you have done request with correct and valid parameters</li>
-<li>If logged user has correct requirements to complete the operation requested</li>
+<li>Vert.x Starter project generator: Based on original Paulo’s project, generates an empty project configured for Vert.x 3 Framework</li>
+<li>Vert.x Web Server Starter generator: Generates a skeleton with sources and tests for Vert.x 3 Web powered REST server</li>
+<li>Vert.x Web Server OpenAPI project generator: Generates a skeleton based on Swagger 2/OpenAPI 3 specification with sources and tests for Vert.x 3 Web powered REST server</li>
+<li>Vert.x Web Client OpenAPI project generator: Generates a client based on a Swagger 2/OpenAPI 3 specification and Vert.x 3 Web Client</li>
 </ul>
-<p>The flexibility of Web API specifications enables this to be used for a lot of use cases:</p>
+<p>I hope it will grow in  the future, creating a tool that can help people to connect with Vert.x world.</p>
+<h2 id="How-it-works"><a href="#How-it-works" class="headerlink" title="How it works"></a>How it works</h2><script type="text/javascript" src="https://asciinema.org/a/134050.js" id="asciicast-134050" async></script>
+
+<h2 id="Behind-the-scenes"><a href="#Behind-the-scenes" class="headerlink" title="Behind the scenes"></a>Behind the scenes</h2><p>slush-vertx is metadata and template driven code generator. This means:</p>
 <ul>
-<li>Develop a SPA (single page application) with back-end in any language and front-end in Javascript</li>
-<li>Develop a mobile application with back-end in any language and front-end natives</li>
-<li>Develop a web service with backend in every language and auto-generate clients for every language</li>
+<li>For every language/build tool it has a set of metadata, that can be extended with user inputs</li>
+<li>It uses a template engine to generate code, based on metadata</li>
 </ul>
-<h2 id="Approaches-to-use-Web-API-Specification-in-you-project"><a href="#Approaches-to-use-Web-API-Specification-in-you-project" class="headerlink" title="Approaches to use Web API Specification in you project"></a>Approaches to use Web API Specification in you project</h2><p>Both client and server can be linked to Web API Spec through two different approches:</p>
-<ul>
-<li>Static code generation</li>
-<li>Dynamic code generation</li>
-</ul>
-<p>Static code generation is the most simple to achieve, you can find a code generation library for every language/framework/api specification standard combination. Depending on your project and on library you use it can be useful approach or not. It’s a really interesting approach on client-side, but it lacks of flexibility in server side. Most code generators on server side create a <strong>stub of server code</strong>, with all validation and security routines generated directly from code generator. It can be really useful when you write an Web API Spec that you assert that will <strong>wont’t change</strong> during development of back-end. One important feature of static code generation is represented by performances, so I prefer this for a web service project</p>
-<p>Dynamic code generation is the most interesting for server side of small project. You can change your spec every time you want, and server will generate new validation flow. It’s interesting when you write a client-server complete stack, and you change spec during development.</p>
-<h2 id="Small-projects"><a href="#Small-projects" class="headerlink" title="Small projects"></a>Small projects</h2><p>Do you want to write a magic mobile/web application with a couple of your friends that do something astonishing? Use this tools:</p>
-<ul>
-<li>OpenAPI specification 2 (version 3 is newer, but you can’t find tools related)</li>
-<li>Node.JS backend with dynamic code generation library (I suggest <a href="https://github.com/krakenjs/swaggerize-express/" target="_blank" rel="noopener">swaggerize-express</a>)</li>
-<li>Static client code generators</li>
-<li>Good feeling between you and your friends when you write the spec :)</li>
-</ul>
+<p>If you want a complete scenario of behaviours of slush-vertx, give a look at <a href="https://github.com/pmlopes/slush-vertx/wiki/Slush-Vert.x-Structure" target="_blank" rel="noopener">this wiki page</a></p>
+<p>But, why that complexity behind a code generator? I mean, It’s only a code generator! Yes, It’s only a code generator, but I wanted to create a tool simple to extend with new generators routines, giving to Eclipse Vert.x a powerful tool.</p>
+<h2 id="Generate-unit-tests"><a href="#Generate-unit-tests" class="headerlink" title="Generate unit tests"></a>Generate unit tests</h2><p>So, if you have a powerful build tool that generates pretty everything you want, why don’t take advantage of it doing things that you don’t want to do? And this is what I’ve done! Copy-pasting code from other generators I’ve created, I builded <a href="https://github.com/pmlopes/slush-vertx/tree/master/src/generators/vertx_web_unit_test_generator" target="_blank" rel="noopener">a unit test generator for <code>vertx-web-api-contract-openapi</code></a>. This generator takes all operations declared in <a href="https://github.com/pmlopes/slush-vertx/blob/master/src/generators/vertx_web_unit_test_generator/openapi.yaml" target="_blank" rel="noopener">this oas 3 spec</a> and generates a specific test to validate the correct parsing of parameters on server side. This is the final result: <a href="https://github.com/slinkydeveloper/vertx-web/blob/designdriven/vertx-web-api-contract/vertx-web-api-contract-openapi/src/test/java/io/vertx/ext/web/designdriven/openapi3/OpenAPI3ParametersUnitTest.java" target="_blank" rel="noopener"><code>OpenAPI3ParametersUnitTest.java</code></a>. This unit tests helped me a lot to complete the <code>vertx-web-api-contract-openapi</code> module.</p>
+<p>With some small changes this can be a complete server libraries/frameworks compatibility test tool for OpenAPI 3</p>
+<h2 id="And-now"><a href="#And-now" class="headerlink" title="And now?"></a>And now?</h2><p>Now use it! Follow the <a href="https://github.com/pmlopes/slush-vertx" target="_blank" rel="noopener">readme inside GitHub repository</a> to install and start using it.</p>
+<p>You can also <a href="https://github.com/pmlopes/slush-vertx/wiki/How-to-contribute" target="_blank" rel="noopener">contribute</a> to this project <a href="https://github.com/pmlopes/slush-vertx/wiki/Create-a-new-generator" target="_blank" rel="noopener">adding new generators</a> and <a href="https://github.com/pmlopes/slush-vertx/wiki/Add-new-language-to-existing-generatorhttps://github.com/pmlopes/slush-vertx/wiki/Add-new-language-to-existing-generator" target="_blank" rel="noopener">updating existing ones with new languages</a></p>
 ]]></content>
       <tags>
-        <tag>swagger</tag>
         <tag>openapi</tag>
         <tag>web development</tag>
-        <tag>web api</tag>
-        <tag>backend</tag>
-        <tag>frontend</tag>
+        <tag>gsoc 2017</tag>
+        <tag>gsoc</tag>
+        <tag>vertx</tag>
+        <tag>vertx web</tag>
+        <tag>openapi3</tag>
+        <tag>generator</tag>
+        <tag>slush-vertx</tag>
       </tags>
   </entry>
   <entry>
@@ -226,188 +351,6 @@
         <tag>vertx</tag>
         <tag>vertx web</tag>
         <tag>http validation</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>My GSoC 2017 - Slush-vertx</title>
-    <url>/My-GSoC-2017-Slush-Vertx/</url>
-    <content><![CDATA[<p><a href="https://github.com/pmlopes/slush-vertx" target="_blank" rel="noopener"><code>slush-vertx</code></a> is a project created by <a href="https://www.jetdrone.xyz" target="_blank" rel="noopener">Paulo Lopes</a> born to simplify build tools configurations for Vert.x. I totally refactored <code>slush-vertx</code> to create a multi purpose code generator for simplify various configurations of Vert.x powered projects.</p>
-<h2 id="Multi-purpose-and-simple-to-enlarge"><a href="#Multi-purpose-and-simple-to-enlarge" class="headerlink" title="Multi purpose and simple to enlarge"></a>Multi purpose and simple to enlarge</h2><p>When I designed the new slush-vertx, I tried to create a Vert.x project generator for every configuration needed, not only an OpenAPI 3 server or OpenAPI 3 client. Another important variable of my project is create a generator that generates code for different languages and different build tools.</p>
-<p>Now <code>slush-vertx</code> It’s like a <em>“code generation hub”</em>: It contains a set of project generators, based on what type of Vert.x project are you going to scaffold. At the moment I’m writing this post, slush-vertx contains:</p>
-<ul>
-<li>Vert.x Starter project generator: Based on original Paulo’s project, generates an empty project configured for Vert.x 3 Framework</li>
-<li>Vert.x Web Server Starter generator: Generates a skeleton with sources and tests for Vert.x 3 Web powered REST server</li>
-<li>Vert.x Web Server OpenAPI project generator: Generates a skeleton based on Swagger 2/OpenAPI 3 specification with sources and tests for Vert.x 3 Web powered REST server</li>
-<li>Vert.x Web Client OpenAPI project generator: Generates a client based on a Swagger 2/OpenAPI 3 specification and Vert.x 3 Web Client</li>
-</ul>
-<p>I hope it will grow in  the future, creating a tool that can help people to connect with Vert.x world.</p>
-<h2 id="How-it-works"><a href="#How-it-works" class="headerlink" title="How it works"></a>How it works</h2><script type="text/javascript" src="https://asciinema.org/a/134050.js" id="asciicast-134050" async></script>
-
-<h2 id="Behind-the-scenes"><a href="#Behind-the-scenes" class="headerlink" title="Behind the scenes"></a>Behind the scenes</h2><p>slush-vertx is metadata and template driven code generator. This means:</p>
-<ul>
-<li>For every language/build tool it has a set of metadata, that can be extended with user inputs</li>
-<li>It uses a template engine to generate code, based on metadata</li>
-</ul>
-<p>If you want a complete scenario of behaviours of slush-vertx, give a look at <a href="https://github.com/pmlopes/slush-vertx/wiki/Slush-Vert.x-Structure" target="_blank" rel="noopener">this wiki page</a></p>
-<p>But, why that complexity behind a code generator? I mean, It’s only a code generator! Yes, It’s only a code generator, but I wanted to create a tool simple to extend with new generators routines, giving to Eclipse Vert.x a powerful tool.</p>
-<h2 id="Generate-unit-tests"><a href="#Generate-unit-tests" class="headerlink" title="Generate unit tests"></a>Generate unit tests</h2><p>So, if you have a powerful build tool that generates pretty everything you want, why don’t take advantage of it doing things that you don’t want to do? And this is what I’ve done! Copy-pasting code from other generators I’ve created, I builded <a href="https://github.com/pmlopes/slush-vertx/tree/master/src/generators/vertx_web_unit_test_generator" target="_blank" rel="noopener">a unit test generator for <code>vertx-web-api-contract-openapi</code></a>. This generator takes all operations declared in <a href="https://github.com/pmlopes/slush-vertx/blob/master/src/generators/vertx_web_unit_test_generator/openapi.yaml" target="_blank" rel="noopener">this oas 3 spec</a> and generates a specific test to validate the correct parsing of parameters on server side. This is the final result: <a href="https://github.com/slinkydeveloper/vertx-web/blob/designdriven/vertx-web-api-contract/vertx-web-api-contract-openapi/src/test/java/io/vertx/ext/web/designdriven/openapi3/OpenAPI3ParametersUnitTest.java" target="_blank" rel="noopener"><code>OpenAPI3ParametersUnitTest.java</code></a>. This unit tests helped me a lot to complete the <code>vertx-web-api-contract-openapi</code> module.</p>
-<p>With some small changes this can be a complete server libraries/frameworks compatibility test tool for OpenAPI 3</p>
-<h2 id="And-now"><a href="#And-now" class="headerlink" title="And now?"></a>And now?</h2><p>Now use it! Follow the <a href="https://github.com/pmlopes/slush-vertx" target="_blank" rel="noopener">readme inside GitHub repository</a> to install and start using it.</p>
-<p>You can also <a href="https://github.com/pmlopes/slush-vertx/wiki/How-to-contribute" target="_blank" rel="noopener">contribute</a> to this project <a href="https://github.com/pmlopes/slush-vertx/wiki/Create-a-new-generator" target="_blank" rel="noopener">adding new generators</a> and <a href="https://github.com/pmlopes/slush-vertx/wiki/Add-new-language-to-existing-generatorhttps://github.com/pmlopes/slush-vertx/wiki/Add-new-language-to-existing-generator" target="_blank" rel="noopener">updating existing ones with new languages</a></p>
-]]></content>
-      <tags>
-        <tag>openapi</tag>
-        <tag>openapi3</tag>
-        <tag>web development</tag>
-        <tag>gsoc 2017</tag>
-        <tag>gsoc</tag>
-        <tag>vertx</tag>
-        <tag>vertx web</tag>
-        <tag>generator</tag>
-        <tag>slush-vertx</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>My GSoC 2017 - Small recap of my summer</title>
-    <url>/My-GSoC-2017-Recap/</url>
-    <content><![CDATA[<p>I love to code, I code for passion and then for work.<br>Lot of people asked me if, excluding money, it’s really interesting to work on an open source project. I found so interesting that I can do that for free and for a lot of reasons: increase skills, help the community, promote myself and work on code that I haven’t wrote!</p>
-<p>Mixing the two things I said, Google Summer of Code is perfect for me!</p>
-<h2 id="Small-story-of-my-GSoC-2017-project"><a href="#Small-story-of-my-GSoC-2017-project" class="headerlink" title="Small story of my GSoC 2017 project"></a>Small story of my GSoC 2017 project</h2><p>As my <a href="https://summerofcode.withgoogle.com/projects/#5472433315250176" target="_blank" rel="noopener">project page</a> says, my  object is implement the api design driven development techniques inside vertx-web. Actually the first idea was to implement OpenAPI 2 (fka Swagger) and RAML, then <a href="https://swagger.io/mulesoft-joins-the-openapi-initiative/" target="_blank" rel="noopener">this happened</a>.</p>
-<p class="image-pull-right">
-<img src="http://2434zd29misd3e4a4f1e73ki-wpengine.netdna-ssl.com/wp-content/uploads/2017/04/SwaggerOnlyBeOne.png" alt="">
-</p>
-
-<p>With OpenAPI 3 at horizon we decided to focus on it, because, as for Swagger 2, OpenAPI 3 have converters from old specification versions to newest one. As my mentor says, we are pioneers of OAS 3 <span class="emoji" alias="smile" style="" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f604.png?v8">&#x1f604;</span>. For OpenAPI 3 parsing, we decided to use <a href="https://github.com/RepreZen/KaiZen-OpenApi-Parser" target="_blank" rel="noopener">Kaizen-OpenAPI-Parser</a> and I often helped this new project with <a href="https://github.com/RepreZen/KaiZen-OpenApi-Parser/pulls?utf8=%E2%9C%93&q=author%3Aslinkydeveloper%20" target="_blank" rel="noopener">pull requests</a>.<br>But I kept the idea to abstract as much as possible the router factory and the validation methods to enable future implementations of new api specification standards. I’ve also created an interface for users to validate HTTP requests without writing an api spec. Also, to complete my work, I wrote a lot of unit tests<br>At the end of implementation of validation and router factory for OAS 3, I wrote a lot of documentation and also a <a href="http://vertx.io/blog/openapi-fka-swagger-3-support-in-eclipse-vert-x-now-in-test-stage/" target="_blank" rel="noopener">blog post on Eclipse Vert.x blog</a></p>
-<p>After the first evaluation phase, I refactored the code splitting it in different maven packages. Then I started focusing on code generation: <a href="https://github.com/swagger-api/swagger-codegen/issues/4669#issuecomment-320597504" target="_blank" rel="noopener">swagger-codegen</a> doesn’t support for now OAS 3, and they don’t know when they will release OAS 3 support, so we decided to create our generator. Basing on <a href="https://github.com/pmlopes/slush-vertx" target="_blank" rel="noopener">my mentor’s project</a>, I started creating the code generator. I’ve done huge changes from original project, to enable it to add different generators to same project and support different languages and package managers. I’ve also take advantage of this work to generate new unit tests for OAS 3 router factory and validation (with a tremendous first run <span class="emoji" alias="cry" style="" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f622.png?v8">&#x1f622;</span>).</p>
-<p class="image-pull-left">
-<img src="/images/80124719.jpg" alt="">
-</p>
-
-<p>I’ve also done other pull requests to vertx-web complementary to my work. I <a href="https://github.com/vert-x3/vertx-web/pull/581" target="_blank" rel="noopener">added a method to get query parameters</a> and I <a href="https://github.com/vert-x3/vertx-web/pull/652" target="_blank" rel="noopener">enabled <code>Route</code> object to contain multiple handlers (like Express middlewares)</a>.</p>
-<p>Before the end of the summer, I will give to Vert.x a set of classes for HTTP requests validation, OAS 3 support and a generator multi-purpose simple to extend with new templates.</p>
-<p>In the next articles I’m going to discuss about all technical things about my project, stay tuned!</p>
-]]></content>
-      <tags>
-        <tag>web development</tag>
-        <tag>gsoc 2017</tag>
-        <tag>gsoc</tag>
-        <tag>vertx</tag>
-        <tag>vertx web</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>My GSoC 2017 - OpenAPI 3 Vert.x support</title>
-    <url>/My-GSoC-2017-OAS3-Router-Factory/</url>
-    <content><![CDATA[<p>The support to OpenAPI 3 it’s located in maven package <code>vertx-web-api-contract-openapi</code>, and most classes extends/subclass from interfaces/classes inside maven package <code>vertx-web-api-contract-common</code> (the package designed to contain all API Specs standards common classes). Most important interfaces of <code>vertx-web-api-contract-openapi</code> are:</p>
-<ul>
-<li>The <code>OpenAPI3ValidationHandler</code> class that fills <a href="https://slinkydeveloper.github.io/articles/My-GSoC-2017-Validation/#structure-of-validation-framework" target="_blank" rel="noopener"><code>BaseValidationHandler</code> maps</a></li>
-<li>The <code>OpenAPI3RouterFactory</code>, the interface that enable users create a router with your API spec</li>
-</ul>
-<p>As I said in a <a href="https://slinkydeveloper.github.io/articles/Whats-New-In-OAS3-Parameters/" target="_blank" rel="noopener">previous blog post</a>, OpenAPI 3 added a lot of new things, in particular about serialization styles and complex form bodies (url encoded and multipart). So when I started working on OpenAPI 3 requests validations, I had to add a lot of things to validation framework that I haven’t expected before.</p>
-<h2 id="The-validation-handler"><a href="#The-validation-handler" class="headerlink" title="The validation handler"></a>The validation handler</h2><p><code>OpenAPI3ValidationHandler</code> is an interface extension of <code>HTTPOperationRequestValidationHandler</code> (located inside <code>vertx-web-api-contract-common</code>), that is an interface extension of <code>ValidationHandler</code>. This class contains all methods to elaborate the <code>Operation</code> object (Java representation of <a href="https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#operationObject" target="_blank" rel="noopener">OAS3 operation object</a>) and the list of <code>Parameter</code> objects (Java representation of <a href="https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#parameterObject" target="_blank" rel="noopener">OAS3 parameter object</a>).</p>
-<p>When constructed, it generates all <code>ParameterValidationRule</code> and <code>ParameterTypeValidator</code> it needs: in fact, <strong>It doesn’t elaborate the api spec nor work with api spec Java models during the validation</strong>. It does everything when It’s constructed, so It iterates through various parameters and It generates objects needed for validation.</p>
-<p class="image-pull-right">
-<img src="/images/messy_code_fry.jpg" alt="">
-</p>
-If you read this class, It seems messy, because It's messy <span class="emoji" alias="smile" style="" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f604.png?v8">&#x1f604;</span>. This is because of complexity of OAS 3, that forced me to write some little tricks to support all things (like for example to manage the `deepObject` serialization style).
-
-<p>To give a quick explanation of how this class elaborates parameters:</p>
-<ol>
-<li>It checks if it’s supported (parameters with <code>allowReserved: true</code> are not supported)</li>
-<li>It checks if the parameter needs a <em>workaround</em> to get validation working and applies the specific <em>workaround</em></li>
-<li>If none workaround is needed, it constructs the correct type validator</li>
-</ol>
-<p>Behind the scenes all the validation work is done by <a href="https://slinkydeveloper.github.io/articles/My-GSoC-2017-Validation/" target="_blank" rel="noopener">validation framework</a></p>
-<h2 id="The-router-factory"><a href="#The-router-factory" class="headerlink" title="The router factory"></a>The router factory</h2><p>The router factory is intended to give the most simple user interface to generate a router based on an API Spec. In fact, it provides this functionalities:</p>
-<ul>
-<li>Async loading of specification and its schema dependencies</li>
-<li>OpenAPI 3 compliant API specification validation (thanks to <a href="https://github.com/RepreZen/KaiZen-OpenApi-Parser" target="_blank" rel="noopener">Kaizen-OpenApi-Parser</a>)</li>
-<li>Load handlers and failure handlers with operationId</li>
-<li>Automatic 501 (Not implemented) response for operations with missing handlers (can be enabled/disabled with <code>mountOperationsWithoutHandlers(boolean)</code>)</li>
-<li>Automatic <code>ValidationException</code> failure handler (can be enabled/disabled with <code>enableValidationFailureHandler()</code> and manually configured with <code>setValidationFailureHandler()</code>)</li>
-<li>Path’s regular expression generation (to support <code>matrix</code> and <code>label</code> style unsupported natively from Vert.x)</li>
-<li>Lazy methods: the generation of the <code>Router</code> is done only when you call <code>getRouter()</code></li>
-<li>Automatic mount of security validation handlers</li>
-</ul>
-<h3 id="Lazy-methods"><a href="#Lazy-methods" class="headerlink" title="Lazy methods"></a>Lazy methods</h3><p>It’s usual to run into problems regards route declaration order. For example if you declare two routes in this order:</p>
-<ol>
-<li><code>GET /hello/{parameter}</code></li>
-<li><code>GET /hello/world</code></li>
-</ol>
-<p>With actual Vert.x <code>Router</code> implementation, <code>/hello/world</code> handler will never called, unless you explicitly call <code>RoutingContext#next()</code> inside <code>/hello/{parameter}</code> handler (that causes <code>Router</code> to run the next route matching the pattern). With lazy methods It’s guaranteed that routes will be loaded with order declared inside API specification.</p>
-<p>I choose lazy methods also for code style reasons, It helps a lot to manage the code of router factory.</p>
-<h2 id="And-the-final-result"><a href="#And-the-final-result" class="headerlink" title="And the final result"></a>And the final result</h2><p>With this tools, user can bring OpenAPI 3 power to its Vert.x server implementation as simple as:</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">OpenAPI3RouterFactory.createRouterFactoryFromFile(<span class="keyword">this</span>.vertx, <span class="string">"src/main/resources/petstore.yaml"</span>, ar -&gt; &#123;</span><br><span class="line">            <span class="keyword">if</span> (ar.succeeded()) &#123;</span><br><span class="line">                <span class="comment">// Spec loaded with success</span></span><br><span class="line">                OpenAPI3RouterFactory routerFactory = ar.result();</span><br><span class="line">                </span><br><span class="line">                <span class="comment">// Add some handlers</span></span><br><span class="line">                routerFactory.addHandlerByOperationId(<span class="string">"listPets"</span>, routingContext -&gt; &#123;</span><br><span class="line">                    RequestParameters params = routingContext.get(<span class="string">"parsedParameters"</span>);</span><br><span class="line">                    <span class="comment">// Handle listPets operation</span></span><br><span class="line">                &#125;);</span><br><span class="line">                routerFactory.addFailureHandlerByOperationId(<span class="string">"listPets"</span>, routingContext -&gt; &#123;</span><br><span class="line">                    Throwable failure = routingContext.failure();</span><br><span class="line">                    <span class="comment">// Something really bad happened during listPets handling</span></span><br><span class="line">                &#125;);</span><br><span class="line"></span><br><span class="line">                <span class="comment">// Add a security handler</span></span><br><span class="line">                routerFactory.addSecurityHandler(<span class="string">"api_key"</span>, routingContext -&gt; &#123;</span><br><span class="line">                    <span class="comment">// Handle security here and then call next()</span></span><br><span class="line">                    routingContext.next();</span><br><span class="line">                &#125;);</span><br><span class="line"></span><br><span class="line">                <span class="comment">// Now you have to generate the router</span></span><br><span class="line">                Router router = routerFactory.getRouter();</span><br><span class="line"></span><br><span class="line">                <span class="comment">// Now you can use your Router instance</span></span><br><span class="line">                HttpServer server = vertx.createHttpServer(<span class="keyword">new</span> HttpServerOptions().setPort(<span class="number">8080</span>).setHost(<span class="string">"localhost"</span>));</span><br><span class="line">                server.requestHandler(router::accept).listen();</span><br><span class="line"></span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// Something went wrong during router factory initialization</span></span><br><span class="line">                Throwable exception = ar.cause();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br></pre></td></tr></table></figure>
-
-<p>Next time I’m going to introduce you <code>slush-vertx</code>, a new generator for Vert.x project. Stay tuned!</p>
-]]></content>
-      <tags>
-        <tag>openapi</tag>
-        <tag>openapi3</tag>
-        <tag>web development</tag>
-        <tag>gsoc 2017</tag>
-        <tag>gsoc</tag>
-        <tag>vertx</tag>
-        <tag>vertx web</tag>
-        <tag>router factory</tag>
-        <tag>factory</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Routing with Eclipse Collections</title>
-    <url>/Routing-With-Eclipse-Collections/</url>
-    <content><![CDATA[<p>I found days ago the <a href="https://www.eclipse.org/collections/" target="_blank" rel="noopener">Eclipse Collections</a> library (ex Goldman Sachs Collections). Yes, that <strong>Goldman Sachs</strong>, one of the biggest investing banking group of the world, that for hobby creates super fast collection library for Java.</p>
-<p>This article follows the previous, when I explored how to improve the routing of <a href="http://vertx.io/docs/vertx-web/java/" target="_blank" rel="noopener">Vert.x Web</a>, so please check it out before reading this one: <a href="https://slinkydeveloper.github.io/articles/Routing-Tree-vs-SkipList/" target="_blank" rel="noopener">Tree vs SkipList routing</a></p>
-<h2 id="What’s-new"><a href="#What’s-new" class="headerlink" title="What’s new"></a>What’s new</h2><p>Three days ago, looking at my twitter wall, I’ve found a tweet about Eclipse Collections. I’ve found really interesting the performances of EC, so I’ve decided to put it into my benchmark and test it on our use case. I obviously choose the tree as data structure to rewrite the routing process of Vert.x Web, so I have write two variants of my original <code>TreeRouter</code>:</p>
-<ul>
-<li><code>ECTreeRouter</code>: A tree that internally uses List implementations of Eclipse Collections.</li>
-<li><code>ImmutableECTreeRouter</code>: A tree that internally uses <strong>immutable</strong> List implementations of Eclipse Collections. In this case user <strong>can’t change</strong> the routing tree after routing has started.</li>
-</ul>
-<p>The second option was a pure experiment: user creates the router and its internal tree doesn’t change during the application execution. In this case you have a <em>simpler implementation</em> and an immutable list (in some cases faster than a mutable one). I’ve also refactored only the <code>SocialNetworkBenchmark</code>, because we have similar results on <code>ECommerceBenchmark</code>.</p>
-<h2 id="Results"><a href="#Results" class="headerlink" title="Results"></a>Results</h2><p>And, as in the previous articles, here comes the graphs:</p>
-<figure>
-  <a href="/images/tree-vs-router-2/basic_social.png" class="image-popup"><img src="/images/tree-vs-router-2/basic_social.png" alt="image"></a>
-  <figcaption>Benchmark results for SocialNetworkBenchmark based on requested URLs</figcaption>
-</figure>
-<figure>
-  <a href="/images/tree-vs-router-2/with_load_social.png" class="image-popup"><img src="/images/tree-vs-router-2/with_load_social.png" alt="image"></a>
-  <figcaption>Benchmark results for SocialNetworkBenchmark based on requested URLs with 10 random requests</figcaption>
-</figure>
-<figure>
-  <a href="/images/tree-vs-router-2/social_complete.png" class="image-popup"><img src="/images/tree-vs-router-2/social_complete.png" alt="image"></a>
-  <figcaption>Final benchmark results for SocialNetworkBenchmark ("with load" values properly scaled)</figcaption>
-</figure>
-
-<p>And in the end the <em>“final test”</em> graph (now it does only random requests, not sequentially):</p>
-<figure>
-  <a href="/images/tree-vs-router-2/social_average.png" class="image-popup"><img src="/images/tree-vs-router-2/social_average.png" alt="image"></a>
-  <figcaption>Final benchmark results for SocialNetworkBenchmark</figcaption>
-</figure>
-
-<p>I have some considerations about these results:</p>
-<ul>
-<li>Eclipse Collections are fast to iterate, faster than JDK’s collections, so probably they are good for our use case. In particular, pay attention to particular events generated from benchmark data:<ul>
-<li><code>ECTreeRouter</code> is faster than skip list in <code>/feed</code> request in “without load” tests! In particular it creates interesting deltas from <code>TreeRouter</code> when we request constant paths…</li>
-<li>But going deeper doesn’t help the <code>ECTreeRouter</code>, in particular in “without load” benchmarks. We have too few datas to assert that at deeper levels <code>ECTreeRouter</code> drops its performances or aligns it with <code>TreeRouter</code></li>
-<li><code>ECTreeRouter</code>, without any doubt, in the random requests test is faster than <code>TreeRouter</code></li>
-</ul>
-</li>
-<li>Eclipse Collections contains a lot of optimized iteration patterns optimized, maybe useful for us</li>
-<li>It seems that EC thread-safe lists are faster than immutable lists, so the <code>ImmutableECTreeRouter</code> is a failed experiment <span class="emoji" alias="disappointed_relieved" style="" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f625.png?v8">&#x1f625;</span></li>
-</ul>
-<p>Unlike the previous post I’m little hesitant to give a verdict, but we have promising results with Eclipse Collections, so I want to start with it. In case we experience “not so good” performances after the implementation, migrate back to JDK’s collections doesn’t appear a complicated task </p>
-<p>Stay tuned for other updates!</p>
-]]></content>
-      <tags>
-        <tag>web development</tag>
-        <tag>vertx</tag>
-        <tag>vertx web</tag>
-        <tag>routing</tag>
-        <tag>data structures</tag>
-        <tag>tree</tag>
-        <tag>skiplist</tag>
-        <tag>eclipse collections</tag>
-        <tag>fast list</tag>
       </tags>
   </entry>
   <entry>
@@ -621,6 +564,63 @@ If you read this class, It seems messy, because It's messy <span class="emoji" a
       </tags>
   </entry>
   <entry>
+    <title>Routing with Eclipse Collections</title>
+    <url>/Routing-With-Eclipse-Collections/</url>
+    <content><![CDATA[<p>I found days ago the <a href="https://www.eclipse.org/collections/" target="_blank" rel="noopener">Eclipse Collections</a> library (ex Goldman Sachs Collections). Yes, that <strong>Goldman Sachs</strong>, one of the biggest investing banking group of the world, that for hobby creates super fast collection library for Java.</p>
+<p>This article follows the previous, when I explored how to improve the routing of <a href="http://vertx.io/docs/vertx-web/java/" target="_blank" rel="noopener">Vert.x Web</a>, so please check it out before reading this one: <a href="https://slinkydeveloper.github.io/articles/Routing-Tree-vs-SkipList/" target="_blank" rel="noopener">Tree vs SkipList routing</a></p>
+<h2 id="What’s-new"><a href="#What’s-new" class="headerlink" title="What’s new"></a>What’s new</h2><p>Three days ago, looking at my twitter wall, I’ve found a tweet about Eclipse Collections. I’ve found really interesting the performances of EC, so I’ve decided to put it into my benchmark and test it on our use case. I obviously choose the tree as data structure to rewrite the routing process of Vert.x Web, so I have write two variants of my original <code>TreeRouter</code>:</p>
+<ul>
+<li><code>ECTreeRouter</code>: A tree that internally uses List implementations of Eclipse Collections.</li>
+<li><code>ImmutableECTreeRouter</code>: A tree that internally uses <strong>immutable</strong> List implementations of Eclipse Collections. In this case user <strong>can’t change</strong> the routing tree after routing has started.</li>
+</ul>
+<p>The second option was a pure experiment: user creates the router and its internal tree doesn’t change during the application execution. In this case you have a <em>simpler implementation</em> and an immutable list (in some cases faster than a mutable one). I’ve also refactored only the <code>SocialNetworkBenchmark</code>, because we have similar results on <code>ECommerceBenchmark</code>.</p>
+<h2 id="Results"><a href="#Results" class="headerlink" title="Results"></a>Results</h2><p>And, as in the previous articles, here comes the graphs:</p>
+<figure>
+  <a href="/images/tree-vs-router-2/basic_social.png" class="image-popup"><img src="/images/tree-vs-router-2/basic_social.png" alt="image"></a>
+  <figcaption>Benchmark results for SocialNetworkBenchmark based on requested URLs</figcaption>
+</figure>
+<figure>
+  <a href="/images/tree-vs-router-2/with_load_social.png" class="image-popup"><img src="/images/tree-vs-router-2/with_load_social.png" alt="image"></a>
+  <figcaption>Benchmark results for SocialNetworkBenchmark based on requested URLs with 10 random requests</figcaption>
+</figure>
+<figure>
+  <a href="/images/tree-vs-router-2/social_complete.png" class="image-popup"><img src="/images/tree-vs-router-2/social_complete.png" alt="image"></a>
+  <figcaption>Final benchmark results for SocialNetworkBenchmark ("with load" values properly scaled)</figcaption>
+</figure>
+
+<p>And in the end the <em>“final test”</em> graph (now it does only random requests, not sequentially):</p>
+<figure>
+  <a href="/images/tree-vs-router-2/social_average.png" class="image-popup"><img src="/images/tree-vs-router-2/social_average.png" alt="image"></a>
+  <figcaption>Final benchmark results for SocialNetworkBenchmark</figcaption>
+</figure>
+
+<p>I have some considerations about these results:</p>
+<ul>
+<li>Eclipse Collections are fast to iterate, faster than JDK’s collections, so probably they are good for our use case. In particular, pay attention to particular events generated from benchmark data:<ul>
+<li><code>ECTreeRouter</code> is faster than skip list in <code>/feed</code> request in “without load” tests! In particular it creates interesting deltas from <code>TreeRouter</code> when we request constant paths…</li>
+<li>But going deeper doesn’t help the <code>ECTreeRouter</code>, in particular in “without load” benchmarks. We have too few datas to assert that at deeper levels <code>ECTreeRouter</code> drops its performances or aligns it with <code>TreeRouter</code></li>
+<li><code>ECTreeRouter</code>, without any doubt, in the random requests test is faster than <code>TreeRouter</code></li>
+</ul>
+</li>
+<li>Eclipse Collections contains a lot of optimized iteration patterns optimized, maybe useful for us</li>
+<li>It seems that EC thread-safe lists are faster than immutable lists, so the <code>ImmutableECTreeRouter</code> is a failed experiment <span class="emoji" alias="disappointed_relieved" style="" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f625.png?v8">&#x1f625;</span></li>
+</ul>
+<p>Unlike the previous post I’m little hesitant to give a verdict, but we have promising results with Eclipse Collections, so I want to start with it. In case we experience “not so good” performances after the implementation, migrate back to JDK’s collections doesn’t appear a complicated task </p>
+<p>Stay tuned for other updates!</p>
+]]></content>
+      <tags>
+        <tag>web development</tag>
+        <tag>vertx</tag>
+        <tag>vertx web</tag>
+        <tag>routing</tag>
+        <tag>data structures</tag>
+        <tag>tree</tag>
+        <tag>skiplist</tag>
+        <tag>eclipse collections</tag>
+        <tag>fast list</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Assertions with Vert.x Futures and JUnit5</title>
     <url>/Assertions-With-Vertx-Futures-And-JUnit5/</url>
     <content><![CDATA[<p>During development of <a href="https://github.com/slinkydeveloper/vertx-event-manager" target="_blank" rel="noopener">Vert.x event manager library</a> (a blog post about it is coming soon) I wanted to play with new <a href="https://vertx.io/docs/vertx-junit5/java/" target="_blank" rel="noopener"><code>vertx-junit5</code></a> library. I like the new async assertion APIs of <code>vertx-junit5</code>, but I feel very unconfortable using <a href="https://vertx.io/docs/apidocs/io/vertx/junit5/VertxTestContext.html#succeeding-io.vertx.core.Handler-" target="_blank" rel="noopener"><code>VertxTestContext.succeding(Handler)</code></a> when I need to run sequentially different async tasks. With this method, your code rapidly grows in a big callback hell! Plus the interfaces I wanted to test are all in <code>Future</code>s style more than callback style.</p>
@@ -668,6 +668,182 @@ If you read this class, It seems messy, because It's messy <span class="emoji" a
         <tag>development</tag>
         <tag>testing</tag>
         <tag>junit5</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Vert.x container images with jlink</title>
+    <url>/Vert-x-Container-images-with-jlink/</url>
+    <content><![CDATA[<p>In this blog post I’m gonna show you how I managed to reduce the container image size of an Eclipse Vert.x application, creating a smaller JDK with <code>jdeps</code> and <code>jlink</code>.</p>
+<p>The application is the data plane of <a href="https://github.com/knative-sandbox/eventing-kafka-broker" target="_blank" rel="noopener">Knative Eventing Kafka Broker</a>, an implementation of Knative <code>Broker</code> tailored on Kafka.</p>
+<h2 id="Fat-jar"><a href="#Fat-jar" class="headerlink" title="Fat-jar"></a>Fat-jar</h2><p>We didn’t handwritten nor generated a <code>module-info.java</code> for our application, we just ship a fat-jar. To generate a fat-jar, configure the <code>maven-shade-plugin</code>:</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.maven.plugins<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>maven-shade-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;maven.shade.plugin.version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">minimizeJar</span>&gt;</span>true<span class="tag">&lt;/<span class="name">minimizeJar</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">executions</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">execution</span>&gt;</span></span><br><span class="line">       <span class="tag">&lt;<span class="name">phase</span>&gt;</span>package<span class="tag">&lt;/<span class="name">phase</span>&gt;</span></span><br><span class="line">       <span class="tag">&lt;<span class="name">goals</span>&gt;</span></span><br><span class="line">         <span class="tag">&lt;<span class="name">goal</span>&gt;</span>shade<span class="tag">&lt;/<span class="name">goal</span>&gt;</span></span><br><span class="line">       <span class="tag">&lt;/<span class="name">goals</span>&gt;</span></span><br><span class="line">       <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">         <span class="tag">&lt;<span class="name">transformers</span>&gt;</span></span><br><span class="line">           <span class="tag">&lt;<span class="name">transformer</span></span></span><br><span class="line"><span class="tag">             <span class="attr">implementation</span>=<span class="string">"org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"</span>&gt;</span></span><br><span class="line">             <span class="tag">&lt;<span class="name">mainClass</span>&gt;</span></span><br><span class="line">               $&#123;main-class&#125;</span><br><span class="line">             <span class="tag">&lt;/<span class="name">mainClass</span>&gt;</span></span><br><span class="line">           <span class="tag">&lt;/<span class="name">transformer</span>&gt;</span></span><br><span class="line">         <span class="tag">&lt;/<span class="name">transformers</span>&gt;</span></span><br><span class="line">       <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;/<span class="name">execution</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;/<span class="name">executions</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Jdeps"><a href="#Jdeps" class="headerlink" title="Jdeps"></a>Jdeps</h2><p><code>jdeps</code> is the tool you must use to figure which JDK modules you depend on. If you run <code>jdeps</code> just with the fat-jar as argument, you’ll get a list of all the packages in your jar and the JDK modules it depends on:</p>
+<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> jdeps receiver/target/receiver-1.0-SNAPSHOT.jar</span></span><br><span class="line">[...]</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.lang                                          java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.lang.invoke                                   java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.net                                           java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.time                                          java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.time.format                                   java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.util                                          java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.util.concurrent                               java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.util.function                                 java.base</span><br><span class="line">   dev.knative.eventing.kafka.broker.core             -&gt; java.util.stream                                   java.base</span><br><span class="line">[...]</span><br></pre></td></tr></table></figure>
+
+<p>Note that <code>jdeps</code> analyzes only the imports so, if you perform some reflections at runtime of JDK classes, they won’t be found by the tool.</p>
+<p>To get an output that you can directly pass to <code>jlink</code>:</p>
+<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> jdeps -q --<span class="built_in">print</span>-module-deps --ignore-missing-deps receiver/target/receiver-1.0-SNAPSHOT.jar</span></span><br><span class="line">java.base,java.compiler,java.naming,java.security.jgss,java.security.sasl,java.sql,jdk.management,jdk.unsupported</span><br></pre></td></tr></table></figure>
+
+<p>This is the list of jdk modules we depend on. Doing a quick check, I’ve found that:</p>
+<ul>
+<li><code>java.base</code> it’s the module that contains all the core features of the jdk</li>
+<li><code>java.compiler</code> contains the compiler types. It’s brought in by Guava and Vert.x CLI feature.</li>
+<li><code>java.naming</code> contains some JNDI types, to perform names lookups. This is required to perform DNS queries by Vert.x</li>
+<li><code>java.security.jgss</code> and <code>java.security.sasl</code> contains some security protocols implementation. They’re used by the Java Kafka client.</li>
+<li><code>java.sql</code> contains JDBC. Jackson databind and Google Gson (that we import transitively via Protobuf json) depends on it because they provide marshallers/unmarshallers for JDBC types.</li>
+<li><code>jdk.management</code> contains some interfaces to manage the JDK. This is used by Micrometer to instrument the JVM and collect metrics.</li>
+<li><code>jdk.unsupported</code> contains <code>sun.misc.Unsafe</code>. Netty and Protobuf use it to perform off-heap allocations.</li>
+</ul>
+<h2 id="Zero-days-since-it-was-DNS"><a href="#Zero-days-since-it-was-DNS" class="headerlink" title="Zero days since it was DNS"></a>Zero days since it was DNS</h2><p>Because some reflection is happening behind the hood to choose the Vert.x DNS resolver, <code>jdeps</code> doesn’t discover the module <code>jdk.naming.dns</code>, that you need in your Vert.x application to enable the DNS.</p>
+<p>To resolve the deps and add the dns module:</p>
+<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="code"><pre><span class="line">MODS=$(jdeps -q --print-module-deps --ignore-missing-deps receiver/target/receiver-1.0-SNAPSHOT.jar)</span><br><span class="line">echo "Computed mods = '$MODS'"</span><br><span class="line"><span class="meta">#</span><span class="bash"> Patch adding the dns</span></span><br><span class="line">MODS="$MODS,jdk.naming.dns"</span><br></pre></td></tr></table></figure>
+
+<h2 id="Create-the-JDK"><a href="#Create-the-JDK" class="headerlink" title="Create the JDK"></a>Create the JDK</h2><p>Now you just need to invoke <code>jlink</code> to generate your custom JDK:</p>
+<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> jlink --verbose \</span></span><br><span class="line">  --no-header-files \</span><br><span class="line">  --no-man-pages \</span><br><span class="line">  --compress=2 \</span><br><span class="line">  --strip-debug \</span><br><span class="line">  --add-modules "$MODS" \</span><br><span class="line">  --output ./jdk</span><br><span class="line">java.base file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.base.jmod</span><br><span class="line">java.compiler file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.compiler.jmod</span><br><span class="line">java.logging file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.logging.jmod</span><br><span class="line">java.management file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.management.jmod</span><br><span class="line">java.naming file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.naming.jmod</span><br><span class="line">java.security.jgss file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.security.jgss.jmod</span><br><span class="line">java.security.sasl file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.security.sasl.jmod</span><br><span class="line">java.sql file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.sql.jmod</span><br><span class="line">java.transaction.xa file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.transaction.xa.jmod</span><br><span class="line">java.xml file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.xml.jmod</span><br><span class="line">jdk.management file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/jdk.management.jmod</span><br><span class="line">jdk.naming.dns file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/jdk.naming.dns.jmod</span><br><span class="line">jdk.unsupported file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/jdk.unsupported.jmod</span><br><span class="line"></span><br><span class="line">Providers:</span><br><span class="line">  java.base provides java.nio.file.spi.FileSystemProvider used by java.base</span><br><span class="line">  java.naming provides java.security.Provider used by java.base</span><br><span class="line">  java.security.jgss provides java.security.Provider used by java.base</span><br><span class="line">  java.security.sasl provides java.security.Provider used by java.base</span><br><span class="line">  jdk.naming.dns provides javax.naming.spi.InitialContextFactory used by java.naming</span><br><span class="line">  java.management provides javax.security.auth.spi.LoginModule used by java.base</span><br><span class="line">  java.logging provides jdk.internal.logger.DefaultLoggerFinder used by java.base</span><br><span class="line">  jdk.management provides sun.management.spi.PlatformMBeanProvider used by java.management</span><br></pre></td></tr></table></figure>
+
+<p>This command will grab the modules you provided from your local machine and will create a JDK without manual, header files, debug symbols:</p>
+<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="code"><pre><span class="line">jdk</span><br><span class="line">├── bin</span><br><span class="line">│   ├── java</span><br><span class="line">│   └── keytool</span><br><span class="line">├── conf</span><br><span class="line">│   ├── logging.properties</span><br><span class="line">│   ├── net.properties</span><br><span class="line">│   ├── sdp</span><br><span class="line">│   └── security</span><br><span class="line">[...]</span><br><span class="line">├── lib</span><br><span class="line">[...]</span><br><span class="line">└── release</span><br></pre></td></tr></table></figure>
+
+<h2 id="Complete-script-and-Dockerfile"><a href="#Complete-script-and-Dockerfile" class="headerlink" title="Complete script and Dockerfile"></a>Complete script and Dockerfile</h2><p>This is the complete Dockerfile (simplified) that builds the project and generates the JDK:</p>
+<figure class="highlight dockerfile"><table><tr><td class="code"><pre><span class="line"><span class="keyword">ARG</span> JAVA_IMAGE=docker.io/adoptopenjdk:<span class="number">14</span>-jdk-hotspot</span><br><span class="line"><span class="keyword">ARG</span> BASE_IMAGE=docker.io/ubuntu:bionic</span><br><span class="line"></span><br><span class="line"><span class="keyword">FROM</span> $&#123;JAVA_IMAGE&#125; as builder</span><br><span class="line"></span><br><span class="line"><span class="keyword">WORKDIR</span><span class="bash"> /app</span></span><br><span class="line"><span class="bash"></span></span><br><span class="line"><span class="bash"><span class="comment"># https://github.com/AdoptOpenJDK/openjdk-docker/issues/260</span></span></span><br><span class="line"><span class="bash">RUN apt-get update &amp;&amp; apt-get install -y binutils</span></span><br><span class="line"><span class="bash"></span></span><br><span class="line"><span class="bash"><span class="comment"># Copy all my project stuff inside the container</span></span></span><br><span class="line"><span class="bash">COPY . .</span></span><br><span class="line"><span class="bash"></span></span><br><span class="line"><span class="bash"><span class="comment"># Build the project</span></span></span><br><span class="line"><span class="bash">RUN ./mvnw package -DskipTests -Deditorconfig.skip --no-transfer-progress</span></span><br><span class="line"><span class="bash"></span></span><br><span class="line"><span class="bash"><span class="comment"># Generate the sdk using the script (shown below)</span></span></span><br><span class="line"><span class="bash">RUN ./generate_jdk.sh /app/receiver/target/receiver-1.0-SNAPSHOT.jar</span></span><br><span class="line"><span class="bash"></span></span><br><span class="line"><span class="bash"><span class="comment"># Prod image</span></span></span><br><span class="line"><span class="bash">FROM <span class="variable">$&#123;BASE_IMAGE&#125;</span> as running</span></span><br><span class="line"><span class="bash"></span></span><br><span class="line"><span class="bash"><span class="comment"># Create appuser and directories</span></span></span><br><span class="line"><span class="bash">RUN groupadd -g 999 appuser &amp;&amp; useradd -r -u 999 -g appuser appuser &amp;&amp; \</span></span><br><span class="line"><span class="bash">  mkdir /tmp/vertx-cache &amp;&amp; chown -R appuser:appuser /tmp/vertx-cache &amp;&amp; \</span></span><br><span class="line"><span class="bash">  mkdir /app</span></span><br><span class="line"><span class="bash"></span></span><br><span class="line"><span class="bash"><span class="comment"># Copy jar and jdk inside /app</span></span></span><br><span class="line"><span class="bash">COPY --from=builder /app/jdk /app/jdk</span></span><br><span class="line"><span class="bash">COPY --from=builder /app/receiver/target/receiver-1.0-SNAPSHOT.jar /app/app.jar</span></span><br><span class="line"><span class="bash">RUN chown -R appuser:appuser /app</span></span><br><span class="line"><span class="bash"></span></span><br><span class="line"><span class="bash"><span class="comment"># Set appuser and configure PATH</span></span></span><br><span class="line"><span class="bash">USER appuser</span></span><br><span class="line"><span class="bash">WORKDIR /app</span></span><br><span class="line"><span class="bash"><span class="comment"># Add jdk bin to the path, so you can run the java command</span></span></span><br><span class="line"><span class="bash">ENV PATH=<span class="string">"/app/jdk/bin:<span class="variable">$&#123;PATH&#125;</span>"</span></span></span><br></pre></td></tr></table></figure>
+
+<p>And the <code>generate_jdk.sh</code> script:</p>
+<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">!/usr/bin/env sh</span></span><br><span class="line"></span><br><span class="line">if [ $# -eq 0 ]</span><br><span class="line">  then</span><br><span class="line">    echo "No arguments supplied, You must provide the jar"</span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line">echo "Computing mods for $1"</span><br><span class="line">MODS=$(jdeps -q --print-module-deps --ignore-missing-deps "$1" | sed -e 's/^[ \t]*//')</span><br><span class="line">echo "Computed mods = '$MODS'"</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Patch adding the dns</span></span><br><span class="line">MODS="$MODS,jdk.naming.dns"</span><br><span class="line">echo "Patched modules shipped with the generated jdk = '$MODS'"</span><br><span class="line"></span><br><span class="line">jlink --verbose --no-header-files --no-man-pages --compress=2 --strip-debug --add-modules "$MODS" --output /app/jdk</span><br></pre></td></tr></table></figure>
+
+<p>You can run the built container with:</p>
+<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker run imagename java -jar /app/app.jar</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Conclusions"><a href="#Conclusions" class="headerlink" title="Conclusions"></a>Conclusions</h2><p>Using <code>jdeps</code> and <code>jlink</code> our container image size is 2.5x smaller, which is a great achievement for us. We also plan to reduce it even further, in fact we want to:</p>
+<ul>
+<li>Investigate some modules we depend on, but that we probably don’t need: <code>java.compiler</code> and <code>java.sql</code> are two good candidates.</li>
+<li>Rebase our base image on <code>alpine</code>, which uses <code>musl</code> as libc. Look at <a href="https://openjdk.java.net/projects/portola/" target="_blank" rel="noopener">Project Portola</a> for more details.</li>
+</ul>
+<p>Check out the full PR: <a href="https://github.com/knative-sandbox/eventing-kafka-broker/pull/265" target="_blank" rel="noopener">https://github.com/knative-sandbox/eventing-kafka-broker/pull/265</a></p>
+]]></content>
+      <tags>
+        <tag>vertx</tag>
+        <tag>development</tag>
+        <tag>container</tag>
+        <tag>cloud</tag>
+        <tag>java</tag>
+        <tag>jlink</tag>
+        <tag>jdeps</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Debts Manager Tutorial Part 3: Vert.x Web API Contract &amp; Service</title>
+    <url>/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/</url>
+    <content><![CDATA[<p>Today I’m going to bootstrap the project starting from the contract I have already created in the <a href="/Debts-Manager-Tutorial-Contract-Design/" title="previous chapter">previous chapter</a>. The aim of this chapter is to show you Vert.x Web, Vert.x Web API Contract and Vert.x Web API Service. The combination of these three packages provides all functionalities you need to create a REST API. Then I’m going to use <a href="https://vertx-starter.jetdrone.xyz/#maven" target="_blank" rel="noopener">pmlopes’ vertx-starter</a> to scaffold the project. </p>
+<p>If you are new to Vert.x, before going further I strongly suggest you to read <a href="https://vertx.io/docs/vertx-core/java/" target="_blank" rel="noopener">vertx-core documentation</a> and <a href="https://vertx.io/docs/vertx-web/java/" target="_blank" rel="noopener">vertx-web documentation</a></p>
+<h2 id="Vert-x-Web-API-Contract-and-API-Services"><a href="#Vert-x-Web-API-Contract-and-API-Services" class="headerlink" title="Vert.x Web, API Contract and API Services"></a>Vert.x Web, API Contract and API Services</h2><p><strong>Vert.x Web</strong> is a library built on top of Vert.x to create web applications. It provides high level features like routing, request body handling, authorization, etc. The core concept of Vert.x Web is the <code>Router</code> which an object that can route requests to one or more <code>Route</code>s based on a set of rules like HTTP method, HTTP path, accepted content types, etc. On each <code>Route</code> you can define one or more <code>Handler</code>s that contain the logic to process the request. When a <code>Router</code> receives a request it creates a <code>RoutingContext</code> object which has all methods to read the request, write the response, call the next <code>Handler</code> and fail the context. Each <code>Handler</code> that you register consumes the request’s <code>RoutingContext</code>. Vert.x Web also provides some common handlers like the <code>BodyHandler</code> that parses the request body and the <code>AuthHandler</code> that manages authN/Z of the request</p>
+<span itemprop="image" itemscope itemtype="http://schema.org/ImageObject"><img itemprop="url image" src="/images/tutorial-debts-manager/vertx-web-1.png" class="full-image" alt="Vert.x Web example architecture" title="Example architecture using Vert.x Web" /><meta itemprop="width" content="auto"/><meta itemprop="height" content="auto"/></span>
+
+<p><strong>Vert.x Web API Contract</strong> generates a <code>Router</code> starting from an OpenAPI definition. Everything revolves around an object called <code>RouterFactory</code>: you create the contract, you specify to the <code>RouterFactory</code> what are the handlers for the defined operations and it generates the Vert.x Web <code>Router</code> for you. The <code>RouterFactory</code> does some magics behind the hood to provide you a <code>Router</code> that:</p>
+<ul>
+<li>Parses and validates the incoming requests (all kind of parameters and form or json bodies)</li>
+<li>Correctly routes the requests to the right operation handlers by generating the correct <code>Route</code> instances</li>
+<li>Has the required security handlers mounted in the right <code>Route</code>s</li>
+</ul>
+<span itemprop="image" itemscope itemtype="http://schema.org/ImageObject"><img itemprop="url image" src="/images/tutorial-debts-manager/vertx-web-2.png" class="full-image" alt="Vert.x Web & Vert.x Web API Contract example architecture" title="Example architecture using Vert.x Web & Vert.x Web API Contract" /><meta itemprop="width" content="auto"/><meta itemprop="height" content="auto"/></span>
+
+<p><strong>Vert.x Web API Service</strong> is a code generator based on concept of <a href="https://vertx.io/docs/vertx-service-proxy/java/" target="_blank" rel="noopener">Vert.x Service Proxy</a>. An <a href="https://vertx.io/docs/vertx-core/java/#event_bus" target="_blank" rel="noopener">event bus</a> service is a Java interface that helps you to define in a more natural way an event bus message consumer. This approach leads to different benefits like the straightforward process to test a message consumer like any other Java class. As every EB event consumer, a service can inhabit inside the same verticle or it can be deployed in another application somewhere else in your microservices network. You can use the Vert.x Web API Service in order to mix Contract Driven capabilites provided by Vert.x WAC and these event bus service features.<br> When you use EB API Services, you don’t put the business logic inside the <code>Route</code> handlers, but you can distribute it inside different services. Then by using Vert.x WAC, you can manage the linking between these services and the <code>Router</code> instance</p>
+<span itemprop="image" itemscope itemtype="http://schema.org/ImageObject"><img itemprop="url image" src="/images/tutorial-debts-manager/vertx-web-3.png" class="full-image" alt="Vert.x Web/Vert.x Web API Contract/Vert.x Web API Service example architecture" title="Example architecture using Vert.x Web & Vert.x Web API Contract & Vert.x Web API Service" /><meta itemprop="width" content="auto"/><meta itemprop="height" content="auto"/></span>
+
+<h2 id="Define-the-API-Services"><a href="#Define-the-API-Services" class="headerlink" title="Define the API Services"></a>Define the API Services</h2><p>Now I need to define how to group the API Operations defined inside the contract into different API Services. An important thing to keep in mind about API Services is that, <em>with a good design</em>, you can turn each API Service into a microservice in a few minutes. Starting from this assumption, I want to group operations by different subdomains of my API. Debts Manager API handles users, transactions and status, so I’m going to organize operations to create a <em>Users Service</em>, a <em>Transactions Service</em> and a <em>Status Service</em>. Here is the mapping between services and operations:</p>
+<table>
+<thead>
+<tr>
+<th>Transactions Service</th>
+<th>Users Service</th>
+<th>Status Service</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>getTransactions</code> <br> <code>getTransaction</code> <br> <code>createTransaction</code> <br> <code>updateTransaction</code> <br> <code>deleteTransaction</code></td>
+<td><code>login</code> <br> <code>register</code> <br> <code>getConnectedUsers</code> <br> <code>connectUser</code> <br> <code>getUsers</code></td>
+<td><code>getUserStatus</code></td>
+</tr>
+</tbody></table>
+<p>I need to assign an event bus address to each service. The interesting fact is that you can deploy more than one service instance on an address and the event bus will manage the load balancing between these. The event bus address could be any string in any format, although this it makes sense to use a domain like format to identify it. My choice is:</p>
+<ul>
+<li><code>TransactionService</code> is available at <code>transactions.debts_manager</code></li>
+<li><code>UsersService</code> is available at <code>users.debts_manager</code></li>
+<li><code>StatusService</code> is available at <code>status.debts_manager</code></li>
+</ul>
+<h2 id="Specify-the-services-inside-the-spec"><a href="#Specify-the-services-inside-the-spec" class="headerlink" title="Specify the services inside the spec"></a>Specify the services inside the spec</h2><p>In order to make the <code>RouterFactory</code> been able to correcly link the <code>Router</code> to the services, it must know what are the services’ addresses. To define these associations, you have a couple of <a href="https://vertx.io/docs/vertx-web-api-service/java/#_mount_to_router_factory" target="_blank" rel="noopener">different methods</a>. I’m going to focus on the configuration based method: inside the OpenAPI document, for each operation, I define the related service event bus address; then just calling <code>mountServicesFromExtensions()</code>, the <code>RouterFactory</code> will inspect the OpenAPI document to find all those associations. E.G. the <code>getTransaction</code> definition now looks like this:</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">summary:</span> <span class="string">'Get a Transaction'</span></span><br><span class="line"><span class="attr">operationId:</span> <span class="string">getTransaction</span></span><br><span class="line"><span class="attr">responses:</span> <span class="string">...</span></span><br><span class="line"><span class="attr">security:</span> <span class="string">...</span></span><br><span class="line"><span class="attr">x-vertx-event-bus:</span> <span class="string">transactions.debts_manager</span></span><br></pre></td></tr></table></figure>
+
+<p>Look at <a href="https://vertx.io/docs/vertx-web-api-service/java/#_using_the_extension_code_x_vertx_event_bus_code" target="_blank" rel="noopener"><code>x-vertx-event-bus</code> documentation</a> for more details.</p>
+<h2 id="Bootstrap-the-project"><a href="#Bootstrap-the-project" class="headerlink" title="Bootstrap the project"></a>Bootstrap the project</h2><p><code>vertx-starter</code> contains a collection of different project templates called presets. I’m going to focus on <em>“OpenAPI Server with Event Bus”</em> preset to scaffold debts manager.</p>
+<p>To help the scaffolder generates the right service interfaces, you must define <a href="https://github.com/pmlopes/vertx-starter/blob/master/dist/webdocs/OpenAPI_Server_With_Services.md" target="_blank" rel="noopener">the service address - service name mapping</a>. Just a couple of entries inside Debts manager API spec and you are ready to scaffold the project:</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">components:</span></span><br><span class="line"><span class="attr">  schemas:</span> <span class="string">...</span></span><br><span class="line"><span class="attr">  securitySchemes:</span> <span class="string">...</span></span><br><span class="line"><span class="attr">  x-vertx-service-gen:</span></span><br><span class="line">    <span class="string">transactions.debts_manager:</span> <span class="string">TransactionsService</span></span><br><span class="line">    <span class="string">users.debts_manager:</span> <span class="string">UsersService</span></span><br><span class="line">    <span class="string">status.debts_manager:</span> <span class="string">StatusService</span></span><br></pre></td></tr></table></figure>
+
+<p>Now open the <a href="https://vertx-starter.jetdrone.xyz/#maven" target="_blank" rel="noopener">vertx-starter</a> page and with just a couple of clicks you have a zip with the project scaffolded!</p>
+<span itemprop="image" itemscope itemtype="http://schema.org/ImageObject"><img itemprop="url image" src="/images/tutorial-debts-manager/vertx-starter-screenshot.png" class="full-image" alt="Vert.x Starter screenshot" /><meta itemprop="width" content="auto"/><meta itemprop="height" content="auto"/></span>
+
+<p>Let’s dig into the generated code:</p>
+<span itemprop="image" itemscope itemtype="http://schema.org/ImageObject"><img itemprop="url image" src="/images/tutorial-debts-manager/generated-code-tree.png" class="full-image" alt="Vert.x Starter generated code tree" /><meta itemprop="width" content="auto"/><meta itemprop="height" content="auto"/></span>
+
+<p>The scaffolder created for you:</p>
+<ul>
+<li>The POJOs which represents the API data models</li>
+<li>The service interfaces</li>
+<li><code>package-info.java</code> files required to trigger Vert.x annotation processing</li>
+<li>The stubs of service implementations</li>
+<li>The stubs of service tests</li>
+<li>The entrypoint of Vert.x application which is called <code>MainVerticle</code></li>
+<li>An <code>ApiClient</code> that can be used for testing purposes</li>
+<li>The build tool configuration file (<code>pom.xml</code> in my case)</li>
+</ul>
+<p>As every scaffolder, it is necessary to make some adjustments for the project needs.</p>
+<h2 id="Configure-the-project"><a href="#Configure-the-project" class="headerlink" title="Configure the project"></a>Configure the project</h2><p>I made a couple of changes to adapt the project skeleton to my needs. In particular I configured in my pom:</p>
+<ul>
+<li><a href="https://logback.qos.ch/" target="_blank" rel="noopener">Logback logging</a></li>
+<li>Compilation with Java 11 with <code>maven-compiler-plugin</code></li>
+<li>JUnit 5 with <code>maven-surefire-plugin</code></li>
+<li><a href="https://reactiverse.io/vertx-maven-plugin/" target="_blank" rel="noopener"><code>vertx-maven-plugin</code></a> to execute and package my Vert.x application</li>
+</ul>
+<p>I also substituted the generated <code>openapi.json</code> with my original <code>debts_manager_api.yaml</code> to keep readibility of the spec document. The generated one is a bundled version with all <code>$ref</code>s solved. If you need to bundle again your spec in future, I suggest you to use <a href="http://speccy.io/" target="_blank" rel="noopener">Speccy</a> which is a very good tool that can also convert Json Schema to OpenAPI Schema while bundling the spec.</p>
+<h3 id="vertx-maven-plugin-and-application-properties"><a href="#vertx-maven-plugin-and-application-properties" class="headerlink" title="vertx-maven-plugin and application properties"></a><code>vertx-maven-plugin</code> and application properties</h3><p>Vert.x Maven plugin provides a couple of facilities to help you execute and package the Vert.x application. The usage is very simple: you must add it to your build plugins and then you must define the FQCN of the Verticle to run:</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">properties</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">vertx.verticle</span>&gt;</span>io.slinkydeveloper.debtsmanager.MainVerticle<span class="tag">&lt;/<span class="name">vertx.verticle</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">properties</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>io.reactiverse<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>vertx-maven-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.0.18<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">executions</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">execution</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">id</span>&gt;</span>vmp<span class="tag">&lt;/<span class="name">id</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">goals</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">goal</span>&gt;</span>initialize<span class="tag">&lt;/<span class="name">goal</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">goal</span>&gt;</span>package<span class="tag">&lt;/<span class="name">goal</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;/<span class="name">goals</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">execution</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">executions</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">redeploy</span>&gt;</span>true<span class="tag">&lt;/<span class="name">redeploy</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">config</span>&gt;</span>test_config.json<span class="tag">&lt;/<span class="name">config</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><code>test_config.json</code> is a JSON containing application properties like PostgreSQL and Redis connection parameters. Vert.x Core includes this basic support to json configuration files: you can load it into your verticle with Vert.x command line, <code>DeploymentConfig</code> or directly with <code>vertx-maven-plugin</code>. If you want to configure a more complex properties management, there is a package called <a href="https://vertx.io/docs/vertx-config/java" target="_blank" rel="noopener">vertx-config</a> that enables you to load HOCON configuration files, load configuration from a remote server, etc.</p>
+<h3 id="MainVerticle"><a href="#MainVerticle" class="headerlink" title="MainVerticle"></a><code>MainVerticle</code></h3><p>The generated <code>MainVerticle</code> contains two methods:</p>
+<ul>
+<li><code>startHttpServer()</code> to create the RouterFactory, define the various handlers, generate the <code>Router</code> instance and start the HTTP server</li>
+<li><code>startServices()</code> to instantiate and mount the event bus services</li>
+</ul>
+<p>As I said before, the HTTP Server and the corresponding <code>Router</code> don’t depend on the event bus services, so you can move these two methods into two separate verticles. For simplicity, I’m going to mantain everything inside one verticle. In next chapters, we will spend time into splitting the verticle.</p>
+<p>To mount a service to the event bus I use an helper object called <code>ServiceBinder</code> that lookups for the generated message handler and binds the service instance to the event bus:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">TransactionsService transactionsService = TransactionsService.create(vertx);</span><br><span class="line">serviceBinder</span><br><span class="line">  .setAddress(<span class="string">"transactions.debts_manager"</span>)</span><br><span class="line">  .register(TransactionsService.class, transactionsService);</span><br></pre></td></tr></table></figure>
+
+<p>As I previously said, the <code>RouterFactory</code> can lookup into the OpenAPI document for the associations between services and operations with <code>mountServicesFromExtensions()</code>. This makes the code of <code>startHttpServer()</code> quite simple for the moment:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Future&lt;Void&gt; <span class="title">startHttpServer</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  Future&lt;Void&gt; future = Future.future();</span><br><span class="line">  OpenAPI3RouterFactory.create(<span class="keyword">this</span>.vertx, <span class="string">"openapi.yaml"</span>, openAPI3RouterFactoryAsyncResult -&gt; &#123;</span><br><span class="line">    <span class="keyword">if</span> (openAPI3RouterFactoryAsyncResult.succeeded()) &#123;</span><br><span class="line">      OpenAPI3RouterFactory routerFactory = openAPI3RouterFactoryAsyncResult.result();</span><br><span class="line"></span><br><span class="line">      <span class="comment">// Mount services on event bus based on extensions</span></span><br><span class="line">      routerFactory.mountServicesFromExtensions();</span><br><span class="line"></span><br><span class="line">      <span class="comment">// Add security handlers</span></span><br><span class="line">      routerFactory.addSecurityHandler(<span class="string">"loggedUserToken"</span>, <span class="keyword">new</span> LoggedUserTokenHandler());</span><br><span class="line"></span><br><span class="line">      <span class="comment">// Generate the router</span></span><br><span class="line">      Router router = routerFactory.getRouter();</span><br><span class="line"></span><br><span class="line">      <span class="comment">// Start the HTTP Server and bind Router</span></span><br><span class="line">      server = vertx.createHttpServer(<span class="keyword">new</span> HttpServerOptions().setPort(<span class="number">8080</span>).setHost(<span class="string">"localhost"</span>));</span><br><span class="line">      server.requestHandler(router).listen();</span><br><span class="line">      future.complete();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// Something went wrong during router factory initialization</span></span><br><span class="line">      future.fail(openAPI3RouterFactoryAsyncResult.cause());</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;);</span><br><span class="line">  <span class="keyword">return</span> future;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Configure-JWT-AuthN-Z"><a href="#Configure-JWT-AuthN-Z" class="headerlink" title="Configure JWT AuthN/Z"></a>Configure JWT AuthN/Z</h3><p>Vert.x Web already provides a good support for JWT thanks to <a href="https://vertx.io/docs/vertx-auth-jwt/java/" target="_blank" rel="noopener">Vert.x Auth JWT</a>, so I don’t need to write an handler that manages the AuthN/Z.</p>
+<p>To get JWT running you need an RSA key pair to sign your tokens. I opted for the <a href="https://tools.ietf.org/html/rfc7517" target="_blank" rel="noopener">JWK</a> standard to store it and I generated the key pair and the key store using <a href="https://mkjwk.org/" target="_blank" rel="noopener">mkjwk.org</a>.</p>
+<p>Vert.x Auth JWT provides <code>JWTAuth</code> auth provider, which is the object that can authenticate, authorize and generate tokens. Vert.x Web has an handler called <code>JWTAuthHandler</code> that uses this auth provider to validate and extract the payload of the token of incoming requests. I modify the <code>start()</code> method of <code>MainVerticle</code> to load the jwk from filesystem and create the <code>JWTAuth</code>:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">loadResource(jwkPath).setHandler(ar -&gt; &#123;</span><br><span class="line">  <span class="keyword">if</span> (ar.failed()) future.fail(ar.cause());</span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    JsonObject jwkObject = ar.result().toJsonObject();</span><br><span class="line">    JWTAuth auth = JWTAuth.create(vertx, <span class="keyword">new</span> JWTAuthOptions().addJwk(jwkObject));</span><br><span class="line">    startServices();</span><br><span class="line">    startHttpServer(auth).setHandler(future.completer());</span><br><span class="line">  &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>And of course I modify the <code>startHttpServer()</code> to use <code>JWTAuthHandler</code>:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">routerFactory.addSecurityHandler(<span class="string">"loggedUserToken"</span>, JWTAuthHandler.create(auth));</span><br></pre></td></tr></table></figure>
+
+<p>In next chapters you will see how to create a token during the login process.</p>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>The application is bootstrapped, now we are ready to deep down into application logic! In next two chapters I’m going to show you how I have implemented the persistence layer and the event sourcing layer.</p>
+<p>Stay tuned for more updates!</p>
+]]></content>
+      <tags>
+        <tag>openapi</tag>
+        <tag>vertx</tag>
+        <tag>development</tag>
+        <tag>web</tag>
+        <tag>web api contract</tag>
+        <tag>openapi 3</tag>
+        <tag>web api service</tag>
+        <tag>vertx service proxy</tag>
       </tags>
   </entry>
   <entry>
@@ -858,121 +1034,6 @@ If you read this class, It seems messy, because It's messy <span class="emoji" a
         <tag>web</tag>
         <tag>web api contract</tag>
         <tag>openapi 3</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Debts Manager Tutorial Part 3: Vert.x Web API Contract &amp; Service</title>
-    <url>/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/</url>
-    <content><![CDATA[<p>Today I’m going to bootstrap the project starting from the contract I have already created in the <a href="/Debts-Manager-Tutorial-Contract-Design/" title="previous chapter">previous chapter</a>. The aim of this chapter is to show you Vert.x Web, Vert.x Web API Contract and Vert.x Web API Service. The combination of these three packages provides all functionalities you need to create a REST API. Then I’m going to use <a href="https://vertx-starter.jetdrone.xyz/#maven" target="_blank" rel="noopener">pmlopes’ vertx-starter</a> to scaffold the project. </p>
-<p>If you are new to Vert.x, before going further I strongly suggest you to read <a href="https://vertx.io/docs/vertx-core/java/" target="_blank" rel="noopener">vertx-core documentation</a> and <a href="https://vertx.io/docs/vertx-web/java/" target="_blank" rel="noopener">vertx-web documentation</a></p>
-<h2 id="Vert-x-Web-API-Contract-and-API-Services"><a href="#Vert-x-Web-API-Contract-and-API-Services" class="headerlink" title="Vert.x Web, API Contract and API Services"></a>Vert.x Web, API Contract and API Services</h2><p><strong>Vert.x Web</strong> is a library built on top of Vert.x to create web applications. It provides high level features like routing, request body handling, authorization, etc. The core concept of Vert.x Web is the <code>Router</code> which an object that can route requests to one or more <code>Route</code>s based on a set of rules like HTTP method, HTTP path, accepted content types, etc. On each <code>Route</code> you can define one or more <code>Handler</code>s that contain the logic to process the request. When a <code>Router</code> receives a request it creates a <code>RoutingContext</code> object which has all methods to read the request, write the response, call the next <code>Handler</code> and fail the context. Each <code>Handler</code> that you register consumes the request’s <code>RoutingContext</code>. Vert.x Web also provides some common handlers like the <code>BodyHandler</code> that parses the request body and the <code>AuthHandler</code> that manages authN/Z of the request</p>
-<span itemprop="image" itemscope itemtype="http://schema.org/ImageObject"><img itemprop="url image" src="/images/tutorial-debts-manager/vertx-web-1.png" class="full-image" alt="Vert.x Web example architecture" title="Example architecture using Vert.x Web" /><meta itemprop="width" content="auto"/><meta itemprop="height" content="auto"/></span>
-
-<p><strong>Vert.x Web API Contract</strong> generates a <code>Router</code> starting from an OpenAPI definition. Everything revolves around an object called <code>RouterFactory</code>: you create the contract, you specify to the <code>RouterFactory</code> what are the handlers for the defined operations and it generates the Vert.x Web <code>Router</code> for you. The <code>RouterFactory</code> does some magics behind the hood to provide you a <code>Router</code> that:</p>
-<ul>
-<li>Parses and validates the incoming requests (all kind of parameters and form or json bodies)</li>
-<li>Correctly routes the requests to the right operation handlers by generating the correct <code>Route</code> instances</li>
-<li>Has the required security handlers mounted in the right <code>Route</code>s</li>
-</ul>
-<span itemprop="image" itemscope itemtype="http://schema.org/ImageObject"><img itemprop="url image" src="/images/tutorial-debts-manager/vertx-web-2.png" class="full-image" alt="Vert.x Web & Vert.x Web API Contract example architecture" title="Example architecture using Vert.x Web & Vert.x Web API Contract" /><meta itemprop="width" content="auto"/><meta itemprop="height" content="auto"/></span>
-
-<p><strong>Vert.x Web API Service</strong> is a code generator based on concept of <a href="https://vertx.io/docs/vertx-service-proxy/java/" target="_blank" rel="noopener">Vert.x Service Proxy</a>. An <a href="https://vertx.io/docs/vertx-core/java/#event_bus" target="_blank" rel="noopener">event bus</a> service is a Java interface that helps you to define in a more natural way an event bus message consumer. This approach leads to different benefits like the straightforward process to test a message consumer like any other Java class. As every EB event consumer, a service can inhabit inside the same verticle or it can be deployed in another application somewhere else in your microservices network. You can use the Vert.x Web API Service in order to mix Contract Driven capabilites provided by Vert.x WAC and these event bus service features.<br> When you use EB API Services, you don’t put the business logic inside the <code>Route</code> handlers, but you can distribute it inside different services. Then by using Vert.x WAC, you can manage the linking between these services and the <code>Router</code> instance</p>
-<span itemprop="image" itemscope itemtype="http://schema.org/ImageObject"><img itemprop="url image" src="/images/tutorial-debts-manager/vertx-web-3.png" class="full-image" alt="Vert.x Web/Vert.x Web API Contract/Vert.x Web API Service example architecture" title="Example architecture using Vert.x Web & Vert.x Web API Contract & Vert.x Web API Service" /><meta itemprop="width" content="auto"/><meta itemprop="height" content="auto"/></span>
-
-<h2 id="Define-the-API-Services"><a href="#Define-the-API-Services" class="headerlink" title="Define the API Services"></a>Define the API Services</h2><p>Now I need to define how to group the API Operations defined inside the contract into different API Services. An important thing to keep in mind about API Services is that, <em>with a good design</em>, you can turn each API Service into a microservice in a few minutes. Starting from this assumption, I want to group operations by different subdomains of my API. Debts Manager API handles users, transactions and status, so I’m going to organize operations to create a <em>Users Service</em>, a <em>Transactions Service</em> and a <em>Status Service</em>. Here is the mapping between services and operations:</p>
-<table>
-<thead>
-<tr>
-<th>Transactions Service</th>
-<th>Users Service</th>
-<th>Status Service</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>getTransactions</code> <br> <code>getTransaction</code> <br> <code>createTransaction</code> <br> <code>updateTransaction</code> <br> <code>deleteTransaction</code></td>
-<td><code>login</code> <br> <code>register</code> <br> <code>getConnectedUsers</code> <br> <code>connectUser</code> <br> <code>getUsers</code></td>
-<td><code>getUserStatus</code></td>
-</tr>
-</tbody></table>
-<p>I need to assign an event bus address to each service. The interesting fact is that you can deploy more than one service instance on an address and the event bus will manage the load balancing between these. The event bus address could be any string in any format, although this it makes sense to use a domain like format to identify it. My choice is:</p>
-<ul>
-<li><code>TransactionService</code> is available at <code>transactions.debts_manager</code></li>
-<li><code>UsersService</code> is available at <code>users.debts_manager</code></li>
-<li><code>StatusService</code> is available at <code>status.debts_manager</code></li>
-</ul>
-<h2 id="Specify-the-services-inside-the-spec"><a href="#Specify-the-services-inside-the-spec" class="headerlink" title="Specify the services inside the spec"></a>Specify the services inside the spec</h2><p>In order to make the <code>RouterFactory</code> been able to correcly link the <code>Router</code> to the services, it must know what are the services’ addresses. To define these associations, you have a couple of <a href="https://vertx.io/docs/vertx-web-api-service/java/#_mount_to_router_factory" target="_blank" rel="noopener">different methods</a>. I’m going to focus on the configuration based method: inside the OpenAPI document, for each operation, I define the related service event bus address; then just calling <code>mountServicesFromExtensions()</code>, the <code>RouterFactory</code> will inspect the OpenAPI document to find all those associations. E.G. the <code>getTransaction</code> definition now looks like this:</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">summary:</span> <span class="string">'Get a Transaction'</span></span><br><span class="line"><span class="attr">operationId:</span> <span class="string">getTransaction</span></span><br><span class="line"><span class="attr">responses:</span> <span class="string">...</span></span><br><span class="line"><span class="attr">security:</span> <span class="string">...</span></span><br><span class="line"><span class="attr">x-vertx-event-bus:</span> <span class="string">transactions.debts_manager</span></span><br></pre></td></tr></table></figure>
-
-<p>Look at <a href="https://vertx.io/docs/vertx-web-api-service/java/#_using_the_extension_code_x_vertx_event_bus_code" target="_blank" rel="noopener"><code>x-vertx-event-bus</code> documentation</a> for more details.</p>
-<h2 id="Bootstrap-the-project"><a href="#Bootstrap-the-project" class="headerlink" title="Bootstrap the project"></a>Bootstrap the project</h2><p><code>vertx-starter</code> contains a collection of different project templates called presets. I’m going to focus on <em>“OpenAPI Server with Event Bus”</em> preset to scaffold debts manager.</p>
-<p>To help the scaffolder generates the right service interfaces, you must define <a href="https://github.com/pmlopes/vertx-starter/blob/master/dist/webdocs/OpenAPI_Server_With_Services.md" target="_blank" rel="noopener">the service address - service name mapping</a>. Just a couple of entries inside Debts manager API spec and you are ready to scaffold the project:</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">components:</span></span><br><span class="line"><span class="attr">  schemas:</span> <span class="string">...</span></span><br><span class="line"><span class="attr">  securitySchemes:</span> <span class="string">...</span></span><br><span class="line"><span class="attr">  x-vertx-service-gen:</span></span><br><span class="line">    <span class="string">transactions.debts_manager:</span> <span class="string">TransactionsService</span></span><br><span class="line">    <span class="string">users.debts_manager:</span> <span class="string">UsersService</span></span><br><span class="line">    <span class="string">status.debts_manager:</span> <span class="string">StatusService</span></span><br></pre></td></tr></table></figure>
-
-<p>Now open the <a href="https://vertx-starter.jetdrone.xyz/#maven" target="_blank" rel="noopener">vertx-starter</a> page and with just a couple of clicks you have a zip with the project scaffolded!</p>
-<span itemprop="image" itemscope itemtype="http://schema.org/ImageObject"><img itemprop="url image" src="/images/tutorial-debts-manager/vertx-starter-screenshot.png" class="full-image" alt="Vert.x Starter screenshot" /><meta itemprop="width" content="auto"/><meta itemprop="height" content="auto"/></span>
-
-<p>Let’s dig into the generated code:</p>
-<span itemprop="image" itemscope itemtype="http://schema.org/ImageObject"><img itemprop="url image" src="/images/tutorial-debts-manager/generated-code-tree.png" class="full-image" alt="Vert.x Starter generated code tree" /><meta itemprop="width" content="auto"/><meta itemprop="height" content="auto"/></span>
-
-<p>The scaffolder created for you:</p>
-<ul>
-<li>The POJOs which represents the API data models</li>
-<li>The service interfaces</li>
-<li><code>package-info.java</code> files required to trigger Vert.x annotation processing</li>
-<li>The stubs of service implementations</li>
-<li>The stubs of service tests</li>
-<li>The entrypoint of Vert.x application which is called <code>MainVerticle</code></li>
-<li>An <code>ApiClient</code> that can be used for testing purposes</li>
-<li>The build tool configuration file (<code>pom.xml</code> in my case)</li>
-</ul>
-<p>As every scaffolder, it is necessary to make some adjustments for the project needs.</p>
-<h2 id="Configure-the-project"><a href="#Configure-the-project" class="headerlink" title="Configure the project"></a>Configure the project</h2><p>I made a couple of changes to adapt the project skeleton to my needs. In particular I configured in my pom:</p>
-<ul>
-<li><a href="https://logback.qos.ch/" target="_blank" rel="noopener">Logback logging</a></li>
-<li>Compilation with Java 11 with <code>maven-compiler-plugin</code></li>
-<li>JUnit 5 with <code>maven-surefire-plugin</code></li>
-<li><a href="https://reactiverse.io/vertx-maven-plugin/" target="_blank" rel="noopener"><code>vertx-maven-plugin</code></a> to execute and package my Vert.x application</li>
-</ul>
-<p>I also substituted the generated <code>openapi.json</code> with my original <code>debts_manager_api.yaml</code> to keep readibility of the spec document. The generated one is a bundled version with all <code>$ref</code>s solved. If you need to bundle again your spec in future, I suggest you to use <a href="http://speccy.io/" target="_blank" rel="noopener">Speccy</a> which is a very good tool that can also convert Json Schema to OpenAPI Schema while bundling the spec.</p>
-<h3 id="vertx-maven-plugin-and-application-properties"><a href="#vertx-maven-plugin-and-application-properties" class="headerlink" title="vertx-maven-plugin and application properties"></a><code>vertx-maven-plugin</code> and application properties</h3><p>Vert.x Maven plugin provides a couple of facilities to help you execute and package the Vert.x application. The usage is very simple: you must add it to your build plugins and then you must define the FQCN of the Verticle to run:</p>
-<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">properties</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">vertx.verticle</span>&gt;</span>io.slinkydeveloper.debtsmanager.MainVerticle<span class="tag">&lt;/<span class="name">vertx.verticle</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">properties</span>&gt;</span></span><br></pre></td></tr></table></figure>
-
-<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>io.reactiverse<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>vertx-maven-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.0.18<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">executions</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">execution</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">id</span>&gt;</span>vmp<span class="tag">&lt;/<span class="name">id</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">goals</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">goal</span>&gt;</span>initialize<span class="tag">&lt;/<span class="name">goal</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">goal</span>&gt;</span>package<span class="tag">&lt;/<span class="name">goal</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;/<span class="name">goals</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">execution</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">executions</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">redeploy</span>&gt;</span>true<span class="tag">&lt;/<span class="name">redeploy</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">config</span>&gt;</span>test_config.json<span class="tag">&lt;/<span class="name">config</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br></pre></td></tr></table></figure>
-
-<p><code>test_config.json</code> is a JSON containing application properties like PostgreSQL and Redis connection parameters. Vert.x Core includes this basic support to json configuration files: you can load it into your verticle with Vert.x command line, <code>DeploymentConfig</code> or directly with <code>vertx-maven-plugin</code>. If you want to configure a more complex properties management, there is a package called <a href="https://vertx.io/docs/vertx-config/java" target="_blank" rel="noopener">vertx-config</a> that enables you to load HOCON configuration files, load configuration from a remote server, etc.</p>
-<h3 id="MainVerticle"><a href="#MainVerticle" class="headerlink" title="MainVerticle"></a><code>MainVerticle</code></h3><p>The generated <code>MainVerticle</code> contains two methods:</p>
-<ul>
-<li><code>startHttpServer()</code> to create the RouterFactory, define the various handlers, generate the <code>Router</code> instance and start the HTTP server</li>
-<li><code>startServices()</code> to instantiate and mount the event bus services</li>
-</ul>
-<p>As I said before, the HTTP Server and the corresponding <code>Router</code> don’t depend on the event bus services, so you can move these two methods into two separate verticles. For simplicity, I’m going to mantain everything inside one verticle. In next chapters, we will spend time into splitting the verticle.</p>
-<p>To mount a service to the event bus I use an helper object called <code>ServiceBinder</code> that lookups for the generated message handler and binds the service instance to the event bus:</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">TransactionsService transactionsService = TransactionsService.create(vertx);</span><br><span class="line">serviceBinder</span><br><span class="line">  .setAddress(<span class="string">"transactions.debts_manager"</span>)</span><br><span class="line">  .register(TransactionsService.class, transactionsService);</span><br></pre></td></tr></table></figure>
-
-<p>As I previously said, the <code>RouterFactory</code> can lookup into the OpenAPI document for the associations between services and operations with <code>mountServicesFromExtensions()</code>. This makes the code of <code>startHttpServer()</code> quite simple for the moment:</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Future&lt;Void&gt; <span class="title">startHttpServer</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  Future&lt;Void&gt; future = Future.future();</span><br><span class="line">  OpenAPI3RouterFactory.create(<span class="keyword">this</span>.vertx, <span class="string">"openapi.yaml"</span>, openAPI3RouterFactoryAsyncResult -&gt; &#123;</span><br><span class="line">    <span class="keyword">if</span> (openAPI3RouterFactoryAsyncResult.succeeded()) &#123;</span><br><span class="line">      OpenAPI3RouterFactory routerFactory = openAPI3RouterFactoryAsyncResult.result();</span><br><span class="line"></span><br><span class="line">      <span class="comment">// Mount services on event bus based on extensions</span></span><br><span class="line">      routerFactory.mountServicesFromExtensions();</span><br><span class="line"></span><br><span class="line">      <span class="comment">// Add security handlers</span></span><br><span class="line">      routerFactory.addSecurityHandler(<span class="string">"loggedUserToken"</span>, <span class="keyword">new</span> LoggedUserTokenHandler());</span><br><span class="line"></span><br><span class="line">      <span class="comment">// Generate the router</span></span><br><span class="line">      Router router = routerFactory.getRouter();</span><br><span class="line"></span><br><span class="line">      <span class="comment">// Start the HTTP Server and bind Router</span></span><br><span class="line">      server = vertx.createHttpServer(<span class="keyword">new</span> HttpServerOptions().setPort(<span class="number">8080</span>).setHost(<span class="string">"localhost"</span>));</span><br><span class="line">      server.requestHandler(router).listen();</span><br><span class="line">      future.complete();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// Something went wrong during router factory initialization</span></span><br><span class="line">      future.fail(openAPI3RouterFactoryAsyncResult.cause());</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;);</span><br><span class="line">  <span class="keyword">return</span> future;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="Configure-JWT-AuthN-Z"><a href="#Configure-JWT-AuthN-Z" class="headerlink" title="Configure JWT AuthN/Z"></a>Configure JWT AuthN/Z</h3><p>Vert.x Web already provides a good support for JWT thanks to <a href="https://vertx.io/docs/vertx-auth-jwt/java/" target="_blank" rel="noopener">Vert.x Auth JWT</a>, so I don’t need to write an handler that manages the AuthN/Z.</p>
-<p>To get JWT running you need an RSA key pair to sign your tokens. I opted for the <a href="https://tools.ietf.org/html/rfc7517" target="_blank" rel="noopener">JWK</a> standard to store it and I generated the key pair and the key store using <a href="https://mkjwk.org/" target="_blank" rel="noopener">mkjwk.org</a>.</p>
-<p>Vert.x Auth JWT provides <code>JWTAuth</code> auth provider, which is the object that can authenticate, authorize and generate tokens. Vert.x Web has an handler called <code>JWTAuthHandler</code> that uses this auth provider to validate and extract the payload of the token of incoming requests. I modify the <code>start()</code> method of <code>MainVerticle</code> to load the jwk from filesystem and create the <code>JWTAuth</code>:</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">loadResource(jwkPath).setHandler(ar -&gt; &#123;</span><br><span class="line">  <span class="keyword">if</span> (ar.failed()) future.fail(ar.cause());</span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    JsonObject jwkObject = ar.result().toJsonObject();</span><br><span class="line">    JWTAuth auth = JWTAuth.create(vertx, <span class="keyword">new</span> JWTAuthOptions().addJwk(jwkObject));</span><br><span class="line">    startServices();</span><br><span class="line">    startHttpServer(auth).setHandler(future.completer());</span><br><span class="line">  &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
-
-<p>And of course I modify the <code>startHttpServer()</code> to use <code>JWTAuthHandler</code>:</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">routerFactory.addSecurityHandler(<span class="string">"loggedUserToken"</span>, JWTAuthHandler.create(auth));</span><br></pre></td></tr></table></figure>
-
-<p>In next chapters you will see how to create a token during the login process.</p>
-<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>The application is bootstrapped, now we are ready to deep down into application logic! In next two chapters I’m going to show you how I have implemented the persistence layer and the event sourcing layer.</p>
-<p>Stay tuned for more updates!</p>
-]]></content>
-      <tags>
-        <tag>openapi</tag>
-        <tag>vertx</tag>
-        <tag>development</tag>
-        <tag>web</tag>
-        <tag>web api contract</tag>
-        <tag>openapi 3</tag>
-        <tag>web api service</tag>
-        <tag>vertx service proxy</tag>
       </tags>
   </entry>
   <entry>
