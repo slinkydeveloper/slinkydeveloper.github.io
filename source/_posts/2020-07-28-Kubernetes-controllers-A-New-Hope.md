@@ -308,3 +308,5 @@ Some interesting issues to follow about Golang and Wasm related to this discussi
 ## There is still a long road ahead
 
 Our long-term goal is to improve the Kubernetes ecosystem, creating a production ready plugin system with low footprint. We encourage the Kubernetes community to give us feedback on our findings and our prototype, so we can work together on shaping the future of Kubernetes controllers!
+
+Check out the second part of this blog post series: [Kubernetes controllers: The Empire Strikes Back](../Kubernetes-controllers-The-Empire-Strikes-Back)

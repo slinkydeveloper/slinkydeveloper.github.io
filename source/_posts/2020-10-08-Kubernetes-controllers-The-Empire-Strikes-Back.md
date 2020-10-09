@@ -5,9 +5,9 @@ date: 2020-10-08 19:42:09
 tags: cloud, kubernetes, rust, webassembly
 ---
 
-In this blog post I want to introduce you some important steps forward we made in our [Extending Kubernetes API In-Process project](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc). If you don't know what I'm talking about, check out the previous post: [Kubernetes Controllers - A new hope](./Kubernetes-controllers-A-New-Hope).
+In this blog post I want to introduce you some important steps forward we made in our [Extending Kubernetes API In-Process project](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc). If you don't know what I'm talking about, check out the previous post: [Kubernetes Controllers - A new hope](../Kubernetes-controllers-A-New-Hope).
 
-We implemented a high-level ABI method to start watchers on Kubernetes resources, as argued in [Next steps](./Kubernetes-controllers-A-New-Hope#Next-Steps) paragraph. This allows us to identify, _at a high level_, the watchers configured by controllers and deduplicate watch requests.
+We implemented a high-level ABI method to start watchers on Kubernetes resources, as argued in [Next steps](../Kubernetes-controllers-A-New-Hope#Next-Steps) paragraph. This allows us to identify, _at a high level_, the watchers configured by controllers and deduplicate watch requests.
 
 Then we worked on modifying our ABI to make it **asynchronous**, in order to invoke the controllers only **on-demand**. Now, we don't spin a thread up for each module, but we wakeup controllers asynchronously when there is a new task to process.
 
@@ -42,7 +42,7 @@ pub(crate) struct WatchRequest {
 ### Controller
 
 When the module invokes the `watch` import, it registers a new watch and returns a watch identifier. This identifier is stored together with a reference to the `Stream<WatchEvent>` in a global map.
-In a similar fashion to `request` ABI discussed in the [previous post](./Kubernetes-controllers-A-New-Hope#The-ABI), we serialize `WatchRequest` data structure in order to pass it to the host.
+In a similar fashion to `request` ABI discussed in the [previous post](../Kubernetes-controllers-A-New-Hope#The-ABI), we serialize `WatchRequest` data structure in order to pass it to the host.
 
 Then, every time the host has a new `WatchEvent` that controller needs to handle, it will invoke `on_event` with the serialized `WatchEvent`. Using the watch identifier, the controller will get back from the global map the associated `Stream` and append to it the deserialized `WatchEvent`.
 
@@ -223,71 +223,155 @@ pub extern "C" fn wakeup_future(future_id: u64, ptr: *const u8, len: usize) {
 }
 ```
 
-### The full flow
+### The complete flow
 
 This is a complete flow of an asynchronous ABI method:
-
-@startuml
-skinparam sequenceArrowThickness 2
-skinparam roundcorner 20
-skinparam maxmessagesize 60
-skinparam sequenceParticipant underline
-
-participant "Controller module" as C
-participant "Host" as H
-
-activate C
-C -> H: do_async()
-H -> C: Returns async operation identifier
-C -> C: run_until_stalled()
-deactivate C
-
-H -> C: wakeup_future(id)
-@enduml
 
 {% mermaid sequenceDiagram %}
 participant C as Controller module
 participant H as Host
-Alice->>John: Hello John, how are you?
-loop Healthcheck
-    John->>John: Fight against hypochondria
-end
-Note right of John: Rational thoughts!
-John-->>Alice: Great!
-John->>Bob: How about you?
-Bob-->>John: Jolly good!
+
+activate C
+C ->> H: do_async()
+activate H
+H ->> C: Returns async operation identifier
+C ->> C: run_until_stalled()
+deactivate C
+Note over H: Waiting for the async result
+H ->> C: wakeup_future()
+deactivate H
+activate C
+C ->> C: run_until_stalled()
+deactivate C
 {% endmermaid %}
 
-
 You can find the complete code regarding `async`/`await` support here: [`executor.rs`](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/blob/master/kube-rs/src/abi/executor.rs)
+
+### More async ABI methods!
+
+After we implemented `async`/`await` in our WASM modules, we refactored the `request` ABI discussed in [our previous post](../Kubernetes-controllers-A-New-Hope/#The-ABI) as asynchronous ABI method:
+
+```rust
+#[link(wasm_import_module = "http-proxy-abi")]
+extern "C" {
+    fn request(ptr: *const u8, len: usize) -> u64;
+}
+```
+
+Now the returned value is the asynchronous operation identifier and, to signal the completion of the request, the host invokes `wakeup_future`.
+
+We also included a new ABI method to sleep the execution of the module:
+
+```rust
+#[link(wasm_import_module = "delay-abi")]
+extern "C" {
+    fn delay(millis: u64) -> u64;
+}
+```
+
+This is necessary to run the kube-runtime, which performs some sleeps before synchronizing again the internal cache.
 
 ## Redesigning the host as event-driven application
 
 The first implementation of the new `kube-watch-abi` ABI was a little rough: a lot of blocking threads, shared memory across threads, some unsafe sprinkled here and there to make the code compiling.
-Because of that, we redesigned the host to transform it in a full asynchronous application made of channels and message handlers:
+Because of that, we redesigned the host to transform it in a full asynchronous application made of channels and message handlers. For every asynchronous ABI method there is a channel that delivers the _request_ to a message handler, which process the request, computes one or more responses and send them back to another channel. This last channel delivers messages to the `AsyncResultDispatcher`, owner of the module instances, that invokes the `wakeup_future`/`wakeup_stream` of the interested controller.
 
-* aaa
+Today we have 3 different message handlers, one for each async ABI method:
+
+* `kube_watch::Watchers` that controls the watch operation. This message handler is also able to dedup the watch operations
+* `http::start_request_executor` to execute HTTP requests
+* `delay::start_delay_executor` to execute delay requests
+
+When the host loads all the modules, it executes the ABI method `run` for each module, then it transfers the ownership of module instances to `AsyncResultDispatcher` that will start listening for new `AsyncResult` messages on its ingress channel.
+
+Because all the message handlers and channels are `async`/`await` based, if all the handlers are in idle, virtually no resource is wasted with threads waiting.
+
+Since `AsyncResultDispatcher` controls all the different module instances, it avoids invoking in parallel the same controller: `LocalLoop` is a single threaded async task executor, hence a module cannot process in parallel multiple async results.
 
 ## Compiling kube-runtime to WASM
 
+Thanks to all the async changes, we managed to realign most of the APIs of `kube-rs` to the original ones. This allowed us to port `kube-runtime` to our WASM controllers.
+
+{% cq %}
+The kube_runtime crate contains sets of higher level abstractions on top of the Api and Resource types so that you don't have to do all the watch/resourceVersion/storage book-keeping yourself. {}
+{% endcq %}
+
+The problem we experienced with compiling `kube-runtime` to WASM is that it depends on `tokio::time::DelayQueue`, a queue that yields components up to a specified deadline. `DelayQueue` uses the `Future` type called `Delay` to effectively implement delays. The problem with this `Delay` is that it's implemented using the internal ticker of the Tokio async task executor `Runtime`, which we don't use inside WASM modules.
+
+In order to fix this issue, we had to fork the implementation of `tokio::time::DelayQueue` and reimplement the `Delay` type using the `delay` ABI showed previously:
+
+```rust
+pub struct Delay {
+    fut: Pin<Box<dyn Future<Output=()> + Send>>,
+    deadline: Instant
+}
+
+impl Delay {
+    pub(crate) fn new_timeout(deadline: Instant) -> Delay {
+        let now = Instant::now();
+        match deadline.checked_duration_since(now) {
+            Some(dur) => Delay {
+                fut: Box::pin(kube::abi::register_delay(dur)),
+                deadline
+            },
+            None => Delay {
+                fut: Box::pin(futures::future::ready(())),
+                deadline: now
+            }
+        }
+    }
+
+    // [...]
+}
+
+impl Future for Delay {
+    type Output = ();
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Self::Output> {
+        self.fut.as_mut().poll(cx)
+    }
+}
+```
+
+With the custom implementation of `DelayQueue`, the `rust-runtime` compiled successfully to WASM, and we managed to port our controllers to use it!
+
+```rust
+async fn main() {
+    let client = Client::default();
+
+    let simple_pods: Api<SimplePod> = Api::namespaced(client.clone(), "default");
+    let pods: Api<Pod> = Api::namespaced(client.clone(), "default");
+
+    Controller::new(simple_pods, ListParams::default())
+        .owns(pods, ListParams::default())
+        .run(reconcile, error_policy, Context::new(Data { client }))
+        .for_each(|res| async move { match res {
+            Ok((obj, _)) => println!("Reconciled {:?}", obj),
+            Err(e) => println!("Reconcile error: {:?}", e),
+        }}).await;
+}
+```
+
 ## Show me the code!
 
-If you want to check out all the different changes, look at these PRs:
+You can check out the complete code of controllers today here: [simple-pod controller](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/blob/master/ext-simple-pod/src/lib.rs)
 
-* [Event system and implementation of `watch` ABI](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/6)
-* [Refactor of the host as event-driven application](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/7)
-* [`async`/`await` + `watch` returns `Stream`](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/8)
-* [Non blocking HTTP proxy ABI](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/9)
-* [Non blocking `delay` ABI](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/10)
-* [Kube runtime port](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/11)
+If you want to look at all the different changes the project went through, look at these PRs:
+
+1. [Event system and implementation of `watch` ABI](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/6)
+1. [Refactor of the host as event-driven application](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/7)
+1. [`async`/`await` + `watch` returns `Stream`](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/8)
+1. [Non blocking HTTP proxy ABI](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/9)
+1. [Non blocking `delay` ABI](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/10)
+1. [Kube runtime port](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/11)
 
 ## Next steps
 
-Now the controller module looks like a real Kubernetes controller: the difference is minimal to a controller targeting the usual deployment style. We also opened up a door for important optimizations, thanks to the `watch` ABI method. 
+Now the controller module looks like a real Kubernetes controller: the difference is minimal to a controller targeting the usual deployment style. We also opened up a door for important optimizations, thanks to the `watch` ABI method. The host refactoring and the async ABI methods should also simplify the future interaction with Golang WASM controllers, because our ABI now resembles the asynchronous semantics of their WASM ABI. 
 
 Our next goals are:
 
-* Hack the Golang compiler to fit our ABI (or a similar one). For more info check out the [previous blog post](./Kubernetes-controllers-A-New-Hope#Wait-where-is-Golang)
+* Hack the Golang compiler to fit our ABI (or a similar one). For more info check out the [previous blog post](../Kubernetes-controllers-A-New-Hope#Wait-where-is-Golang)
 * Perform a comparison in terms of resource utilization between this deployment style using WASM modules and the usual one of 1 container per controller.
 * Figure out how to handle the different `ServiceAccount`s per controller
 
