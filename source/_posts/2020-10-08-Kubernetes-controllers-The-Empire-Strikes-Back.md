@@ -293,7 +293,7 @@ Since `AsyncResultDispatcher` controls all the different module instances, it av
 Thanks to all the async changes, we managed to realign most of the APIs of `kube-rs` to the original ones. This allowed us to port `kube-runtime` to our WASM controllers.
 
 {% cq %}
-The kube_runtime crate contains sets of higher level abstractions on top of the Api and Resource types so that you don't have to do all the watch/resourceVersion/storage book-keeping yourself. {}
+The kube_runtime crate contains sets of higher level abstractions on top of the Api and Resource types so that you don't have to do all the watch/resourceVersion/storage book-keeping yourself.
 {% endcq %}
 
 The problem we experienced with compiling `kube-runtime` to WASM is that it depends on `tokio::time::DelayQueue`, a queue that yields components up to a specified deadline. `DelayQueue` uses the `Future` type called `Delay` to effectively implement delays. The problem with this `Delay` is that it's implemented using the internal ticker of the Tokio async task executor `Runtime`, which we don't use inside WASM modules.
