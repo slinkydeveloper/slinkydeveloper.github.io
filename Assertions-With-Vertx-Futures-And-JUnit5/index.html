@@ -32,7 +32,7 @@
 <meta property="og:description" content="Write beautiful async assertions with Vert.x Futures and Vert.x JUnit 5">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2018-10-29T13:46:00.000Z">
-<meta property="article:modified_time" content="2020-10-08T14:07:01.911Z">
+<meta property="article:modified_time" content="2020-10-27T14:46:32.093Z">
 <meta property="article:author" content="Software Engineer">
 <meta property="article:tag" content="vertx">
 <meta property="article:tag" content="development">
@@ -248,7 +248,7 @@ window.cookieconsent.initialise({
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">16</span>
+          <span class="site-state-item-count">17</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -340,7 +340,7 @@ window.cookieconsent.initialise({
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 08-10-2020 16:07:01" itemprop="dateModified" datetime="2020-10-08T16:07:01+02:00">08-10-2020</time>
+        <time title="Modified: 27-10-2020 15:46:32" itemprop="dateModified" datetime="2020-10-27T15:46:32+01:00">27-10-2020</time>
       </span>
 
   
@@ -501,6 +501,19 @@ window.cookieconsent.initialise({
 
 
 
+<script>
+if (document.querySelectorAll('.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8.8.0/dist/mermaid.min.js', () => {
+    mermaid.init({
+      theme    : 'forest',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    }, '.mermaid');
+  }, window.mermaid);
+}
+</script>
 
 
 

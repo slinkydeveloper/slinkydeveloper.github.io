@@ -241,7 +241,7 @@ window.cookieconsent.initialise({
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">16</span>
+          <span class="site-state-item-count">17</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -300,13 +300,33 @@ window.cookieconsent.initialise({
   <div class="post-block">
     <div class="post-content">
       <div class="collection-title">
-        <span class="collection-header">Um..! 16 posts in total. Keep on posting.</span>
+        <span class="collection-header">Um..! 17 posts in total. Keep on posting.</span>
       </div>
 
       
     <div class="collection-year">
       <span class="collection-header">2020</span>
     </div>
+
+  <article itemscope itemtype="http://schema.org/Article">
+    <header class="post-header">
+      <div class="post-meta-container">
+        <time itemprop="dateCreated"
+              datetime="2020-10-08T19:42:09+02:00"
+              content="08-10-2020">
+          10-08
+        </time>
+      </div>
+
+      <div class="post-title">
+          <a class="post-title-link" href="/Kubernetes-controllers-The-Empire-Strikes-Back/" itemprop="url">
+            <span itemprop="name">Kubernetes controllers - The Empire Strikes Back</span>
+          </a>
+      </div>
+
+      
+    </header>
+  </article>
 
   <article itemscope itemtype="http://schema.org/Article">
     <header class="post-header">
@@ -429,6 +449,19 @@ window.cookieconsent.initialise({
 
 
 
+<script>
+if (document.querySelectorAll('.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8.8.0/dist/mermaid.min.js', () => {
+    mermaid.init({
+      theme    : 'forest',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    }, '.mermaid');
+  }, window.mermaid);
+}
+</script>
 
 
 
