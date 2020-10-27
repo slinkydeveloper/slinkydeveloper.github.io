@@ -1,17 +1,17 @@
 ---
 title: Kubernetes controllers - The Empire Strikes Back
-description: In this blog post I want to introduce you some important steps forward we made in our Extending Kubernetes API In-Process project. We implemented an high level watch ABI method, we made the host asynchronous, we invoke the controllers only on-demand without wasting resources and we finally use the full-fledged kube-runtime to create the controllers.
+description: In this blog post I want to introduce you to some important steps forward we made in our Extending Kubernetes API In-Process project. We implemented an high level watch ABI, we made the host asynchronous, we invoke the controllers only on-demand without wasting resources and we finally use the full-fledged kube-runtime to create the controllers.
 date: 2020-10-08 19:42:09
 tags: cloud, kubernetes, rust, webassembly
 ---
 
-In this blog post I want to introduce you some important steps forward we made in our [Extending Kubernetes API In-Process project](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc). If you don't know what I'm talking about, check out the previous post: [Kubernetes Controllers - A new hope](../Kubernetes-controllers-A-New-Hope).
+In this blog post I want to introduce you to some important steps forward we made in our [Extending Kubernetes API In-Process project](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc). If you don't know what I'm talking about, check out the previous post: [Kubernetes Controllers - A new hope](../Kubernetes-controllers-A-New-Hope).
 
-We implemented a high-level ABI method to start watchers on Kubernetes resources, as argued in [Next steps](../Kubernetes-controllers-A-New-Hope#Next-Steps) paragraph. This allows us to identify, _at a high level_, the watchers configured by controllers and deduplicate watch requests.
+We implemented the high-level ABI to start watchers on Kubernetes resources, as argued in [Next steps](../Kubernetes-controllers-A-New-Hope#Next-Steps) paragraph. This allows us to identify watch requests sent by controllers and to deduplicate them.
 
-Then we worked on modifying our ABI to make it **asynchronous**, in order to invoke the controllers only **on-demand**. Now, we don't spin a thread up for each module, but we wakeup controllers asynchronously when there is a new task to process.
+Then we worked on modifying our ABI to make it **asynchronous**, in order to invoke the controllers only **on-demand**. Now, we don't spin up a thread for each module, but we wake controllers up asynchronously when there is a new task to process.
 
-Thanks to these changes, we're now able to use Rust `async`/`await` inside the module. This allowed us to realign our fork of `kube-rs`, bringing back all the original interfaces, and run `kube-runtime` inside the modules.
+Thanks to these changes, we're now able to use Rust's `async`/`await` inside the module. This allowed us to realign our fork of `kube-rs`, bringing back all the original interfaces, and run `kube-runtime` inside the modules.
 
 ## The `kube-watch-abi` ABI
 
@@ -42,20 +42,20 @@ pub(crate) struct WatchRequest {
 ### Controller
 
 When the module invokes the `watch` import, it registers a new watch and returns a watch identifier. This identifier is stored together with a reference to the `Stream<WatchEvent>` in a global map.
-In a similar fashion to `request` ABI discussed in the [previous post](../Kubernetes-controllers-A-New-Hope#The-ABI), we serialize `WatchRequest` data structure in order to pass it to the host.
+In similar fashion to the `request` ABI discussed in the [previous post](../Kubernetes-controllers-A-New-Hope#The-ABI), we serialize the `WatchRequest` data structure in order to pass it to the host.
 
-Then, every time the host has a new `WatchEvent` that controller needs to handle, it will invoke `on_event` with the serialized `WatchEvent`. Using the watch identifier, the controller will get back from the global map the associated `Stream` and append to it the deserialized `WatchEvent`.
+Then, every time the host has a new `WatchEvent` that the controller needs to handle, it will invoke `on_event` with the serialized `WatchEvent`. Using the watch identifier, the controller will get the associated `Stream` from the global map and append the deserialized `WatchEvent` to it.
 
 ### The host
 
 When the controller invokes `watch`, the host checks if there is a registered watch for that resource. If there is, then it just registers the invoker as interested to that watch, otherwise it starts a new watch.
-Every time a watch receives a new event from Kubernetes, the host resolves all the modules interested to that particular event. For each module, it allocates some module memory to pass the event and it finally wake up again the controller with `on_event`.
+Every time a watch receives a new event from Kubernetes, the host resolves all the modules interested to that particular event. For each module, it allocates some module memory to pass the event and it finally wakes the controller up by invoking `on_event`.
 
 ## Rust module with async-await
 
 ### Callbacks are bad!
 
-The `kube-watch-abi` is de-facto an asynchronous API: `watch` starts the asynchronous operation, `on_event` notifies the completion of the operation. 
+The `kube-watch-abi` is the de-facto an asynchronous API: `watch` starts the asynchronous operation, `on_event` notifies on the completion of the operation. 
 
 In the initial implementation of the `watch`, on module side, I just modified the kube client `watch` to provide a callback:
 
@@ -66,17 +66,17 @@ pub fn watch<F: 'static + Fn(WatchEvent<K>) + Send>(&self, lp: &ListParams, vers
 ```
 
 Every time `on_event` was invoked, the module resolved the callback from the watch identifier and invoked it.
-This is fine as initial approach, but we soon hit a problem: porting all the existing Kubernetes client and runtime code from `async`/`await` to the more _primitive_ callbacks could have caused a lot of issues, making the fork too much divergent from the upstream code.
+This was fine as an initial approach, but we soon hit a problem: Porting all of the existing Kubernetes client and runtime code from `async`/`await` to the more _primitive_ callbacks could have caused a lot of issues, making the fork diverge too much from the upstream code.
 
 ### How `async`/`await` works
 
-Here's for you a little refresh on `async`/`await` from [Asynchronous Programming in Rust book](https://rust-lang.github.io/async-book/01_getting_started/04_async_await_primer.html):
+Here's a little refresh on `async`/`await` from [Asynchronous Programming in Rust book](https://rust-lang.github.io/async-book/01_getting_started/04_async_await_primer.html):
 
 {% cq %}
 async/.await is Rust's built-in tool for writing asynchronous functions that look like synchronous code. async transforms a block of code into a state machine that implements a trait called Future. Whereas calling a blocking function in a synchronous method would block the whole thread, blocked Futures will yield control of the thread, allowing other Futures to run._
 {% endcq %}
 
-Although there are a lot of details about how Rust implements the `async`/`await` feature, I'm gonna try to summarize the concepts we need for this post:
+Although there are a lot of details about how Rust implements the `async`/`await` feature, these are the relevant concepts for this post:
 
 * `Future` is the type that represents an asynchronous result, e.g. `async fn` returns a `Future`. You can wait for the result of a `Future` using `.await`.
 * `Stream` is the same as `Future`, but it returns several elements before `None`, which notifies the end of the stream.
@@ -103,20 +103,18 @@ fn main() {
 }
 ```
 
-If you want to know more about it, I encourage you to look at the [Asynchronous Programming in Rust book](https://rust-lang.github.io/async-book/01_getting_started/01_chapter.html).
-
-In our `async`/`await` implementation we implemented the `Future` and `Stream` traits, we reused [LocalPool](https://docs.rs/futures/0.3.6/futures/executor/struct.LocalPool.html) from `futures` crate as task executor, and we generalized `on_event` to notify the asynchronous operation completion.
+In our `async`/`await` implementation we implemented the `Future` and `Stream` traits, we reused [LocalPool](https://docs.rs/futures/0.3.6/futures/executor/struct.LocalPool.html) from the `futures` crate as a task executor, and we generalized `on_event` to notify the asynchronous operation completion.
 
 ### The controller lifecycle
 
 We first analyzed the controller lifecycle:
 
 1. When host invokes `run`, the controller starts a bunch of watchers and then it waits for new events
-2. Every time a new event comes in, the host wakeup again the controller with `on_event` 
+2. Every time a new event comes in, the host wakes the controller up by calling `on_event` 
 
-This means that during the `run` phase, the controller starts a bunch of asynchronous tasks, one or more of them waiting for asynchronous events. After the `run` phase completes, **there is no need to keep the module running**. When we wakeup again the controller, we need to check for any tasks that can continue and run them up to the point where we have all the tasks waiting for an external event.
+This means that during the `run` phase, the controller starts a bunch of asynchronous tasks, one or more of them waiting for asynchronous events. After the `run` phase completes, **there is no need to keep the module running**. When we wake the controller up again, we need to check for any tasks that can continue and run them up to the point where we have all the tasks waiting for an external event.
 
-To implement this lifecycle, we just need to execute both on `run` and `on_event` the executor method [`run_until_stalled()`](https://docs.rs/futures/0.3.6/futures/executor/struct.LocalPool.html#method.run_until_stalled), which will run all tasks in the executor pool and returns if no more progress can be made on any task. This allows us to implement the `run` as following:
+To implement this lifecycle, we need to execute both on `run` and on `on_event` the executor method [`run_until_stalled()`](https://docs.rs/futures/0.3.6/futures/executor/struct.LocalPool.html#method.run_until_stalled), which will run all tasks in the executor pool and returns if no more progress can be made on any task. This allows us to implement `run` as follows:
 
 ```rust
 #[no_mangle]
@@ -188,7 +186,7 @@ pub fn start_future(async_operation_id: u64) -> AbiFuture {
 
 At this point, we took the concept of `on_event` and generalized to `async`/`await`, introducing `wakeup_future`/`wakeup_stream` ABI exports.
 Every time the controller invokes an asynchronous ABI import (like `watch`), it gets the identifier that we use to instantiate our `Future`/`Stream` implementation.
-When the host completed the asynchronous operation, it invokes `wakeup_future`/`wakeup_stream`. The controller marks the `Future`/`Stream` as completed, including the result value, and invokes again `LocalPool::run_until_stalled()` to wakeup tasks waiting for that future/stream to complete.
+When the host completed the asynchronous operation, it invokes `wakeup_future`/`wakeup_stream`. The controller marks the `Future`/`Stream` as completed, including the result value, and invokes `LocalPool::run_until_stalled()` to wake up tasks waiting for that future/stream to complete.
 
 ```rust
 #[no_mangle]
@@ -249,7 +247,7 @@ You can find the complete code regarding `async`/`await` support here: [`executo
 
 ### More async ABI methods!
 
-After we implemented `async`/`await` in our WASM modules, we refactored the `request` ABI discussed in [our previous post](../Kubernetes-controllers-A-New-Hope/#The-ABI) as asynchronous ABI method:
+After we implemented `async`/`await` in our WASM modules, we refactored the `request` ABI discussed in [our previous post](../Kubernetes-controllers-A-New-Hope/#The-ABI) as an asynchronous ABI method:
 
 ```rust
 #[link(wasm_import_module = "http-proxy-abi")]
@@ -269,16 +267,16 @@ extern "C" {
 }
 ```
 
-This is necessary to run the kube-runtime, which performs some sleeps before synchronizing again the internal cache.
+This is necessary to run the kube-runtime, which performs some sleeps before synchronizing the internal cache again.
 
-## Redesigning the host as event-driven application
+## Redesigning the host as an event-driven application
 
 The first implementation of the new `kube-watch-abi` ABI was a little rough: a lot of blocking threads, shared memory across threads, some unsafe sprinkled here and there to make the code compiling.
-Because of that, we redesigned the host to transform it in a full asynchronous application made of channels and message handlers. For every asynchronous ABI method there is a channel that delivers the _request_ to a message handler, which process the request, computes one or more responses and send them back to another channel. This last channel delivers messages to the `AsyncResultDispatcher`, owner of the module instances, that invokes the `wakeup_future`/`wakeup_stream` of the interested controller.
+Because of that, we redesigned the host to transform it in a full asynchronous application made of channels and message handlers. For every asynchronous ABI method there is a channel that delivers the _request_ to a message handler, which processes the request, computes one or more responses and sends them back to another channel. This last channel delivers messages to the `AsyncResultDispatcher`, owner of the module instances, that invokes the `wakeup_future`/`wakeup_stream` of the interested controller.
 
 Today we have 3 different message handlers, one for each async ABI method:
 
-* `kube_watch::Watchers` that controls the watch operation. This message handler is also able to dedup the watch operations
+* `kube_watch::Watchers` that controls the watch operation. This message handler is also able to deduplicate the watch operations
 * `http::start_request_executor` to execute HTTP requests
 * `delay::start_delay_executor` to execute delay requests
 
@@ -286,7 +284,7 @@ When the host loads all the modules, it executes the ABI method `run` for each m
 
 Because all the message handlers and channels are `async`/`await` based, if all the handlers are in idle, virtually no resource is wasted with threads waiting.
 
-Since `AsyncResultDispatcher` controls all the different module instances, it avoids invoking in parallel the same controller: `LocalLoop` is a single threaded async task executor, hence a module cannot process in parallel multiple async results.
+Since `AsyncResultDispatcher` controls all the different module instances, it avoids invoking the same controller in parallel: `LocalLoop` is a single threaded async task executor, hence a module cannot process multiple async results in parallel.
 
 ## Compiling kube-runtime to WASM
 
@@ -298,7 +296,7 @@ The kube_runtime crate contains sets of higher level abstractions on top of the 
 
 The problem we experienced with compiling `kube-runtime` to WASM is that it depends on `tokio::time::DelayQueue`, a queue that yields components up to a specified deadline. `DelayQueue` uses the `Future` type called `Delay` to effectively implement delays. The problem with this `Delay` is that it's implemented using the internal ticker of the Tokio async task executor `Runtime`, which we don't use inside WASM modules.
 
-In order to fix this issue, we had to fork the implementation of `tokio::time::DelayQueue` and reimplement the `Delay` type using the `delay` ABI showed previously:
+In order to fix this issue, we had to fork the implementation of `tokio::time::DelayQueue` and reimplement the `Delay` type using the `delay` ABI shown previously:
 
 ```rust
 pub struct Delay {
