@@ -56,7 +56,9 @@ google_analytics:
 mermaid:
   enable: true
   # Available themes: default | dark | forest | neutral
-  theme: forest
+  theme:
+    light: default
+    dark: dark
 
 codeblock:
   # Code Highlight theme
