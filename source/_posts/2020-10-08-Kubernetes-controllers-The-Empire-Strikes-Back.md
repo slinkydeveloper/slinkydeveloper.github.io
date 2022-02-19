@@ -2,7 +2,7 @@
 title: Kubernetes controllers - The Empire Strikes Back
 description: In this blog post I want to introduce you to some important steps forward we made in our Extending Kubernetes API In-Process project. We implemented an high level watch ABI, we made the host asynchronous, we invoke the controllers only on-demand without wasting resources and we finally use the full-fledged kube-runtime to create the controllers.
 date: 2020-10-08 19:42:09
-tags: cloud, kubernetes, rust, webassembly
+tags: [cloud, kubernetes, rust, webassembly]
 ---
 
 In this blog post I want to introduce you to some important steps forward we made in our [Extending Kubernetes API In-Process project](https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc). If you don't know what I'm talking about, check out the previous post: [Kubernetes Controllers - A new hope](../Kubernetes-controllers-A-New-Hope).

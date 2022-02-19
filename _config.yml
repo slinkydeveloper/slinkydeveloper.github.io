@@ -95,3 +95,7 @@ githubEmojis:
   className: github-emoji
   styles:
   customEmojis:
+
+markdown:
+  plugins:
+    - markdown-it-footnote

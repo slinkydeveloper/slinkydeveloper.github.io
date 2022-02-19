@@ -2,7 +2,7 @@
 title: Reproducibility of benchmarks in Kubernetes
 description: "Today I'm going to talk you about how I've managed to run a benchmark inside Kubernetes in a reproducible manner"
 date: 2019-12-02 15:49:53
-tags: cloud, kubernetes, serverless, knative
+tags: [cloud, kubernetes, serverless, knative]
 ---
 
 Hi everybody! Today I'm going to talk you about how I've managed to run a benchmark **inside** Kubernetes in a **reproducible** manner.
@@ -29,7 +29,7 @@ I won't cover all aspects of Knative Eventing, If you want to learn more about i
 
 Knative, among the others, provides the concept of `Channel`, a flow of events from one or more producers to one or more subscribed consumers:
 
-{%fi /images/reproducibility-k8s/channel.png, Knative Channel, From source to user application, through a Channel %}
+{% img /images/reproducibility-k8s/channel.png "From source to user application, through a Channel" %}
 
 To push events into the channel you interact with its HTTP interface, while to receive events from the channel you subscribe to it, specifying at what HTTP endpoint the channel should send the events. Behind the hood, a pod called _dispatcher_ is actually serving the HTTP interface for inbound events, managing the interaction with the messaging system and dispatching the events to the subscribers.
 

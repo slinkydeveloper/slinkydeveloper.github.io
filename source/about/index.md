@@ -6,7 +6,14 @@ date: 2019-01-20 15:51:24
 {% raw %}
 <div class="timeline-container">
 
-	<div class="timeline-item" date-is='From August 2019'>
+	<div class="timeline-item" date-is='From September 2021'>
+		<h1>Software Engineer at Ververica</h1>
+		<p>
+      Joined the <a href="https://flink.apache.org/">Apache Flink</a> SQL team, developing the SQL parser, planner, optimizer and runtime.
+		</p>
+	</div>
+
+	<div class="timeline-item" date-is='August 2019 - July 2021'>
 		<h1>Software Engineer at Red Hat</h1>
 		<p>
       Joined the <a href="https://www.openshift.com/learn/topics/serverless">Openshift Cloud Functions</a> team to focus on Serverless technologies and Event Driven FaaS applications, with a particular focus on <a href="https://knative.dev/">Knative</a> and <a href="https://cloudevents.io/">CloudEvents</a>

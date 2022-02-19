@@ -13,7 +13,7 @@ If you are new to Vert.x, before going further I strongly suggest you to read [v
 
 **Vert.x Web** is a library built on top of Vert.x to create web applications. It provides high level features like routing, request body handling, authorization, etc. The core concept of Vert.x Web is the `Router` which an object that can route requests to one or more `Route`s based on a set of rules like HTTP method, HTTP path, accepted content types, etc. On each `Route` you can define one or more `Handler`s that contain the logic to process the request. When a `Router` receives a request it creates a `RoutingContext` object which has all methods to read the request, write the response, call the next `Handler` and fail the context. Each `Handler` that you register consumes the request's `RoutingContext`. Vert.x Web also provides some common handlers like the `BodyHandler` that parses the request body and the `AuthHandler` that manages authN/Z of the request
 
-{%fi /images/tutorial-debts-manager/vertx-web-1.png, Vert.x Web example architecture, Example architecture using Vert.x Web %}
+{% img /images/tutorial-debts-manager/vertx-web-1.png "Example architecture using Vert.x Web" %}
 
 **Vert.x Web API Contract** generates a `Router` starting from an OpenAPI definition. Everything revolves around an object called `RouterFactory`: you create the contract, you specify to the `RouterFactory` what are the handlers for the defined operations and it generates the Vert.x Web `Router` for you. The `RouterFactory` does some magics behind the hood to provide you a `Router` that:
 
@@ -21,12 +21,12 @@ If you are new to Vert.x, before going further I strongly suggest you to read [v
 - Correctly routes the requests to the right operation handlers by generating the correct `Route` instances
 - Has the required security handlers mounted in the right `Route`s
 
-{%fi /images/tutorial-debts-manager/vertx-web-2.png, Vert.x Web & Vert.x Web API Contract example architecture, Example architecture using Vert.x Web & Vert.x Web API Contract %}
+{% img /images/tutorial-debts-manager/vertx-web-2.png "Example architecture using Vert.x Web & Vert.x Web API Contract" %}
 
 **Vert.x Web API Service** is a code generator based on concept of [Vert.x Service Proxy](https://vertx.io/docs/vertx-service-proxy/java/). An [event bus](https://vertx.io/docs/vertx-core/java/#event_bus) service is a Java interface that helps you to define in a more natural way an event bus message consumer. This approach leads to different benefits like the straightforward process to test a message consumer like any other Java class. As every EB event consumer, a service can inhabit inside the same verticle or it can be deployed in another application somewhere else in your microservices network. You can use the Vert.x Web API Service in order to mix Contract Driven capabilites provided by Vert.x WAC and these event bus service features.
  When you use EB API Services, you don't put the business logic inside the `Route` handlers, but you can distribute it inside different services. Then by using Vert.x WAC, you can manage the linking between these services and the `Router` instance
 
-{%fi /images/tutorial-debts-manager/vertx-web-3.png, Vert.x Web/Vert.x Web API Contract/Vert.x Web API Service example architecture, Example architecture using Vert.x Web & Vert.x Web API Contract & Vert.x Web API Service %}
+{% img /images/tutorial-debts-manager/vertx-web-3.png "Example architecture using Vert.x Web & Vert.x Web API Contract & Vert.x Web API Service" %}
 
 ## Define the API Services
 
@@ -74,11 +74,11 @@ components:
 
 Now open the [vertx-starter](https://vertx-starter.jetdrone.xyz/#maven) page and with just a couple of clicks you have a zip with the project scaffolded!
 
-{%fi /images/tutorial-debts-manager/vertx-starter-screenshot.png, Vert.x Starter screenshot %}
+{% img /images/tutorial-debts-manager/vertx-starter-screenshot.png "Vert.x Starter screenshot" %}
 
 Let's dig into the generated code:
 
-{%fi /images/tutorial-debts-manager/generated-code-tree.png, Vert.x Starter generated code tree %}
+{% img /images/tutorial-debts-manager/generated-code-tree.png "Vert.x Starter generated code tree" %}
 
 The scaffolder created for you:
 

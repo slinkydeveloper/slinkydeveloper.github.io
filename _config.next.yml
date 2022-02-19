@@ -57,3 +57,10 @@ mermaid:
   enable: true
   # Available themes: default | dark | forest | neutral
   theme: forest
+
+codeblock:
+  # Code Highlight theme
+  # All available themes: https://theme-next.js.org/highlight/
+  theme:
+    light: default
+    dark: stackoverflow-dark
