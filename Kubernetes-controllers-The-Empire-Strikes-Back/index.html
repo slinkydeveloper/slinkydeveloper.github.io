@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.0.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/safari-pinned-tab.svg" color="#222">
+  <link rel="manifest" href="/images/manifest.json">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"slinkydeveloper.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.10.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+  <meta name="description" content="In this blog post I want to introduce you to some important steps forward we made in our Extending Kubernetes API In-Process project. We implemented an high level watch ABI, we made the host asynchron">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kubernetes controllers - The Empire Strikes Back">
+<meta property="og:url" content="https://slinkydeveloper.com/Kubernetes-controllers-The-Empire-Strikes-Back/index.html">
+<meta property="og:site_name" content="Slinky&#39;s corner">
+<meta property="og:description" content="In this blog post I want to introduce you to some important steps forward we made in our Extending Kubernetes API In-Process project. We implemented an high level watch ABI, we made the host asynchron">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-10-08T17:42:09.000Z">
+<meta property="article:modified_time" content="2023-08-28T15:56:42.185Z">
+<meta property="article:author" content="Software Engineer">
+<meta property="article:tag" content="cloud">
+<meta property="article:tag" content="kubernetes">
+<meta property="article:tag" content="rust">
+<meta property="article:tag" content="webassembly">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://slinkydeveloper.com/Kubernetes-controllers-The-Empire-Strikes-Back/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://slinkydeveloper.com/Kubernetes-controllers-The-Empire-Strikes-Back/","path":"Kubernetes-controllers-The-Empire-Strikes-Back/","title":"Kubernetes controllers - The Empire Strikes Back"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Kubernetes controllers - The Empire Strikes Back | Slinky's corner</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-39408029-2"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-39408029-2","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.1.0/cookieconsent.min.css" />
+<script src="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.1.0/cookieconsent.min.js"></script>
+<script>
+window.addEventListener("load", function(){
+window.cookieconsent.initialise({
+  "palette": {
+    "popup": {
+      "background": "#252e39"
+    },
+    "button": {
+      "background": "#14a7d0"
+    }
+  }
+})});
+</script>
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Slinky's corner" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Slinky's corner</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Personal blog of Francesco Guardiani, Software Engineer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="home fa-fw"></i>Home</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="user fa-fw"></i>About</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#The-kube-watch-abi-ABI"><span class="nav-number">1.</span> <span class="nav-text">The kube-watch-abi ABI</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Controller"><span class="nav-number">1.1.</span> <span class="nav-text">Controller</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#The-host"><span class="nav-number">1.2.</span> <span class="nav-text">The host</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Rust-module-with-async-await"><span class="nav-number">2.</span> <span class="nav-text">Rust module with async-await</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Callbacks-are-bad"><span class="nav-number">2.1.</span> <span class="nav-text">Callbacks are bad!</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#How-async-await-works"><span class="nav-number">2.2.</span> <span class="nav-text">How async&#x2F;await works</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#The-controller-lifecycle"><span class="nav-number">2.3.</span> <span class="nav-text">The controller lifecycle</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Our-custom-Future-Stream"><span class="nav-number">2.4.</span> <span class="nav-text">Our custom Future&#x2F;Stream</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Generalizing-on-event-to-wakeup-future-wakeup-stream"><span class="nav-number">2.5.</span> <span class="nav-text">Generalizing on_event to wakeup_future&#x2F;wakeup_stream</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#The-complete-flow"><span class="nav-number">2.6.</span> <span class="nav-text">The complete flow</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#More-async-ABI-methods"><span class="nav-number">2.7.</span> <span class="nav-text">More async ABI methods!</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Redesigning-the-host-as-an-event-driven-application"><span class="nav-number">3.</span> <span class="nav-text">Redesigning the host as an event-driven application</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Compiling-kube-runtime-to-WASM"><span class="nav-number">4.</span> <span class="nav-text">Compiling kube-runtime to WASM</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Show-me-the-code"><span class="nav-number">5.</span> <span class="nav-text">Show me the code!</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Next-steps-2"><span class="nav-number">6.</span> <span class="nav-text">Next steps</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Software Engineer</p>
+  <div class="site-description" itemprop="description">Personal blog of Francesco Guardiani, Software Engineer</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/slinkydeveloper" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;slinkydeveloper" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:francescoguard@gmail.com" title="E-Mail → mailto:francescoguard@gmail.com" rel="noopener" target="_blank"><i class="envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/SlinkyGuardiani" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;SlinkyGuardiani" rel="noopener" target="_blank"><i class="twitter fa-fw"></i>Twitter</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://stackoverflow.com/users/2399055/francesco-guardiani" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;2399055&#x2F;francesco-guardiani" rel="noopener" target="_blank"><i class="stack-overflow fa-fw"></i>StackOverflow</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://slinkydeveloper.com/Kubernetes-controllers-The-Empire-Strikes-Back/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Software Engineer">
+      <meta itemprop="description" content="Personal blog of Francesco Guardiani, Software Engineer">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Slinky's corner">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Kubernetes controllers - The Empire Strikes Back
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 08-10-2020 19:42:09" itemprop="dateCreated datePublished" datetime="2020-10-08T19:42:09+02:00">08-10-2020</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 28-08-2023 17:56:42" itemprop="dateModified" datetime="2023-08-28T17:56:42+02:00">28-08-2023</time>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">In this blog post I want to introduce you to some important steps forward we made in our Extending Kubernetes API In-Process project. We implemented an high level watch ABI, we made the host asynchronous, we invoke the controllers only on-demand without wasting resources and we finally use the full-fledged kube-runtime to create the controllers.</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>In this blog post I want to introduce you to some important steps forward we made in our <a target="_blank" rel="noopener" href="https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc">Extending Kubernetes API In-Process project</a>. If you don’t know what I’m talking about, check out the previous post: <a href="../Kubernetes-controllers-A-New-Hope">Kubernetes Controllers - A new hope</a>.</p>
+<p>We implemented the high-level ABI to start watchers on Kubernetes resources, as argued in <a href="../Kubernetes-controllers-A-New-Hope#Next-Steps">Next steps</a> paragraph. This allows us to identify watch requests sent by controllers and to deduplicate them.</p>
+<p>Then we worked on modifying our ABI to make it <strong>asynchronous</strong>, in order to invoke the controllers only <strong>on-demand</strong>. Now, we don’t spin up a thread for each module, but we wake controllers up asynchronously when there is a new task to process.</p>
+<p>Thanks to these changes, we’re now able to use Rust’s <code>async</code>/<code>await</code> inside the module. This allowed us to realign our fork of <code>kube-rs</code>, bringing back all the original interfaces, and run <code>kube-runtime</code> inside the modules.</p>
+<h2 id="The-kube-watch-abi-ABI">The <code>kube-watch-abi</code> ABI</h2>
+<p>The <code>kube-watch-abi</code> ABI was originally composed by an import and an export:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[link(wasm_import_module = <span class="string">&quot;kube-watch-abi&quot;</span>)]</span></span><br><span class="line"><span class="keyword">extern</span> <span class="string">&quot;C&quot;</span> &#123;</span><br><span class="line">    <span class="comment">// Returns the watch identifier</span></span><br><span class="line">    <span class="keyword">fn</span> <span class="title function_">watch</span>(watch_req_ptr: *<span class="keyword">const</span> <span class="type">u8</span>, watch_req_len: <span class="type">usize</span>) <span class="punctuation">-&gt;</span> <span class="type">u64</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">extern</span> <span class="string">&quot;C&quot;</span> <span class="keyword">fn</span> <span class="title function_">on_event</span>(watch_id: <span class="type">u64</span>, ev_ptr: *<span class="keyword">const</span> <span class="type">u8</span>, ev_len: <span class="type">usize</span>) &#123;</span><br><span class="line">    <span class="comment">// handle event</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>The <code>watch_req</code> is a description of the watch to register:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_ invoke__">pub</span>(<span class="keyword">crate</span>) <span class="keyword">struct</span> <span class="title class_">WatchRequest</span> &#123;</span><br><span class="line">    <span class="title function_ invoke__">pub</span>(<span class="keyword">crate</span>) resource: Resource,</span><br><span class="line">    <span class="title function_ invoke__">pub</span>(<span class="keyword">crate</span>) watch_params: WatchParams</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="Controller">Controller</h3>
+<p>When the module invokes the <code>watch</code> import, it registers a new watch and returns a watch identifier. This identifier is stored together with a reference to the <code>Stream&lt;WatchEvent&gt;</code> in a global map.<br>
+In similar fashion to the <code>request</code> ABI discussed in the <a href="../Kubernetes-controllers-A-New-Hope#The-ABI">previous post</a>, we serialize the <code>WatchRequest</code> data structure in order to pass it to the host.</p>
+<p>Then, every time the host has a new <code>WatchEvent</code> that the controller needs to handle, it will invoke <code>on_event</code> with the serialized <code>WatchEvent</code>. Using the watch identifier, the controller will get the associated <code>Stream</code> from the global map and append the deserialized <code>WatchEvent</code> to it.</p>
+<h3 id="The-host">The host</h3>
+<p>When the controller invokes <code>watch</code>, the host checks if there is a registered watch for that resource. If there is, then it just registers the invoker as interested to that watch, otherwise it starts a new watch.<br>
+Every time a watch receives a new event from Kubernetes, the host resolves all the modules interested to that particular event. For each module, it allocates some module memory to pass the event and it finally wakes the controller up by invoking <code>on_event</code>.</p>
+<h2 id="Rust-module-with-async-await">Rust module with async-await</h2>
+<h3 id="Callbacks-are-bad">Callbacks are bad!</h3>
+<p>The <code>kube-watch-abi</code> is the de-facto an asynchronous API: <code>watch</code> starts the asynchronous operation, <code>on_event</code> notifies on the completion of the operation.</p>
+<p>In the initial implementation of the <code>watch</code>, on module side, I just modified the kube client <code>watch</code> to provide a callback:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">watch</span>&lt;F: <span class="symbol">&#x27;static</span> + <span class="title function_ invoke__">Fn</span>(WatchEvent&lt;K&gt;) + <span class="built_in">Send</span>&gt;(&amp;<span class="keyword">self</span>, lp: &amp;ListParams, version: &amp;<span class="type">str</span>, callback: F) &#123;</span><br><span class="line">    <span class="comment">// Invoke watch</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Every time <code>on_event</code> was invoked, the module resolved the callback from the watch identifier and invoked it.<br>
+This was fine as an initial approach, but we soon hit a problem: Porting all of the existing Kubernetes client and runtime code from <code>async</code>/<code>await</code> to the more <em>primitive</em> callbacks could have caused a lot of issues, making the fork diverge too much from the upstream code.</p>
+<h3 id="How-async-await-works">How <code>async</code>/<code>await</code> works</h3>
+<p>Here’s a little refresh on <code>async</code>/<code>await</code> from <a target="_blank" rel="noopener" href="https://rust-lang.github.io/async-book/01_getting_started/04_async_await_primer.html">Asynchronous Programming in Rust book</a>:</p>
+<blockquote class="blockquote-center">
+<p>async/.await is Rust’s built-in tool for writing asynchronous functions that look like synchronous code. async transforms a block of code into a state machine that implements a trait called Future. Whereas calling a blocking function in a synchronous method would block the whole thread, blocked Futures will yield control of the thread, allowing other Futures to run._</p>
+
+</blockquote>
+<p>Although there are a lot of details about how Rust implements the <code>async</code>/<code>await</code> feature, these are the relevant concepts for this post:</p>
+<ul>
+<li><code>Future</code> is the type that represents an asynchronous result, e.g. <code>async fn</code> returns a <code>Future</code>. You can wait for the result of a <code>Future</code> using <code>.await</code>.</li>
+<li><code>Stream</code> is the same as <code>Future</code>, but it returns several elements before <code>None</code>, which notifies the end of the stream.</li>
+<li>In order to use <code>.await</code>, you <strong>must</strong> be in an <code>async</code> code block.</li>
+<li>In order to run an <code>async</code> code block, you need to use a task executor.</li>
+</ul>
+<p>For example:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">use</span> futures::executor::LocalPool;</span><br><span class="line"></span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">main</span>() &#123;</span><br><span class="line">    <span class="comment">// Create the executor</span></span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">pool</span> = LocalPool::<span class="title function_ invoke__">new</span>();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Spawn an async task</span></span><br><span class="line">    poll.<span class="title function_ invoke__">spawner</span>().<span class="title function_ invoke__">spawn</span>(<span class="keyword">async</span> &#123;</span><br><span class="line">        <span class="comment">// execute `my_async_fn()` and await for the result</span></span><br><span class="line">        <span class="title function_ invoke__">my_async_fn</span>().<span class="keyword">await</span></span><br><span class="line">    &#125;);    </span><br><span class="line"></span><br><span class="line">    <span class="comment">// Block the main thread until all the tasks are done</span></span><br><span class="line">    pool.<span class="title function_ invoke__">run</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>In our <code>async</code>/<code>await</code> implementation we implemented the <code>Future</code> and <code>Stream</code> traits, we reused <a target="_blank" rel="noopener" href="https://docs.rs/futures/0.3.6/futures/executor/struct.LocalPool.html">LocalPool</a> from the <code>futures</code> crate as a task executor, and we generalized <code>on_event</code> to notify the asynchronous operation completion.</p>
+<h3 id="The-controller-lifecycle">The controller lifecycle</h3>
+<p>We first analyzed the controller lifecycle:</p>
+<ol>
+<li>When host invokes <code>run</code>, the controller starts a bunch of watchers and then it waits for new events</li>
+<li>Every time a new event comes in, the host wakes the controller up by calling <code>on_event</code></li>
+</ol>
+<p>This means that during the <code>run</code> phase, the controller starts a bunch of asynchronous tasks, one or more of them waiting for asynchronous events. After the <code>run</code> phase completes, <strong>there is no need to keep the module running</strong>. When we wake the controller up again, we need to check for any tasks that can continue and run them up to the point where we have all the tasks waiting for an external event.</p>
+<p>To implement this lifecycle, we need to execute both on <code>run</code> and on <code>on_event</code> the executor method <a target="_blank" rel="noopener" href="https://docs.rs/futures/0.3.6/futures/executor/struct.LocalPool.html#method.run_until_stalled"><code>run_until_stalled()</code></a>, which will run all tasks in the executor pool and returns if no more progress can be made on any task. This allows us to implement <code>run</code> as follows:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">extern</span> <span class="string">&quot;C&quot;</span> <span class="keyword">fn</span> <span class="title function_">run</span>() &#123;</span><br><span class="line">    <span class="comment">// Get the global executor</span></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">exec</span> = kube::abi::<span class="title function_ invoke__">get_mut_executor</span>();</span><br><span class="line">    <span class="comment">// Start the main task</span></span><br><span class="line">    exec.<span class="title function_ invoke__">deref</span>().<span class="title function_ invoke__">borrow_mut</span>().<span class="title function_ invoke__">spawner</span>().<span class="title function_ invoke__">spawn</span>(<span class="title function_ invoke__">main</span>()).<span class="title function_ invoke__">unwrap</span>();</span><br><span class="line">    <span class="comment">// Give a little push to the executor.</span></span><br><span class="line">    <span class="comment">// This runs until all tasks up to when they&#x27;re all waiting for async results completion.</span></span><br><span class="line">    exec.<span class="title function_ invoke__">deref</span>().<span class="title function_ invoke__">borrow_mut</span>().<span class="title function_ invoke__">run_until_stalled</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="Our-custom-Future-Stream">Our custom <code>Future</code>/<code>Stream</code></h3>
+<p>In order to encapsulate the pending asynchronous operation, we implemented our <code>Future</code>. The implementations are straightforward and pretty much the same <a target="_blank" rel="noopener" href="https://rust-lang.github.io/async-book/02_execution/03_wakeups.html">as explained in the Rust async book</a>:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// Shared state between the future and the waiting thread</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">AbiFutureState</span> &#123;</span><br><span class="line">    <span class="comment">// The result value</span></span><br><span class="line">    value: <span class="type">Option</span>&lt;<span class="type">Vec</span>&lt;<span class="type">u8</span>&gt;&gt;,</span><br><span class="line">    <span class="comment">// Was the future completed?</span></span><br><span class="line">    completed: <span class="type">bool</span>,</span><br><span class="line">    <span class="comment">// Object that notifies the completion to the executor</span></span><br><span class="line">    waker: <span class="type">Option</span>&lt;Waker&gt;,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">impl</span> <span class="title class_">Future</span> <span class="keyword">for</span> <span class="title class_">AbiFuture</span> &#123;</span><br><span class="line">    <span class="keyword">type</span> <span class="title class_">Output</span> = <span class="type">Option</span>&lt;<span class="type">Vec</span>&lt;<span class="type">u8</span>&gt;&gt;;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">fn</span> <span class="title function_">poll</span>(<span class="keyword">self</span>: Pin&lt;&amp;<span class="keyword">mut</span> <span class="keyword">Self</span>&gt;, cx: &amp;<span class="keyword">mut</span> Context&lt;<span class="symbol">&#x27;_</span>&gt;) <span class="punctuation">-&gt;</span> Poll&lt;<span class="keyword">Self</span>::Output&gt; &#123;</span><br><span class="line">        <span class="comment">// Look at the shared state to see if the timer has already completed.</span></span><br><span class="line">        <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">shared_state</span> = <span class="keyword">self</span>.shared_state.<span class="title function_ invoke__">lock</span>().<span class="title function_ invoke__">unwrap</span>();</span><br><span class="line">        <span class="keyword">if</span> shared_state.completed &#123;</span><br><span class="line">            Poll::<span class="title function_ invoke__">Ready</span>(shared_state.value.<span class="title function_ invoke__">take</span>())</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            shared_state.waker = <span class="title function_ invoke__">Some</span>(cx.<span class="title function_ invoke__">waker</span>().<span class="title function_ invoke__">clone</span>());</span><br><span class="line">            Poll::Pending</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>A similar implementation exists for the <code>Stream</code> trait. To create a <code>Future</code>, we use this method:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">start_future</span>(async_operation_id: <span class="type">u64</span>) <span class="punctuation">-&gt;</span> AbiFuture &#123;</span><br><span class="line">    <span class="comment">// Create the future state</span></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">state</span> = Arc::<span class="title function_ invoke__">new</span>(Mutex::<span class="title function_ invoke__">new</span>(</span><br><span class="line">        AbiFutureState &#123;</span><br><span class="line">            value: <span class="literal">None</span>,</span><br><span class="line">            completed: <span class="literal">false</span>,</span><br><span class="line">            waker: <span class="literal">None</span></span><br><span class="line">        &#125;</span><br><span class="line">    ));</span><br><span class="line">    <span class="comment">// Insert in the global map of pending future states this future state</span></span><br><span class="line">    <span class="title function_ invoke__">get_pending_futures</span>().<span class="title function_ invoke__">deref</span>().<span class="title function_ invoke__">borrow_mut</span>().<span class="title function_ invoke__">insert</span>(async_operation_id, state.<span class="title function_ invoke__">clone</span>());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Return the new future</span></span><br><span class="line">    AbiFuture &#123;</span><br><span class="line">        shared_state: state</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="Generalizing-on-event-to-wakeup-future-wakeup-stream">Generalizing <code>on_event</code> to <code>wakeup_future</code>/<code>wakeup_stream</code></h3>
+<p>At this point, we took the concept of <code>on_event</code> and generalized to <code>async</code>/<code>await</code>, introducing <code>wakeup_future</code>/<code>wakeup_stream</code> ABI exports.<br>
+Every time the controller invokes an asynchronous ABI import (like <code>watch</code>), it gets the identifier that we use to instantiate our <code>Future</code>/<code>Stream</code> implementation.<br>
+When the host completed the asynchronous operation, it invokes <code>wakeup_future</code>/<code>wakeup_stream</code>. The controller marks the <code>Future</code>/<code>Stream</code> as completed, including the result value, and invokes <code>LocalPool::run_until_stalled()</code> to wake up tasks waiting for that future/stream to complete.</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">extern</span> <span class="string">&quot;C&quot;</span> <span class="keyword">fn</span> <span class="title function_">wakeup_future</span>(future_id: <span class="type">u64</span>, ptr: *<span class="keyword">const</span> <span class="type">u8</span>, len: <span class="type">usize</span>) &#123;</span><br><span class="line">    <span class="comment">// Retrieve the global pending future states map</span></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">fut_state</span> = <span class="title function_ invoke__">get_pending_futures</span>();</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">waker</span> = &#123;</span><br><span class="line">        <span class="keyword">let</span> <span class="variable">state_arc</span> = fut_state.<span class="title function_ invoke__">deref</span>().<span class="title function_ invoke__">borrow_mut</span>().<span class="title function_ invoke__">remove</span>(&amp;future_id).<span class="title function_ invoke__">unwrap</span>();</span><br><span class="line">        <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">state</span> = state_arc.<span class="title function_ invoke__">lock</span>().<span class="title function_ invoke__">unwrap</span>();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// If the pointer is not null, fill the Future result value </span></span><br><span class="line">        <span class="keyword">if</span> !ptr.<span class="title function_ invoke__">is_null</span>() &#123;</span><br><span class="line">            state.value = <span class="title function_ invoke__">Some</span>(<span class="keyword">unsafe</span> &#123;</span><br><span class="line">                Vec::<span class="title function_ invoke__">from_raw_parts</span>(</span><br><span class="line">                    ptr <span class="keyword">as</span> *<span class="keyword">mut</span> <span class="type">u8</span>,</span><br><span class="line">                    len <span class="keyword">as</span> <span class="type">usize</span>,</span><br><span class="line">                    len <span class="keyword">as</span> <span class="type">usize</span>,</span><br><span class="line">                )</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        state.completed = <span class="literal">true</span>;</span><br><span class="line">        state.waker.<span class="title function_ invoke__">take</span>()</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="comment">// Use the waker to notify the executor this future is completed</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">let</span> <span class="variable">Some</span>(waker) = waker &#123;</span><br><span class="line">        waker.<span class="title function_ invoke__">wake</span>()</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Let&#x27;s try to execute stuff up to the point where there isn&#x27;t anything else to execute</span></span><br><span class="line">    <span class="title function_ invoke__">get_mut_executor</span>().<span class="title function_ invoke__">deref</span>().<span class="title function_ invoke__">borrow_mut</span>().<span class="title function_ invoke__">run_until_stalled</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="The-complete-flow">The complete flow</h3>
+<p>This is a complete flow of an asynchronous ABI method:</p>
+<pre class="mermaid">
+sequenceDiagram
+participant C as Controller module
+participant H as Host
+
+activate C
+C -&gt;&gt; H: do_async()
+activate H
+H -&gt;&gt; C: Returns async operation identifier
+C -&gt;&gt; C: run_until_stalled()
+deactivate C
+Note over H: Waiting for the async result
+H -&gt;&gt; C: wakeup_future()
+deactivate H
+activate C
+C -&gt;&gt; C: run_until_stalled()
+deactivate C
+</pre>
+<p>You can find the complete code regarding <code>async</code>/<code>await</code> support here: <a target="_blank" rel="noopener" href="https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/blob/master/kube-rs/src/abi/executor.rs"><code>executor.rs</code></a></p>
+<h3 id="More-async-ABI-methods">More async ABI methods!</h3>
+<p>After we implemented <code>async</code>/<code>await</code> in our WASM modules, we refactored the <code>request</code> ABI discussed in <a href="../Kubernetes-controllers-A-New-Hope/#The-ABI">our previous post</a> as an asynchronous ABI method:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[link(wasm_import_module = <span class="string">&quot;http-proxy-abi&quot;</span>)]</span></span><br><span class="line"><span class="keyword">extern</span> <span class="string">&quot;C&quot;</span> &#123;</span><br><span class="line">    <span class="keyword">fn</span> <span class="title function_">request</span>(ptr: *<span class="keyword">const</span> <span class="type">u8</span>, len: <span class="type">usize</span>) <span class="punctuation">-&gt;</span> <span class="type">u64</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Now the returned value is the asynchronous operation identifier and, to signal the completion of the request, the host invokes <code>wakeup_future</code>.</p>
+<p>We also included a new ABI method to sleep the execution of the module:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[link(wasm_import_module = <span class="string">&quot;delay-abi&quot;</span>)]</span></span><br><span class="line"><span class="keyword">extern</span> <span class="string">&quot;C&quot;</span> &#123;</span><br><span class="line">    <span class="keyword">fn</span> <span class="title function_">delay</span>(millis: <span class="type">u64</span>) <span class="punctuation">-&gt;</span> <span class="type">u64</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>This is necessary to run the kube-runtime, which performs some sleeps before synchronizing the internal cache again.</p>
+<h2 id="Redesigning-the-host-as-an-event-driven-application">Redesigning the host as an event-driven application</h2>
+<p>The first implementation of the new <code>kube-watch-abi</code> ABI was a little rough: a lot of blocking threads, shared memory across threads, some unsafe sprinkled here and there to make the code compiling.<br>
+Because of that, we redesigned the host to transform it in a full asynchronous application made of channels and message handlers. For every asynchronous ABI method there is a channel that delivers the <em>request</em> to a message handler, which processes the request, computes one or more responses and sends them back to another channel. This last channel delivers messages to the <code>AsyncResultDispatcher</code>, owner of the module instances, that invokes the <code>wakeup_future</code>/<code>wakeup_stream</code> of the interested controller.</p>
+<p>Today we have 3 different message handlers, one for each async ABI method:</p>
+<ul>
+<li><code>kube_watch::Watchers</code> that controls the watch operation. This message handler is also able to deduplicate the watch operations</li>
+<li><code>http::start_request_executor</code> to execute HTTP requests</li>
+<li><code>delay::start_delay_executor</code> to execute delay requests</li>
+</ul>
+<p>When the host loads all the modules, it executes the ABI method <code>run</code> for each module, then it transfers the ownership of module instances to <code>AsyncResultDispatcher</code> that will start listening for new <code>AsyncResult</code> messages on its ingress channel.</p>
+<p>Because all the message handlers and channels are <code>async</code>/<code>await</code> based, if all the handlers are in idle, virtually no resource is wasted with threads waiting.</p>
+<p>Since <code>AsyncResultDispatcher</code> controls all the different module instances, it avoids invoking the same controller in parallel: <code>LocalLoop</code> is a single threaded async task executor, hence a module cannot process multiple async results in parallel.</p>
+<h2 id="Compiling-kube-runtime-to-WASM">Compiling kube-runtime to WASM</h2>
+<p>Thanks to all the async changes, we managed to realign most of the APIs of <code>kube-rs</code> to the original ones. This allowed us to port <code>kube-runtime</code> to our WASM controllers.</p>
+<blockquote class="blockquote-center">
+<p>The kube_runtime crate contains sets of higher level abstractions on top of the Api and Resource types so that you don’t have to do all the watch/resourceVersion/storage book-keeping yourself.</p>
+
+</blockquote>
+<p>The problem we experienced with compiling <code>kube-runtime</code> to WASM is that it depends on <code>tokio::time::DelayQueue</code>, a queue that yields components up to a specified deadline. <code>DelayQueue</code> uses the <code>Future</code> type called <code>Delay</code> to effectively implement delays. The problem with this <code>Delay</code> is that it’s implemented using the internal ticker of the Tokio async task executor <code>Runtime</code>, which we don’t use inside WASM modules.</p>
+<p>In order to fix this issue, we had to fork the implementation of <code>tokio::time::DelayQueue</code> and reimplement the <code>Delay</code> type using the <code>delay</code> ABI shown previously:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">Delay</span> &#123;</span><br><span class="line">    fut: Pin&lt;<span class="type">Box</span>&lt;<span class="keyword">dyn</span> Future&lt;Output=()&gt; + <span class="built_in">Send</span>&gt;&gt;,</span><br><span class="line">    deadline: Instant</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">impl</span> <span class="title class_">Delay</span> &#123;</span><br><span class="line">    <span class="title function_ invoke__">pub</span>(<span class="keyword">crate</span>) <span class="keyword">fn</span> <span class="title function_">new_timeout</span>(deadline: Instant) <span class="punctuation">-&gt;</span> Delay &#123;</span><br><span class="line">        <span class="keyword">let</span> <span class="variable">now</span> = Instant::<span class="title function_ invoke__">now</span>();</span><br><span class="line">        <span class="keyword">match</span> deadline.<span class="title function_ invoke__">checked_duration_since</span>(now) &#123;</span><br><span class="line">            <span class="title function_ invoke__">Some</span>(dur) =&gt; Delay &#123;</span><br><span class="line">                fut: Box::<span class="title function_ invoke__">pin</span>(kube::abi::<span class="title function_ invoke__">register_delay</span>(dur)),</span><br><span class="line">                deadline</span><br><span class="line">            &#125;,</span><br><span class="line">            <span class="literal">None</span> =&gt; Delay &#123;</span><br><span class="line">                fut: Box::<span class="title function_ invoke__">pin</span>(futures::future::<span class="title function_ invoke__">ready</span>(())),</span><br><span class="line">                deadline: now</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// [...]</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">impl</span> <span class="title class_">Future</span> <span class="keyword">for</span> <span class="title class_">Delay</span> &#123;</span><br><span class="line">    <span class="keyword">type</span> <span class="title class_">Output</span> = ();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">fn</span> <span class="title function_">poll</span>(<span class="keyword">mut</span> <span class="keyword">self</span>: Pin&lt;&amp;<span class="keyword">mut</span> <span class="keyword">Self</span>&gt;, cx: &amp;<span class="keyword">mut</span> task::Context&lt;<span class="symbol">&#x27;_</span>&gt;) <span class="punctuation">-&gt;</span> Poll&lt;<span class="keyword">Self</span>::Output&gt; &#123;</span><br><span class="line">        <span class="keyword">self</span>.fut.<span class="title function_ invoke__">as_mut</span>().<span class="title function_ invoke__">poll</span>(cx)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>With the custom implementation of <code>DelayQueue</code>, the <code>rust-runtime</code> compiled successfully to WASM, and we managed to port our controllers to use it!</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">async</span> <span class="keyword">fn</span> <span class="title function_">main</span>() &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">client</span> = Client::<span class="title function_ invoke__">default</span>();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">simple_pods</span>: Api&lt;SimplePod&gt; = Api::<span class="title function_ invoke__">namespaced</span>(client.<span class="title function_ invoke__">clone</span>(), <span class="string">&quot;default&quot;</span>);</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">pods</span>: Api&lt;Pod&gt; = Api::<span class="title function_ invoke__">namespaced</span>(client.<span class="title function_ invoke__">clone</span>(), <span class="string">&quot;default&quot;</span>);</span><br><span class="line"></span><br><span class="line">    Controller::<span class="title function_ invoke__">new</span>(simple_pods, ListParams::<span class="title function_ invoke__">default</span>())</span><br><span class="line">        .<span class="title function_ invoke__">owns</span>(pods, ListParams::<span class="title function_ invoke__">default</span>())</span><br><span class="line">        .<span class="title function_ invoke__">run</span>(reconcile, error_policy, Context::<span class="title function_ invoke__">new</span>(Data &#123; client &#125;))</span><br><span class="line">        .<span class="title function_ invoke__">for_each</span>(|res| <span class="keyword">async</span> <span class="keyword">move</span> &#123; <span class="keyword">match</span> res &#123;</span><br><span class="line">            <span class="title function_ invoke__">Ok</span>((obj, _)) =&gt; <span class="built_in">println!</span>(<span class="string">&quot;Reconciled &#123;:?&#125;&quot;</span>, obj),</span><br><span class="line">            <span class="title function_ invoke__">Err</span>(e) =&gt; <span class="built_in">println!</span>(<span class="string">&quot;Reconcile error: &#123;:?&#125;&quot;</span>, e),</span><br><span class="line">        &#125;&#125;).<span class="keyword">await</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Show-me-the-code">Show me the code!</h2>
+<p>You can check out the complete code of controllers today here: <a target="_blank" rel="noopener" href="https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/blob/master/ext-simple-pod/src/lib.rs">simple-pod controller</a></p>
+<p>If you want to look at all the different changes the project went through, look at these PRs:</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/6">Event system and implementation of <code>watch</code> ABI</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/7">Refactor of the host as event-driven application</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/8"><code>async</code>/<code>await</code> + <code>watch</code> returns <code>Stream</code></a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/9">Non blocking HTTP proxy ABI</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/10">Non blocking <code>delay</code> ABI</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/11">Kube runtime port</a></li>
+</ol>
+<h2 id="Next-steps-2">Next steps</h2>
+<p>Now the controller module looks like a real Kubernetes controller: the difference is minimal to a controller targeting the usual deployment style. We also opened up a door for important optimizations, thanks to the <code>watch</code> ABI method. The host refactoring and the async ABI methods should also simplify the future interaction with Golang WASM controllers, because our ABI now resembles the asynchronous semantics of their WASM ABI.</p>
+<p>Our next goals are:</p>
+<ul>
+<li>Hack the Golang compiler to fit our ABI (or a similar one). For more info check out the <a href="../Kubernetes-controllers-A-New-Hope#Wait-where-is-Golang">previous blog post</a></li>
+<li>Perform a comparison in terms of resource utilization between this deployment style using WASM modules and the usual one of 1 container per controller.</li>
+<li>Figure out how to handle the different <code>ServiceAccount</code>s per controller</li>
+</ul>
+<p>Stay tuned!</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/cloud/" rel="tag"># cloud</a>
+              <a href="/tags/kubernetes/" rel="tag"># kubernetes</a>
+              <a href="/tags/rust/" rel="tag"># rust</a>
+              <a href="/tags/webassembly/" rel="tag"># webassembly</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Vert-x-Container-images-with-jlink/" rel="prev" title="Vert.x container images with jlink">
+                  <i class="fa fa-chevron-left"></i> Vert.x container images with jlink
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/JUnit-5-Parallel-tests-Extensions-and-ThreadLocal/" rel="next" title="JUnit 5, Parallel tests, Extensions and ThreadLocal">
+                  JUnit 5, Parallel tests, Extensions and ThreadLocal <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Software Engineer</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.10/dist/mermaid.min.js","integrity":"sha256-CmZCFVnvol9YL23PfjDflGY5nJwE+Mf/JN+8v+tD/34="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.0.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/safari-pinned-tab.svg" color="#222">
+  <link rel="manifest" href="/images/manifest.json">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"slinkydeveloper.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.10.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+  <meta name="description" content="Some months ago I decided to create a complete Vert.x application to show you capabilities of Vert.x for building Web APIs and, at the same time, I wanted to try some patterns I never used or applied.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Debts Manager Tutorial Part 1: Introduction">
+<meta property="og:url" content="https://slinkydeveloper.com/Debts-Manager-Tutorial-Introduction/index.html">
+<meta property="og:site_name" content="Slinky&#39;s corner">
+<meta property="og:description" content="Some months ago I decided to create a complete Vert.x application to show you capabilities of Vert.x for building Web APIs and, at the same time, I wanted to try some patterns I never used or applied.">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2018-12-13T08:10:00.000Z">
+<meta property="article:modified_time" content="2023-08-28T15:56:42.184Z">
+<meta property="article:author" content="Software Engineer">
+<meta property="article:tag" content="openapi">
+<meta property="article:tag" content="vertx">
+<meta property="article:tag" content="development">
+<meta property="article:tag" content="web">
+<meta property="article:tag" content="web api contract">
+<meta property="article:tag" content="openapi 3">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://slinkydeveloper.com/Debts-Manager-Tutorial-Introduction/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://slinkydeveloper.com/Debts-Manager-Tutorial-Introduction/","path":"Debts-Manager-Tutorial-Introduction/","title":"Debts Manager Tutorial Part 1: Introduction"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Debts Manager Tutorial Part 1: Introduction | Slinky's corner</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-39408029-2"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-39408029-2","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.1.0/cookieconsent.min.css" />
+<script src="//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.1.0/cookieconsent.min.js"></script>
+<script>
+window.addEventListener("load", function(){
+window.cookieconsent.initialise({
+  "palette": {
+    "popup": {
+      "background": "#252e39"
+    },
+    "button": {
+      "background": "#14a7d0"
+    }
+  }
+})});
+</script>
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="Slinky's corner" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Slinky's corner</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Personal blog of Francesco Guardiani, Software Engineer</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="home fa-fw"></i>Home</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="user fa-fw"></i>About</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#What-Debts-Manager-should-do"><span class="nav-number">1.</span> <span class="nav-text">What Debts Manager should do</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Design"><span class="nav-number">2.</span> <span class="nav-text">Design</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Persistence-Event-Sourcing"><span class="nav-number">2.1.</span> <span class="nav-text">Persistence &amp; Event Sourcing</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Web-API"><span class="nav-number">2.2.</span> <span class="nav-text">Web API</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Testing"><span class="nav-number">2.3.</span> <span class="nav-text">Testing</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Tutorial-parts"><span class="nav-number">3.</span> <span class="nav-text">Tutorial parts</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Software Engineer</p>
+  <div class="site-description" itemprop="description">Personal blog of Francesco Guardiani, Software Engineer</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/slinkydeveloper" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;slinkydeveloper" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:francescoguard@gmail.com" title="E-Mail → mailto:francescoguard@gmail.com" rel="noopener" target="_blank"><i class="envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/SlinkyGuardiani" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;SlinkyGuardiani" rel="noopener" target="_blank"><i class="twitter fa-fw"></i>Twitter</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://stackoverflow.com/users/2399055/francesco-guardiani" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;2399055&#x2F;francesco-guardiani" rel="noopener" target="_blank"><i class="stack-overflow fa-fw"></i>StackOverflow</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://slinkydeveloper.com/Debts-Manager-Tutorial-Introduction/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Software Engineer">
+      <meta itemprop="description" content="Personal blog of Francesco Guardiani, Software Engineer">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Slinky's corner">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Debts Manager Tutorial Part 1: Introduction
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 13-12-2018 09:10:00" itemprop="dateCreated datePublished" datetime="2018-12-13T09:10:00+01:00">13-12-2018</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 28-08-2023 17:56:42" itemprop="dateModified" datetime="2023-08-28T17:56:42+02:00">28-08-2023</time>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">Some months ago I decided to create a complete Vert.x application to show you capabilities of Vert.x for building Web APIs and, at the same time, I wanted to try some patterns I never used or applied. I'm going to create a production ready application to finally manage the debts with my house mate with a fully powered Vert.x application!</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>Some months ago I decided to create a complete Vert.x application to show you capabilities of Vert.x for building Web APIs and, at the same time, I wanted to try some patterns I never used or applied. I’m going to create a <em>production ready</em> application to finally manage the debts with my house mate with a fully powered Vert.x application!</p>
+<p>Some notes before starting: I’m going to make this guide as complete as possible, but keep in mind that this is a side project and It could contain bugs and It could be incomplete. I will try to cover all interesting aspects about API design, implementation, testing and I will show you how I implemented Event Sourcing and CQRS. I don’t plan to write a frontend for it (I don’t want to hurt your eyes), but if you want to help me I’m glad to accept it!</p>
+<p>The code is already available on <a target="_blank" rel="noopener" href="https://github.com/slinkydeveloper/debts-manager">GitHub</a> but It could change while I’m writing the guide.</p>
+<h2 id="What-Debts-Manager-should-do">What Debts Manager should do</h2>
+<p>The purpose of Debts Manager is to manage the debts between two users of the service. The idea is similar to <a target="_blank" rel="noopener" href="https://www.splitwise.com/">Splitwise</a>, but it will support only bills between two users. Every user should be registered to use the application. Then, if you want to receive bills from another user, you must <strong>connect</strong> to that user. When you are connected, you can bill him creating a transaction. For example:</p>
+<ul>
+<li>User A registers to the platform</li>
+<li>User B registers to the platform</li>
+<li>User B allows user A to bill himself. It does connecting to user A</li>
+<li>User A bills user B of 5 Euros for last grocery shopping</li>
+</ul>
+<p>The final result is: user B now has a debt of 5 Euros with user A. Debts Manager will show to both users their status with various debts/credits</p>
+<p>The connection between users are unidirectional, which means that if users want to bill each other they must create two diffent connections. There is no group concept, I wanted to keep things as simple as possible.</p>
+<h2 id="Design">Design</h2>
+<p>Before going further I want to show you a couple of things of the overall design of the application. These are required to undestand various aspects of the tutorial.</p>
+<h3 id="Persistence-Event-Sourcing">Persistence &amp; Event Sourcing</h3>
+<p>For persistence I choose PostgreSQL to store my data. The application stores into the database:</p>
+<ul>
+<li>The users instances (<em>user</em>)</li>
+<li>The connections between users (<em>user relationship</em>)</li>
+<li>The bills (<em>transaction</em>)</li>
+</ul>
+<p>The DB access is provided by the blazing fast <a target="_blank" rel="noopener" href="https://github.com/reactiverse/reactive-pg-client">reactive-pg-client library</a></p>
+<p>The application stores the <em>transactions</em> between users (events). You can use it as a log of various bills, but you also want to look at a summary of various credits/debits between connected users. To build it, I aggregate the various transactions into one single structure that I call <em>status</em>. Every user has a status and is represented as a map with users as keys and total credits/debits as values. This map is built incrementally every time a user adds/modifies/removes a transaction and is stored in a Redis cache.</p>
+<h3 id="Web-API">Web API</h3>
+<p>The application exposes a Web REST API that you can interact with. It is documented with an OpenAPI 3 file and exposes most of CRUD endpoints for users, user connections and transactions (some are missing to keep things simple). It also has an endpoint to access status of users. The endpoints are protected with JWT tokens, so to use the application you must complete a login request and you get a token to use for the following requests. The Web API is implemented using <a target="_blank" rel="noopener" href="https://vertx.io/docs/vertx-web/java/">vertx-web</a>, <a target="_blank" rel="noopener" href="https://vertx.io/docs/vertx-web-api-contract/java/">vertx-web-api-contract</a> and <a target="_blank" rel="noopener" href="https://vertx.io/docs/vertx-web-api-service/java/">vertx-web-api-service</a>.</p>
+<h3 id="Testing">Testing</h3>
+<p>Okay I admit it, I’m lazy <span class="emoji" alias="smile" style="" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f604.png?v8">😄</span> I tested only the minimum features! I built these tests primarly to show you how I faced and solved common async test problems. I used Junit5 together with <a target="_blank" rel="noopener" href="https://vertx.io/docs/vertx-junit5/java/">vertx-junit5</a> and <a target="_blank" rel="noopener" href="https://www.testcontainers.org/">testcontainers</a> to spin up Redis and PostgreSQL.</p>
+<h2 id="Tutorial-parts">Tutorial parts</h2>
+<ol>
+<li><strong><a href="/Debts-Manager-Tutorial-Contract-Design/" title="Contract design">Contract design</a></strong>: Design the OpenAPI 3 contract</li>
+<li><strong><a href="/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/" title="Vert.x Web API Contract &amp; Service">Vert.x Web API Contract &amp; Service</a></strong>: Setup Vert.x project and bind Vert.x Event Bus services</li>
+<li><strong>Persistence</strong>: Design and implement persistence</li>
+<li><strong>Event Sourcing</strong>: Develop the read model and CQRS</li>
+<li><strong>Implement services logic</strong>: Implement the services</li>
+<li><strong>Testing</strong>: Spin up test containers and write clean assertions</li>
+<li><strong>BONUS: Deploy to OpenShift</strong></li>
+<li><strong>BONUS: Refactor to microservices using Vert.x Event Bus</strong></li>
+</ol>
+<p>Stay tuned for next chapter! And give me feedback about this tutorial!</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/openapi/" rel="tag"># openapi</a>
+              <a href="/tags/vertx/" rel="tag"># vertx</a>
+              <a href="/tags/development/" rel="tag"># development</a>
+              <a href="/tags/web/" rel="tag"># web</a>
+              <a href="/tags/web-api-contract/" rel="tag"># web api contract</a>
+              <a href="/tags/openapi-3/" rel="tag"># openapi 3</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Assertions-With-Vertx-Futures-And-JUnit5/" rel="prev" title="Assertions with Vert.x Futures and JUnit5">
+                  <i class="fa fa-chevron-left"></i> Assertions with Vert.x Futures and JUnit5
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Debts-Manager-Tutorial-Contract-Design/" rel="next" title="Debts Manager Tutorial Part 2: Contract Design">
+                  Debts Manager Tutorial Part 2: Contract Design <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Software Engineer</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" integrity="sha256-yt2kYMy0w8AbtF89WXb2P1rfjcP/HTHLT7097U8Y5b8=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdn.jsdelivr.net/npm/mermaid@8.13.10/dist/mermaid.min.js","integrity":"sha256-CmZCFVnvol9YL23PfjDflGY5nJwE+Mf/JN+8v+tD/34="}}</script>
+  <script src="/js/third-party/tags/mermaid.js"></script>
+
+  <script src="/js/third-party/fancybox.js"></script>
+
+
+  
+
+
+
+
+
+</body>
+</html>
