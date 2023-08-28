@@ -6,7 +6,14 @@ date: 2019-01-20 15:51:24
 {% raw %}
 <div class="timeline-container">
 
-	<div class="timeline-item" date-is='From September 2021'>
+	<div class="timeline-item" date-is='From May 2022'>
+		<h1>Software Engineer at Restate</h1>
+		<p>
+      First employee of <a href="https://www.restate.dev">Restate</a>, designing and developing the distributed runtime.
+		</p>
+	</div>
+
+	<div class="timeline-item" date-is='September 2021 - May 2022'>
 		<h1>Software Engineer at Ververica</h1>
 		<p>
       Joined the <a href="https://flink.apache.org/">Apache Flink</a> SQL team, developing the SQL parser, planner, optimizer and runtime.
