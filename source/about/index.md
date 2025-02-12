@@ -9,7 +9,7 @@ date: 2019-01-20 15:51:24
 	<div class="timeline-item" date-is='From May 2022'>
 		<h1>Software Engineer at Restate</h1>
 		<p>
-      First employee of <a href="https://www.restate.dev">Restate</a>, designing and developing the distributed runtime.
+      First employee of <a href="https://www.restate.dev">Restate</a>, designing the programming model and DevEx.
 		</p>
 	</div>
 
