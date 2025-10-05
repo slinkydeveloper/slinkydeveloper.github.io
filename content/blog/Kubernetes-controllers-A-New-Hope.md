@@ -50,7 +50,7 @@ In short: **We're flooding our Kubernetes clusters with applications that suck r
 
 The idea behind our solution is to create a runtime plugin system where every plugin is a Kubernetes controller.
 
-![Plugin system](/img/kubernetes-controllers-a-new-hope/kubernetes-controllers-a-new-hope-1.png "Plugin system")
+![Plugin system](../../public/img/kubernetes-controllers-a-new-hope/kubernetes-controllers-a-new-hope-1.png "Plugin system")
 
 This plugin system should have certain traits:
 
@@ -61,7 +61,7 @@ This plugin system should have certain traits:
 
 This plugin system can be seen as a _mega controller_. It can run as its own process, or it could even be merged with the _kube-controller-manager_, which is the process with all the controllers that manage the Kubernetes built-in resources:
 
-![kube-controller-manager including the plugin system](/img/kubernetes-controllers-a-new-hope/kubernetes-controllers-a-new-hope-2.png "kube-controller-manager including the plugin system")
+![kube-controller-manager including the plugin system](../../public/img/kubernetes-controllers-a-new-hope/kubernetes-controllers-a-new-hope-2.png "kube-controller-manager including the plugin system")
 
 ## Isolated, multi-language, lightweight plugin system? That sounds hard...
 
@@ -83,7 +83,7 @@ Although WebAssembly sounds like a web or browser technology, in the last years 
 
 With WebAssembly, our plugin system looks like:
 
-![](/img/kubernetes-controllers-a-new-hope/kubernetes-controllers-a-new-hope-3.png)
+![](../../public/img/kubernetes-controllers-a-new-hope/kubernetes-controllers-a-new-hope-3.png)
 
 When we develop a controller, the compiled artifact is a binary Wasm module. A Wasm engine loads this module, eventually compiles it in AOT cases, and executes it.
 
@@ -186,7 +186,7 @@ In Wasm the module cannot access to the host memory, but the host can access to 
 
 The `request` flow should give you an idea of what it takes to implement an ABI:
 
-![](/img/kubernetes-controllers-a-new-hope/kubernetes-controllers-a-new-hope-4.png)
+![](../../public/img/kubernetes-controllers-a-new-hope/kubernetes-controllers-a-new-hope-4.png)
 
 The host takes care of handling the authentication, in order to avoid the controller having to have access to files at all.
 

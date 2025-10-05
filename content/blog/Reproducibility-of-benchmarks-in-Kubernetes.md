@@ -29,7 +29,7 @@ I won't cover all aspects of Knative Eventing, If you want to learn more about i
 
 Knative, among the others, provides the concept of `Channel`, a flow of events from one or more producers to one or more subscribed consumers:
 
-![From source to user application, through a Channel](/img/reproducibility-k8s/channel.png "From source to user application, through a Channel")
+![From source to user application, through a Channel](../../public/img/reproducibility-k8s/channel.png "From source to user application, through a Channel")
 
 To push events into the channel you interact with its HTTP interface, while to receive events from the channel you subscribe to it, specifying at what HTTP endpoint the channel should send the events. Behind the hood, a pod called _dispatcher_ is actually serving the HTTP interface for inbound events, managing the interaction with the messaging system and dispatching the events to the subscribers.
 

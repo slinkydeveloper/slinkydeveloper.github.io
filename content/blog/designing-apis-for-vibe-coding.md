@@ -39,7 +39,7 @@ The first problem: **people don't know what Restate can do for them**, unless th
 So let's put all the important features in a single type, and let's call that `Context`, a common name used for such APIs.
 The user can just `CTRL` + `SPACE` and here they are, all the features we want users to learn about:
 
-![Vs code autocompletion for Context](/img/vscode-autocompletion.png "Vs code autocompletion for Context")
+![Vs code autocompletion for Context](../../public/img/vscode-autocompletion.png "Vs code autocompletion for Context")
 
 We got `run` which lets users record a side effect, `sleep` which lets users sleep their function, `serviceClient` which lets users create clients for other services, and the list goes on.
 
@@ -65,11 +65,9 @@ Of course, every design has its set of tradeoffs. In our `Context` design approa
 
 ## What changed with vibe coding
 
-Now why am I telling you all of this?
+Let's look at the example that gave me the idea for this post:
 
-Let's take the example of `ctx.serviceClient`:
-
-![Vs code autocompletion for service client](/img/vscode-autocompletion-2.png "Vs code autocompletion for service client")
+![Vs code autocompletion for service client](../../public/img/vscode-autocompletion-2.png "Vs code autocompletion for service client")
 
 This API is another example of optimizing for auto-completion: you pass the service you want to call to `ctx.serviceClient`, and some TypeScript type manipulation plus `Proxy` gives the user a typed client with autocompletion.
 
@@ -79,11 +77,11 @@ Let's do a test now with Copilot, using GPT as a model, prompting:
 In my function, can you call anotherFn using the context?
 ```
 
-![First prompt result](/img/prompt-first-result.png "First prompt result")
+![First prompt result](../../public/img/prompt-first-result.png "First prompt result")
 
 Let's try another time:
 
-![Second prompt result](/img/prompt-second-result.png "Second prompt result")
+![Second prompt result](../../public/img/prompt-second-result.png "Second prompt result")
 
 Let's try another prompt:
 
@@ -91,13 +89,13 @@ Let's try another prompt:
 In my function, can you send a request to anotherFn using the context?
 ```
 
-![Fourth prompt result](/img/prompt-fourth-result.png "Fourth prompt result")
+![Fourth prompt result](../../public/img/prompt-fourth-result.png "Fourth prompt result")
 
 Changing model to Claude Sonnet 4, after a few attempts, we get the right result:
 
-![Third prompt result](/img/prompt-third-result.png "Third prompt result")
+![Third prompt result](../../public/img/prompt-third-result.png "Third prompt result")
 
-Before the current generation of models, Copilot would give me even more interesting results, returning some `fetch` like API, something like:
+Before the current generation of models, Copilot would give me even more interesting results, trying to come up with a `fetch` like API:
 
 ```typescript
 ctx.request({
@@ -107,15 +105,27 @@ ctx.request({
 })
 ```
 
-Of course, LLMs get better over time, at some point they get trained/or get feedback over your API docs/examples, and at the end of the day they're probabilistic models, so they won't be always right.
+Of course, LLMs get better over time, at some point they get trained/or get feedback over your APIs, and at the end of the day they're probabilistic models, so they won't be always right.
 
-Yet you want to give a good experience to your users, so here it is a new principle to design APIs for you: maximize the **"LLMs hit rate"**.
+Yet a vibe coder using your API will most likely use a prompt like the above-mentioned, and you want the user to focus on your project and not on teaching LLMs your API!
+This leads me to a new principle to design APIs: maximize the **"LLMs hit rate"**.
 
-This API, while being perfectly fine for auto-completion, it's perhaps not the best choice for LLMs hit rate, as when you say "request" to a LLM in the context of Typescript, `fetch` or similar is what it
+## Why the LLM won't guess this API?
 
+I don't know for certain, but I assume it roots down to few issues.
 
+The type manipulation/proxy aspect is something that the LLM needs to be trained on,
+it won't be as easy as looking at the `Context` type, pick the method, fill the parameters.
+It needs to understand TypeScript types, perhaps have access to LSP output.
 
-In my opinion, idiomatic and easy to integrate APIs are still valid design goals.
-Perhaps those are even more important than ever, as these days software development consists essentially in connecting other people APIs in a way that makes sense for your business.
+My second hypothesis is that in the concept space with _TypeScript_ and _requests_,
+probably `fetch` or function calls are the closest thing the LLM can "think" of.
+At the end of the day, during its training the model probably saw `fetch` way more than other client APIs with a design closer to our service client.
 
-Who reads docs anymore? Only LLMs do!!!
+## How do I increase the LLM hit rate?
+
+In the end, my empirical conclusion experimenting with other prompts, always related to our APIs, is that **flat and verbose** seem to win over concise and **conformity with other APIs** seem to win over more original designs.
+
+A bit sad, if you ask me, as this most likely will create the effect that we'll see less and less innovative API designs thriving, with this effect being amplified for new programming languages...
+
+Of course, every API design I work on now includes a final test: prompt ChatGPT, Gemini, Claude, asking to assume the API already exists, then compare the results, checking how far they got from my design idea.
