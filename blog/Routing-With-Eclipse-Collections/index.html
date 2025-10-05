@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Routing with Eclipse Collections</title>
+		<meta name="description" content="Eclipse Collections are so fast!">
+		<link rel="alternate" href="/slinkydeveloper.github.io/feed/feed.xml" type="application/atom+xml" title="slinkydeveloper">
+		
+		
+		
+		<style>/* This is an arbitrary CSS string added to the bundle */
+/* Defaults */
+:root {
+	--font-family: -apple-system, system-ui, sans-serif;
+	--font-family-monospace: Consolas, Menlo, Monaco, Andale Mono WT, Andale Mono, Lucida Console, Lucida Sans Typewriter, DejaVu Sans Mono, Bitstream Vera Sans Mono, Liberation Mono, Nimbus Mono L, Courier New, Courier, monospace;
+}
+
+/* Theme colors */
+:root {
+	--color-gray-20: #e0e0e0;
+	--color-gray-50: #C0C0C0;
+	--color-gray-90: #333;
+
+	--background-color: #fff;
+
+	--text-color: var(--color-gray-90);
+	--text-color-link: #082840;
+	--text-color-link-active: #5f2b48;
+	--text-color-link-visited: #17050F;
+
+	--syntax-tab-size: 2;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-gray-20: #e0e0e0;
+		--color-gray-50: #C0C0C0;
+		--color-gray-90: #dad8d8;
+
+		/* --text-color is assigned to --color-gray-_ above */
+		--text-color-link: #1493fb;
+		--text-color-link-active: #6969f7;
+		--text-color-link-visited: #a6a6f8;
+
+		--background-color: #15202b;
+	}
+}
+
+
+/* Global stylesheet */
+* {
+	box-sizing: border-box;
+}
+
+@view-transition {
+	navigation: auto;
+}
+
+html,
+body {
+	padding: 0;
+	margin: 0 auto;
+	font-family: var(--font-family);
+	color: var(--text-color);
+	background-color: var(--background-color);
+}
+html {
+	overflow-y: scroll;
+}
+body {
+	max-width: 75em;
+}
+
+/* https://www.a11yproject.com/posts/how-to-hide-content/ */
+.visually-hidden:not(:focus):not(:active) {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+/* Fluid images via https://www.zachleat.com/web/fluid-images/ */
+img{
+  max-width: 100%;
+}
+img[width][height] {
+  height: auto;
+}
+img[src$=".svg"] {
+  width: 100%;
+  height: auto;
+  max-width: none;
+}
+video,
+iframe {
+	width: 100%;
+	height: auto;
+}
+iframe {
+	aspect-ratio: 16/9;
+}
+
+p:last-child {
+	margin-bottom: 0;
+}
+p {
+	line-height: 1.5;
+}
+
+li {
+	line-height: 1.5;
+}
+
+a[href] {
+	color: var(--text-color-link);
+}
+a[href]:visited {
+	color: var(--text-color-link-visited);
+}
+a[href]:hover,
+a[href]:active {
+	color: var(--text-color-link-active);
+}
+
+main,
+footer {
+	padding: 1rem;
+}
+main :first-child {
+	margin-top: 0;
+}
+
+header {
+	border-bottom: 1px dashed var(--color-gray-20);
+}
+
+#skip-link {
+	text-decoration: none;
+	background: var(--background-color);
+	color: var(--text-color);
+	padding: 0.5rem 1rem;
+	border: 1px solid var(--color-gray-90);
+	border-radius: 2px;
+}
+
+/* Prevent visually-hidden skip link fom pushing content around when focused */
+#skip-link.visually-hidden:focus {
+	position: absolute;
+	top: 1rem;
+	left: 1rem;
+	/* Ensure it is positioned on top of everything else when it is shown */
+	z-index: 999;
+}
+
+.links-nextprev {
+	display: flex;
+	justify-content: space-between;
+	gap: .5em 1em;
+	list-style: "";
+	border-top: 1px dashed var(--color-gray-20);
+	padding: 1em 0;
+}
+.links-nextprev > * {
+	flex-grow: 1;
+}
+.links-nextprev-next {
+	text-align: right;
+}
+
+table {
+	margin: 1em 0;
+}
+table td,
+table th {
+	padding-right: 1em;
+}
+
+pre,
+code {
+	font-family: var(--font-family-monospace);
+}
+pre:not([class*="language-"]) {
+	margin: .5em 0;
+	line-height: 1.375; /* 22px /16 */
+	-moz-tab-size: var(--syntax-tab-size);
+	-o-tab-size: var(--syntax-tab-size);
+	tab-size: var(--syntax-tab-size);
+	-webkit-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+	direction: ltr;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	overflow-x: auto;
+}
+code {
+	word-break: break-all;
+}
+
+/* Header */
+header {
+	display: flex;
+	gap: 1em;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1em;
+}
+.home-link {
+	flex-grow: 1;
+	font-size: 1em; /* 16px /16 */
+	font-weight: 700;
+}
+.home-link:link:not(:hover) {
+	text-decoration: none;
+}
+
+/* Nav */
+.nav {
+	display: flex;
+	gap: .5em 1em;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+.nav-item {
+	display: inline-block;
+}
+.nav-item a[href]:not(:hover) {
+	text-decoration: none;
+}
+.nav a[href][aria-current="page"] {
+	text-decoration: underline;
+}
+
+/* Posts list */
+.postlist {
+	counter-reset: start-from var(--postlist-index);
+	list-style: none;
+	padding: 0;
+	padding-left: 1.5rem;
+}
+.postlist-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	counter-increment: start-from -1;
+	margin-bottom: 1em;
+}
+.postlist-item:before {
+	display: inline-block;
+	pointer-events: none;
+	content: "" counter(start-from, decimal-leading-zero) ". ";
+	line-height: 100%;
+	text-align: right;
+	margin-left: -1.5rem;
+}
+.postlist-date,
+.postlist-item:before {
+	font-size: 0.8125em; /* 13px /16 */
+	color: var(--color-gray-90);
+}
+.postlist-date {
+	word-spacing: -0.5px;
+}
+.postlist-link {
+	font-size: 1.1875em; /* 19px /16 */
+	font-weight: 700;
+	flex-basis: calc(100% - 1.5rem);
+	padding-left: .25em;
+	padding-right: .5em;
+	text-underline-position: from-font;
+	text-underline-offset: 0;
+	text-decoration-thickness: 1px;
+}
+.postlist-item-active .postlist-link {
+	font-weight: bold;
+}
+
+/* Tags */
+.post-tag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-transform: capitalize;
+	font-style: italic;
+}
+.postlist-item > .post-tag {
+	align-self: center;
+}
+
+/* Tags list */
+.post-metadata {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: .5em;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.post-metadata time {
+	margin-right: 1em;
+}
+
+/* Hero image */
+.hero-image-container {
+	position: relative;
+	display: inline-block;
+}
+.hero-image-container img {
+	display: block;
+	border: 12px solid white;
+	border-radius: 12px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.hero-image-caption {
+	position: absolute;
+	bottom: 24px;
+	right: 24px;
+	font-family: 'Georgia', 'Garamond', serif;
+	font-style: italic;
+	font-size: 0.95rem;
+	color: white !important;
+	text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+	padding: 0.5rem 0.75rem;
+	background: rgba(0, 0, 0, 0.3);
+	border-radius: 4px;
+	backdrop-filter: blur(4px);
+	text-decoration: none !important;
+	transition: background 0.2s ease;
+}
+.hero-image-caption:hover {
+	background: rgba(0, 0, 0, 0.5);
+	color: white !important;
+}
+.hero-image-caption:visited {
+	color: white !important;
+}
+.hero-image-caption:active {
+	color: white !important;
+}
+
+/* Timeline container */
+.timeline-container {
+  width: 100%;
+  margin: 1ch;
+}
+
+.timeline-item {
+  padding: 3em 2em 2em;
+  position: relative;
+  color: rgba(0, 0, 0, 0.7);
+  border-left: 2px solid rgba(0, 0, 0, 0.3);
+}
+.timeline-item p {
+  font-size: 1rem;
+}
+.timeline-item::before {
+  content: attr(date-is);
+  position: absolute;
+  left: 2em;
+  font-weight: bold;
+  top: 1em;
+  display: block;
+  font-size: .9rem;
+}
+.timeline-item::after {
+  width: 10px;
+  height: 10px;
+  display: block;
+  top: 1em;
+  position: absolute;
+  left: -7px;
+  border-radius: 10px;
+  content: '';
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  background: white;
+}
+.timeline-item:last-child {
+  -o-border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+  border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+}
+/**
+ * okaidia theme for JavaScript, CSS and HTML
+ * Loosely based on Monokai textmate theme by http://www.monokai.nl/
+ * @author ocodia
+ */
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: #f8f8f2;
+	background: none;
+	text-shadow: 0 1px rgba(0, 0, 0, 0.3);
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-size: 1em;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+	border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background: #272822;
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+	white-space: normal;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: #8292a2;
+}
+
+.token.punctuation {
+	color: #f8f8f2;
+}
+
+.token.namespace {
+	opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.constant,
+.token.symbol,
+.token.deleted {
+	color: #f92672;
+}
+
+.token.boolean,
+.token.number {
+	color: #ae81ff;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+	color: #a6e22e;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string,
+.token.variable {
+	color: #f8f8f2;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.function,
+.token.class-name {
+	color: #e6db74;
+}
+
+.token.keyword {
+	color: #66d9ef;
+}
+
+.token.regex,
+.token.important {
+	color: #fd971f;
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+/*
+ * New diff- syntax
+ */
+
+pre[class*="language-diff-"] {
+	--eleventy-code-padding: 1.25em;
+	padding-left: var(--eleventy-code-padding);
+	padding-right: var(--eleventy-code-padding);
+}
+.token.deleted {
+	background-color: hsl(0, 51%, 37%);
+	color: inherit;
+}
+.token.inserted {
+	background-color: hsl(126, 31%, 39%);
+	color: inherit;
+}
+
+/* Make the + and - characters unselectable for copy/paste */
+.token.prefix.unchanged,
+.token.prefix.inserted,
+.token.prefix.deleted {
+	-webkit-user-select: none;
+	user-select: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+.token.prefix.inserted,
+.token.prefix.deleted {
+	width: var(--eleventy-code-padding);
+	background-color: rgba(0,0,0,.2);
+}
+
+/* Optional: full-width background color */
+.token.inserted:not(.prefix),
+.token.deleted:not(.prefix) {
+	display: block;
+	margin-left: calc(-1 * var(--eleventy-code-padding));
+	margin-right: calc(-1 * var(--eleventy-code-padding));
+	text-decoration: none; /* override del, ins, mark defaults */
+	color: inherit; /* override del, ins, mark defaults */
+}</style>
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+	</head>
+	<body>
+		<a href="#main" id="skip-link" class="visually-hidden">Skip to main content</a>
+
+		<header>
+			<a href="/slinkydeveloper.github.io/" class="home-link">slinkydeveloper</a>
+			<nav>
+				<h2 class="visually-hidden" id="top-level-navigation-menu">Top level navigation menu</h2>
+				<ul class="nav">
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/">Home</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/blog/">Posts</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/landscapes/">Landscapes</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/about/">About</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/feed/feed.xml">Feed</a></li>
+					<li class="nav-item"><a href="https://github.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github"></i></a></li>
+					<li class="nav-item"><a href="https://bsky.app/profile/slinkydeveloper.bsky.social" target="_blank" rel="noopener noreferrer" aria-label="Bluesky"><i class="fa-brands fa-bluesky"></i></a></li>
+					<li class="nav-item"><a href="https://x.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></a></li>
+					<li class="nav-item"><a href="https://www.linkedin.com/in/francesco-guardiani/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-square-linkedin"></i></a></li>
+				</ul>
+			</nav>
+		</header>
+
+		<main id="main">
+			<heading-anchors>
+				
+
+
+<h1 id="routing-with-eclipse-collections">Routing with Eclipse Collections</h1>
+
+<ul class="post-metadata">
+	<li><time datetime="2017-10-03">03 October 2017</time></li>
+	<li><a href="/slinkydeveloper.github.io/tags/web-development/" class="post-tag">web development</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/vertx/" class="post-tag">vertx</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/vertx-web/" class="post-tag">vertx web</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/routing/" class="post-tag">routing</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/data-structures/" class="post-tag">data structures</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/tree/" class="post-tag">tree</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/skiplist/" class="post-tag">skiplist</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/eclipse-collections/" class="post-tag">eclipse collections</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/fast-list/" class="post-tag">fast list</a></li>
+</ul>
+
+<p>I found days ago the <a href="https://www.eclipse.org/collections/">Eclipse Collections</a> library (ex Goldman Sachs Collections). Yes, that <strong>Goldman Sachs</strong>, one of the biggest investing banking group of the world, that for hobby creates super fast collection library for Java.</p>
+<p>This article follows the previous, when I explored how to improve the routing of <a href="http://vertx.io/docs/vertx-web/java/">Vert.x Web</a>, so please check it out before reading this one: <a href="https://slinkydeveloper.github.io/articles/Routing-Tree-vs-SkipList/">Tree vs SkipList routing</a></p>
+<h2 id="whats-new">What's new</h2>
+<p>Three days ago, looking at my twitter wall, I've found a tweet about Eclipse Collections. I've found really interesting the performances of EC, so I've decided to put it into my benchmark and test it on our use case. I obviously choose the tree as data structure to rewrite the routing process of Vert.x Web, so I have write two variants of my original <code>TreeRouter</code>:</p>
+<ul>
+<li><code>ECTreeRouter</code>: A tree that internally uses List implementations of Eclipse Collections.</li>
+<li><code>ImmutableECTreeRouter</code>: A tree that internally uses <strong>immutable</strong> List implementations of Eclipse Collections. In this case user <strong>can't change</strong> the routing tree after routing has started.</li>
+</ul>
+<p>The second option was a pure experiment: user creates the router and its internal tree doesn't change during the application execution. In this case you have a <em>simpler implementation</em> and an immutable list (in some cases faster than a mutable one). I've also refactored only the <code>SocialNetworkBenchmark</code>, because we have similar results on <code>ECommerceBenchmark</code>.</p>
+<h2 id="results">Results</h2>
+<p>And, as in the previous articles, here comes the graphs:</p>
+<figure>
+  <a href="/slinkydeveloper.github.io/images/tree-vs-router-2/basic_social.png" class="image-popup"><img src="content/images/tree-vs-router-2/basic_social.png" alt="image"></a>
+  <figcaption>Benchmark results for SocialNetworkBenchmark based on requested URLs</figcaption>
+</figure>
+<figure>
+  <a href="/slinkydeveloper.github.io/images/tree-vs-router-2/with_load_social.png" class="image-popup"><img src="content/images/tree-vs-router-2/with_load_social.png" alt="image"></a>
+  <figcaption>Benchmark results for SocialNetworkBenchmark based on requested URLs with 10 random requests</figcaption>
+</figure>
+<figure>
+  <a href="/slinkydeveloper.github.io/images/tree-vs-router-2/social_complete.png" class="image-popup"><img src="content/images/tree-vs-router-2/social_complete.png" alt="image"></a>
+  <figcaption>Final benchmark results for SocialNetworkBenchmark ("with load" values properly scaled)</figcaption>
+</figure>
+<p>And in the end the <em>&quot;final test&quot;</em> graph (now it does only random requests, not sequentially):</p>
+<figure>
+  <a href="/slinkydeveloper.github.io/images/tree-vs-router-2/social_average.png" class="image-popup"><img src="content/images/tree-vs-router-2/social_average.png" alt="image"></a>
+  <figcaption>Final benchmark results for SocialNetworkBenchmark</figcaption>
+</figure>
+<p>I have some considerations about these results:</p>
+<ul>
+<li>Eclipse Collections are fast to iterate, faster than JDK's collections, so probably they are good for our use case. In particular, pay attention to particular events generated from benchmark data:
+<ul>
+<li><code>ECTreeRouter</code> is faster than skip list in <code>/feed</code> request in &quot;without load&quot; tests! In particular it creates interesting deltas from <code>TreeRouter</code> when we request constant paths...</li>
+<li>But going deeper doesn't help the <code>ECTreeRouter</code>, in particular in &quot;without load&quot; benchmarks. We have too few datas to assert that at deeper levels <code>ECTreeRouter</code> drops its performances or aligns it with <code>TreeRouter</code></li>
+<li><code>ECTreeRouter</code>, without any doubt, in the random requests test is faster than <code>TreeRouter</code></li>
+</ul>
+</li>
+<li>Eclipse Collections contains a lot of optimized iteration patterns optimized, maybe useful for us</li>
+<li>It seems that EC thread-safe lists are faster than immutable lists, so the <code>ImmutableECTreeRouter</code> is a failed experiment 😥</li>
+</ul>
+<p>Unlike the previous post I'm little hesitant to give a verdict, but we have promising results with Eclipse Collections, so I want to start with it. In case we experience &quot;not so good&quot; performances after the implementation, migrate back to JDK's collections doesn't appear a complicated task</p>
+<p>Stay tuned for other updates!</p>
+
+<ul class="links-nextprev"><li class="links-nextprev-prev">← Previous<br> <a href="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/">Tree vs SkipList routing</a></li><li class="links-nextprev-next">Next →<br><a href="/slinkydeveloper.github.io/blog/Assertions-With-Vertx-Futures-And-JUnit5/">Assertions with Vert.x Futures and JUnit5</a></li>
+</ul>
+
+			</heading-anchors>
+		</main>
+
+		<footer>
+			<p>
+				<em>Built with <a href="https://www.11ty.dev/">Eleventy v3.1.2</a></em>
+			</p>
+		</footer>
+
+		<!-- This page `/blog/Routing-With-Eclipse-Collections/` was built on 2025-10-05T17:01:29.967Z -->
+		<script type="module" src="/slinkydeveloper.github.io/dist/cC8wS6ZjFU.js"></script>
+	</body>
+</html>

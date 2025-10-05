@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Tree vs SkipList routing</title>
+		<meta name="description" content="Can we improve speed of vert-x web using a tree structure?">
+		<link rel="alternate" href="/slinkydeveloper.github.io/feed/feed.xml" type="application/atom+xml" title="slinkydeveloper">
+		
+		
+		
+		<style>/* This is an arbitrary CSS string added to the bundle */
+/* Defaults */
+:root {
+	--font-family: -apple-system, system-ui, sans-serif;
+	--font-family-monospace: Consolas, Menlo, Monaco, Andale Mono WT, Andale Mono, Lucida Console, Lucida Sans Typewriter, DejaVu Sans Mono, Bitstream Vera Sans Mono, Liberation Mono, Nimbus Mono L, Courier New, Courier, monospace;
+}
+
+/* Theme colors */
+:root {
+	--color-gray-20: #e0e0e0;
+	--color-gray-50: #C0C0C0;
+	--color-gray-90: #333;
+
+	--background-color: #fff;
+
+	--text-color: var(--color-gray-90);
+	--text-color-link: #082840;
+	--text-color-link-active: #5f2b48;
+	--text-color-link-visited: #17050F;
+
+	--syntax-tab-size: 2;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-gray-20: #e0e0e0;
+		--color-gray-50: #C0C0C0;
+		--color-gray-90: #dad8d8;
+
+		/* --text-color is assigned to --color-gray-_ above */
+		--text-color-link: #1493fb;
+		--text-color-link-active: #6969f7;
+		--text-color-link-visited: #a6a6f8;
+
+		--background-color: #15202b;
+	}
+}
+
+
+/* Global stylesheet */
+* {
+	box-sizing: border-box;
+}
+
+@view-transition {
+	navigation: auto;
+}
+
+html,
+body {
+	padding: 0;
+	margin: 0 auto;
+	font-family: var(--font-family);
+	color: var(--text-color);
+	background-color: var(--background-color);
+}
+html {
+	overflow-y: scroll;
+}
+body {
+	max-width: 75em;
+}
+
+/* https://www.a11yproject.com/posts/how-to-hide-content/ */
+.visually-hidden:not(:focus):not(:active) {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+/* Fluid images via https://www.zachleat.com/web/fluid-images/ */
+img{
+  max-width: 100%;
+}
+img[width][height] {
+  height: auto;
+}
+img[src$=".svg"] {
+  width: 100%;
+  height: auto;
+  max-width: none;
+}
+video,
+iframe {
+	width: 100%;
+	height: auto;
+}
+iframe {
+	aspect-ratio: 16/9;
+}
+
+p:last-child {
+	margin-bottom: 0;
+}
+p {
+	line-height: 1.5;
+}
+
+li {
+	line-height: 1.5;
+}
+
+a[href] {
+	color: var(--text-color-link);
+}
+a[href]:visited {
+	color: var(--text-color-link-visited);
+}
+a[href]:hover,
+a[href]:active {
+	color: var(--text-color-link-active);
+}
+
+main,
+footer {
+	padding: 1rem;
+}
+main :first-child {
+	margin-top: 0;
+}
+
+header {
+	border-bottom: 1px dashed var(--color-gray-20);
+}
+
+#skip-link {
+	text-decoration: none;
+	background: var(--background-color);
+	color: var(--text-color);
+	padding: 0.5rem 1rem;
+	border: 1px solid var(--color-gray-90);
+	border-radius: 2px;
+}
+
+/* Prevent visually-hidden skip link fom pushing content around when focused */
+#skip-link.visually-hidden:focus {
+	position: absolute;
+	top: 1rem;
+	left: 1rem;
+	/* Ensure it is positioned on top of everything else when it is shown */
+	z-index: 999;
+}
+
+.links-nextprev {
+	display: flex;
+	justify-content: space-between;
+	gap: .5em 1em;
+	list-style: "";
+	border-top: 1px dashed var(--color-gray-20);
+	padding: 1em 0;
+}
+.links-nextprev > * {
+	flex-grow: 1;
+}
+.links-nextprev-next {
+	text-align: right;
+}
+
+table {
+	margin: 1em 0;
+}
+table td,
+table th {
+	padding-right: 1em;
+}
+
+pre,
+code {
+	font-family: var(--font-family-monospace);
+}
+pre:not([class*="language-"]) {
+	margin: .5em 0;
+	line-height: 1.375; /* 22px /16 */
+	-moz-tab-size: var(--syntax-tab-size);
+	-o-tab-size: var(--syntax-tab-size);
+	tab-size: var(--syntax-tab-size);
+	-webkit-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+	direction: ltr;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	overflow-x: auto;
+}
+code {
+	word-break: break-all;
+}
+
+/* Header */
+header {
+	display: flex;
+	gap: 1em;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1em;
+}
+.home-link {
+	flex-grow: 1;
+	font-size: 1em; /* 16px /16 */
+	font-weight: 700;
+}
+.home-link:link:not(:hover) {
+	text-decoration: none;
+}
+
+/* Nav */
+.nav {
+	display: flex;
+	gap: .5em 1em;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+.nav-item {
+	display: inline-block;
+}
+.nav-item a[href]:not(:hover) {
+	text-decoration: none;
+}
+.nav a[href][aria-current="page"] {
+	text-decoration: underline;
+}
+
+/* Posts list */
+.postlist {
+	counter-reset: start-from var(--postlist-index);
+	list-style: none;
+	padding: 0;
+	padding-left: 1.5rem;
+}
+.postlist-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	counter-increment: start-from -1;
+	margin-bottom: 1em;
+}
+.postlist-item:before {
+	display: inline-block;
+	pointer-events: none;
+	content: "" counter(start-from, decimal-leading-zero) ". ";
+	line-height: 100%;
+	text-align: right;
+	margin-left: -1.5rem;
+}
+.postlist-date,
+.postlist-item:before {
+	font-size: 0.8125em; /* 13px /16 */
+	color: var(--color-gray-90);
+}
+.postlist-date {
+	word-spacing: -0.5px;
+}
+.postlist-link {
+	font-size: 1.1875em; /* 19px /16 */
+	font-weight: 700;
+	flex-basis: calc(100% - 1.5rem);
+	padding-left: .25em;
+	padding-right: .5em;
+	text-underline-position: from-font;
+	text-underline-offset: 0;
+	text-decoration-thickness: 1px;
+}
+.postlist-item-active .postlist-link {
+	font-weight: bold;
+}
+
+/* Tags */
+.post-tag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-transform: capitalize;
+	font-style: italic;
+}
+.postlist-item > .post-tag {
+	align-self: center;
+}
+
+/* Tags list */
+.post-metadata {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: .5em;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.post-metadata time {
+	margin-right: 1em;
+}
+
+/* Hero image */
+.hero-image-container {
+	position: relative;
+	display: inline-block;
+}
+.hero-image-container img {
+	display: block;
+	border: 12px solid white;
+	border-radius: 12px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.hero-image-caption {
+	position: absolute;
+	bottom: 24px;
+	right: 24px;
+	font-family: 'Georgia', 'Garamond', serif;
+	font-style: italic;
+	font-size: 0.95rem;
+	color: white !important;
+	text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+	padding: 0.5rem 0.75rem;
+	background: rgba(0, 0, 0, 0.3);
+	border-radius: 4px;
+	backdrop-filter: blur(4px);
+	text-decoration: none !important;
+	transition: background 0.2s ease;
+}
+.hero-image-caption:hover {
+	background: rgba(0, 0, 0, 0.5);
+	color: white !important;
+}
+.hero-image-caption:visited {
+	color: white !important;
+}
+.hero-image-caption:active {
+	color: white !important;
+}
+
+/* Timeline container */
+.timeline-container {
+  width: 100%;
+  margin: 1ch;
+}
+
+.timeline-item {
+  padding: 3em 2em 2em;
+  position: relative;
+  color: rgba(0, 0, 0, 0.7);
+  border-left: 2px solid rgba(0, 0, 0, 0.3);
+}
+.timeline-item p {
+  font-size: 1rem;
+}
+.timeline-item::before {
+  content: attr(date-is);
+  position: absolute;
+  left: 2em;
+  font-weight: bold;
+  top: 1em;
+  display: block;
+  font-size: .9rem;
+}
+.timeline-item::after {
+  width: 10px;
+  height: 10px;
+  display: block;
+  top: 1em;
+  position: absolute;
+  left: -7px;
+  border-radius: 10px;
+  content: '';
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  background: white;
+}
+.timeline-item:last-child {
+  -o-border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+  border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+}
+/**
+ * okaidia theme for JavaScript, CSS and HTML
+ * Loosely based on Monokai textmate theme by http://www.monokai.nl/
+ * @author ocodia
+ */
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: #f8f8f2;
+	background: none;
+	text-shadow: 0 1px rgba(0, 0, 0, 0.3);
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-size: 1em;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+	border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background: #272822;
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+	white-space: normal;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: #8292a2;
+}
+
+.token.punctuation {
+	color: #f8f8f2;
+}
+
+.token.namespace {
+	opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.constant,
+.token.symbol,
+.token.deleted {
+	color: #f92672;
+}
+
+.token.boolean,
+.token.number {
+	color: #ae81ff;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+	color: #a6e22e;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string,
+.token.variable {
+	color: #f8f8f2;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.function,
+.token.class-name {
+	color: #e6db74;
+}
+
+.token.keyword {
+	color: #66d9ef;
+}
+
+.token.regex,
+.token.important {
+	color: #fd971f;
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+/*
+ * New diff- syntax
+ */
+
+pre[class*="language-diff-"] {
+	--eleventy-code-padding: 1.25em;
+	padding-left: var(--eleventy-code-padding);
+	padding-right: var(--eleventy-code-padding);
+}
+.token.deleted {
+	background-color: hsl(0, 51%, 37%);
+	color: inherit;
+}
+.token.inserted {
+	background-color: hsl(126, 31%, 39%);
+	color: inherit;
+}
+
+/* Make the + and - characters unselectable for copy/paste */
+.token.prefix.unchanged,
+.token.prefix.inserted,
+.token.prefix.deleted {
+	-webkit-user-select: none;
+	user-select: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+.token.prefix.inserted,
+.token.prefix.deleted {
+	width: var(--eleventy-code-padding);
+	background-color: rgba(0,0,0,.2);
+}
+
+/* Optional: full-width background color */
+.token.inserted:not(.prefix),
+.token.deleted:not(.prefix) {
+	display: block;
+	margin-left: calc(-1 * var(--eleventy-code-padding));
+	margin-right: calc(-1 * var(--eleventy-code-padding));
+	text-decoration: none; /* override del, ins, mark defaults */
+	color: inherit; /* override del, ins, mark defaults */
+}</style>
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+	</head>
+	<body>
+		<a href="#main" id="skip-link" class="visually-hidden">Skip to main content</a>
+
+		<header>
+			<a href="/slinkydeveloper.github.io/" class="home-link">slinkydeveloper</a>
+			<nav>
+				<h2 class="visually-hidden" id="top-level-navigation-menu">Top level navigation menu</h2>
+				<ul class="nav">
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/">Home</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/blog/">Posts</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/landscapes/">Landscapes</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/about/">About</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/feed/feed.xml">Feed</a></li>
+					<li class="nav-item"><a href="https://github.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github"></i></a></li>
+					<li class="nav-item"><a href="https://bsky.app/profile/slinkydeveloper.bsky.social" target="_blank" rel="noopener noreferrer" aria-label="Bluesky"><i class="fa-brands fa-bluesky"></i></a></li>
+					<li class="nav-item"><a href="https://x.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></a></li>
+					<li class="nav-item"><a href="https://www.linkedin.com/in/francesco-guardiani/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-square-linkedin"></i></a></li>
+				</ul>
+			</nav>
+		</header>
+
+		<main id="main">
+			<heading-anchors>
+				
+
+
+<h1 id="tree-vs-skiplist-routing">Tree vs SkipList routing</h1>
+
+<ul class="post-metadata">
+	<li><time datetime="2017-09-25">25 September 2017</time></li>
+	<li><a href="/slinkydeveloper.github.io/tags/web-development/" class="post-tag">web development</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/vertx/" class="post-tag">vertx</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/vertx-web/" class="post-tag">vertx web</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/routing/" class="post-tag">routing</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/data-structures/" class="post-tag">data structures</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/tree/" class="post-tag">tree</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/skiplist/" class="post-tag">skiplist</a></li>
+</ul>
+
+<p>One of the most important features of web frameworks is performance and the routing process can become an important performance killer. I'm going to introduce you a comparison between the list (in particular the skip list) and the tree as data structure for web framework's routers.</p>
+<h2 id="why-this-article">Why this article</h2>
+<p>Routing consists in calling the correct handler for the URL that user requested. Sometimes this can be a simple and fast process, but in modern scenarios most times this process slows your application, in particular when:</p>
+<ul>
+<li>You have a huge list of routes</li>
+<li>You rely on path parameters (sometimes 2 or more path parameters in the same route)</li>
+<li>You want to run multiple handlers for every URL segment</li>
+</ul>
+<p>I'm writing this article because <a href="https://github.com/vert-x3/vertx-web/issues/678">I want to implement a tree router inside Vert.x Web framework</a>, so I'm investigating around to find what the best solution would be.</p>
+<h2 id="list-routing-vs-tree-routing">List routing vs Tree routing</h2>
+<p>A <strong>Route</strong> is a combination of HTTP method and path. The path can be a simple constant path or a path with one or more parameters, managed via regular expressions.</p>
+<p>The <strong>list routing</strong> uses a list to contain all defined routes (in a precise order). When the server receives a request, the router iterates through the list and searches for the routes that match with the received request. This process <strong>cannot be</strong> a simple list search, because a request can match multiple times. For example: if we have a router that declares</p>
+<ul>
+<li><code>GET &quot;/&quot;</code></li>
+<li><code>GET &quot;/users&quot;</code></li>
+<li><code>GET &quot;/users/userA&quot;</code></li>
+</ul>
+<p>and we receive <code>/users/userA</code> as request, the router has to run all the handlers of these three routes.</p>
+<p>The <strong>tree routing</strong> differs from list routing for one simple thing: the routes are inside a tree. So when the router receives the request, it follows the tree searching for matching routes</p>
+<p>When you think about a website (or, in the same situation, a web API) you think about a tree of web pages (operations) you can retrieve (perform). But most of the web frameworks don't implement the routing as a tree of resources, for multiple reasons:</p>
+<ul>
+<li>It's difficult to build a routing codebase around a concurrent tree preserving good performances</li>
+<li>Does the user manually build the routing tree or is the insertion a task for the algorithm? And how can we manage the regular expressions inside this insertion algorithm?</li>
+<li>Modern lists (for example the SkipList) are really powerful and <a href="https://en.wikipedia.org/wiki/Skip_list">can obtain performances similar to trees</a> mantaining the routing codebase simple</li>
+</ul>
+<p>But, not considering these problems, the tree seems a better solution for this problem, right? This is the starting thesis, now I need to prove it.</p>
+<p>Before starting, I want to underline that some frameworks have succesfully implemented the tree routing, for example <a href="https://github.com/fastify/fastify">Fastify</a>, achieving really interesting <a href="https://github.com/fastify/fastify#benchmarks">performances</a></p>
+<h2 id="reproduce-the-two-types-of-routers">Reproduce the two types of routers</h2>
+<p>The first step is creating the sketches of these two routing mechanisms. I've tried to create the list routing similar to Vert.x Web router, but of course these are only <strong>simplified examples</strong>. The router of a web framework is more complex than my 50 lines of code. The list router is implemented inside class <a href="https://github.com/slinkydeveloper/tree-list-routing-java-bench/blob/master/src/main/java/io/slinkydeveloper/bench/ListRouter.java"><code>ListRouter</code></a> and tree router is implemented inside class <a href="https://github.com/slinkydeveloper/tree-list-routing-java-bench/blob/master/src/main/java/io/slinkydeveloper/bench/TreeRouter.java"><code>TreeRouter</code></a>.</p>
+<p>The list router has a simple loop that calls for every route the function <code>route()</code>; when this function returns true, the route matches perfectly and the routing process stops. Remember that when I check if route <em>matches</em> (both in tree and list scenario) the router:</p>
+<ol>
+<li>first checks if the path matches partially (in case of regexes it calls <code>lookingAt()</code> method, while in string paths it calls the method <code>startsWith()</code>)</li>
+<li>Then it checks if the path matches totally (methods <code>matches()</code> and <code>equals()</code>). If the path matches totally, the routing stops</li>
+</ol>
+<p>The tree routing is a simple recursive function that works as follow:</p>
+<ul>
+<li>Base case: The path chunk is empty so we have finished the routing succesfully</li>
+<li>If not base case: We try to match <strong>partially</strong> first the constant paths and then the regular expressions. If we found a match, we go deeper with recursion</li>
+<li>If we don't find any match the requested route doesn't exist and the routing process stops</li>
+</ul>
+<p>We test against path chunks for a simple reason: when we go deeper with recursion we don't need to test against previous path components (and we don't need to re-extract the parameters), so the router simply removes it from the requested URL. And of course when the string is empty we have finished the routing. To gain good performances inside tree nodes I used the skip lists (I know I've cheated) to contain associated routes.</p>
+<p>This is only a way to implement the tree routing and also remember that I haven't written the insertion algorithm for the tree router, so I do all association between nodes manually.</p>
+<h2 id="two-common-api-scenarios">Two common API scenarios</h2>
+<p>I've created two benchmarks: an example of ecommerce API and a social network API. This examples are really similar, they only differ in number of routes and how many regular expression are contained in said routes. Below you can see how this &quot;fake&quot; routers are composed.</p>
+<figure>
+  <a href="/slinkydeveloper.github.io/images/tree-vs-router/ecommerce-tree.png" class="image-popup"><img src="content/images/tree-vs-router/ecommerce-tree.png" alt="image"></a>
+  <figcaption>Router created for ECommerceBenchmark</figcaption>
+</figure>
+<figure>
+  <a href="/slinkydeveloper.github.io/images/tree-vs-router/social-tree.png" class="image-popup"><img src="content/images/tree-vs-router/social-tree.png" alt="image"></a>
+  <figcaption>Router created for SocialNetworkBenchmark</figcaption>
+</figure>
+<h2 id="maybe-skip-list-is-better">Maybe Skip List is better?</h2>
+<p>The first benchmarks I wrote are simple accesses to routes. I wrote one benchmark for every route (that I store in <code>compatiblePaths</code>) and every data structure. Below you can find results of <a href="https://github.com/slinkydeveloper/tree-list-routing-java-bench/blob/master/src/main/java/io/slinkydeveloper/bench/ECommerceBenchmark.java"><code>ECommerceBenchmark</code></a>:</p>
+<figure>
+  <a href="/slinkydeveloper.github.io/images/tree-vs-router/basic_complex.png" class="image-popup"><img src="content/images/tree-vs-router/basic_complex.png" alt="image"></a>
+  <figcaption>Benchmark results for ECommerceBenchmark based on requested URLs</figcaption>
+</figure>
+<p>The first observation is that the constant paths in skip list are faster than in the tree router. This is caused by skip list optimization: when we get the same elements multiple times the skip list optimizes its links to access more quickly to its values. But the performances for skip lists falls in favor of tree when we use regular expressions, because of course we give a smaller string to the regular expression engine. With the <code>/health</code> path we have a little difference because in tree we are at the first level, while in <code>/user/newUser</code> we are one level deeper than <code>/health</code>. This results are confirmed by the <a href="https://github.com/slinkydeveloper/tree-list-routing-java-bench/blob/master/src/main/java/io/slinkydeveloper/bench/SocialNetworkBenchmark.java"><code>SocialNetworkBenchmark</code></a> with the same configuration:</p>
+<figure>
+  <a href="/slinkydeveloper.github.io/images/tree-vs-router/basic_social.png" class="image-popup"><img src="content/images/tree-vs-router/basic_social.png" alt="image"></a>
+  <figcaption>Benchmark results for SocialNetworkBenchmark based on requested URLs</figcaption>
+</figure>
+<p>So maybe skip lists are so fast that trees are not competitive in this application field? I've done two considerations:</p>
+<ol>
+<li>In a real case situation a router doesn't receive <strong>12.000.000 same requests</strong> in one second, but maybe if it receives 1.000 same requests (for example the <code>/feed</code> request) the skip list optimization helps a lot</li>
+<li>My tree implementation is rude compared to JDK's <code>ConcurrentSkipListSet</code></li>
+</ol>
+<h2 id="and-if-i-add-some-spice">And if I add some spice?</h2>
+<p>To confuse the skip list I've created a more <em>real</em> scenario: The benchmark function does 10 random requests and then the request assigned. This process complicates things a bit for the skip list, because it loses the optimization:</p>
+<figure>
+  <a href="/slinkydeveloper.github.io/images/tree-vs-router/with_load_complex.png" class="image-popup"><img src="content/images/tree-vs-router/with_load_complex.png" alt="image"></a>
+  <figcaption>Benchmark results for ECommerceBenchmark based on requested URLs with 10 random requests</figcaption>
+</figure>
+<p>And of course it's a win for the tree. The fun fact is that tree defeats the skip list also in first paths.</p>
+<p>For the social benchmark the random function that chooses the 10 requests is little bit hacky: Some paths (for example the <code>/feed</code>) have more chances than other ones. But the results remain the same:</p>
+<figure>
+  <a href="/slinkydeveloper.github.io/images/tree-vs-router/with_load_social.png" class="image-popup"><img src="content/images/tree-vs-router/with_load_social.png" alt="image"></a>
+  <figcaption>Benchmark results for SocialNetworkBenchmark based on requested URLs with 10 random requests</figcaption>
+</figure>
+<p>The results on <code>SocialNetworkBenchmark</code> are impressive because with some paths we have 3x or more performances for tree router, but we have an unstable situation at the same level.</p>
+<p>There's also an important consideration to do: When we go deeper, tree performances slope down, so to write a good tree router we need a good combination of access optimizations and insertion algorithm that avoids creating uselessly deep nodes.</p>
+<p>You can find below the final results with and without load (&quot;with load&quot; values conveniently scaled x11):</p>
+<figure>
+  <a href="/slinkydeveloper.github.io/images/tree-vs-router/complex_complete.png" class="image-popup"><img src="content/images/tree-vs-router/complex_complete.png" alt="image"></a>
+  <figcaption>Final benchmark results for ECommerceBenchmark</figcaption>
+</figure>
+<figure>
+  <a href="/slinkydeveloper.github.io/images/tree-vs-router/social_complete.png" class="image-popup"><img src="content/images/tree-vs-router/social_complete.png" alt="image"></a>
+  <figcaption>Final benchmark results for SocialNetworkBenchmark</figcaption>
+</figure>
+<h2 id="and-its-not-finished">And it's not finished!</h2>
+<p>For the two test cases and data structures I also wrote a <em>final benchmark</em> that accesses to <code>compatiblePaths</code> sequentially and in both cases it's a huge win for tree:</p>
+<figure class="half">
+	<a href="/slinkydeveloper.github.io/images/tree-vs-router/complex_average.png" class="image-popup"><img src="content/images/tree-vs-router/complex_average.png" alt="image"></a>
+	<a href="/slinkydeveloper.github.io/images/tree-vs-router/social_average.png" class="image-popup"><img src="content/images/tree-vs-router/social_average.png" alt="image"></a>
+	<figcaption>Final results (left e-commerce benchmark, right social benchmark)</figcaption>
+</figure>
+<p>But this is not a very realistic situation, because usually we have a situation like the social network benchmark with load: we have more frequent requests and less frequent requests, but it's unusual to get requests ordered in the router order sequentially.</p>
+<h2 id="so-whats-better">So, what's better?</h2>
+<p>That's an hard question, because these examples don't prove a lot. But, according to this data, it makes sense to start developing a tree router because we have good preconditions. In some situations with regular expressions we have seen up to 2x performances thanks to the tree router, but it's important to get good performances also with constant paths (remember that when we have query parameters like <code>/user?q=blabla</code> these URLs are splitted at the start of routing and the router treats this requests like constant paths).</p>
+<h2 id="implementing-a-tree-router-challenging-tasks">Implementing a Tree Router: challenging tasks</h2>
+<h3 id="insertion-algorithm">Insertion algorithm</h3>
+<p>The insertion algorithm is the most important challange for different reasons:</p>
+<ol>
+<li>Providing an optimization at every insertion</li>
+<li>Splitting constant paths and mostly importantly</li>
+<li><strong>Splitting regular expressions</strong></li>
+</ol>
+<p>The idea of insertion is not splitting for every <code>/</code> (like I've done in my examples) but something more like this:</p>
+<ol>
+<li>At the start we have an empty root node</li>
+<li>When I add a route I assign it to the root node</li>
+<li>When I add another route I check if it's a child of the root node or if I can split the root node in two nodes. In the first case I simply add the new route inside the list of childs, in the second case I split the root node creating two child nodes and assigning to the root node the shared first part of path</li>
+</ol>
+<p>For example:</p>
+<table>
+<thead>
+<tr>
+<th>Path inserted</th>
+<th>Tree update</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>Empty root node</td>
+</tr>
+<tr>
+<td>/users/{user_id}</td>
+<td>Root node with assigned &quot;/users/{user_id}&quot;</td>
+</tr>
+<tr>
+<td>/users/addUser</td>
+<td>Root node assigned with &quot;/users/&quot; and with childs &quot;{user_id}&quot; and &quot;addUser&quot;</td>
+</tr>
+<tr>
+<td>/users/addFacebookUser</td>
+<td>&quot;addUser&quot; splitted in new node with &quot;add&quot; and childs &quot;User&quot; and &quot;FacebookUser&quot;</td>
+</tr>
+</tbody>
+</table>
+<p>The last task in particular is very tricky, because a simple char to char comparison is very limiting and also can generate not working regular expressions. For example: path <code>/([a-b]{0, 9})</code> and path <code>/([a-z]{0, 9})</code> cannot be splitted creating a parent node with <code>/([a</code>, because of course this regular expression is invalid. I've got some ideas about it:</p>
+<ul>
+<li>First I check if two routes have the same regular expressions in the middle. For example when we have <code>/users/{user_id}/feed</code> and <code>/users/{user_id}/events</code> we split it into <code>/users/{user_id}/</code> with childs <code>feed</code> and <code>events</code>. This can be done with some regular expressions</li>
+<li>If a regular expression is at the end of a path, I split at the last constant <code>/</code> (not inside a group).</li>
+<li>If none of the previous, I treat it as first level child</li>
+</ul>
+<p>To do these things maybe a library that helps &quot;understanding&quot; regular expressions could come in handy.</p>
+<h3 id="mantaining-good-performances-during-routing">Mantaining good performances during routing</h3>
+<p>I really don't have idea how 😄. I want to start creating a simple router that does only the minimal routing and then I add conditions necessary to successfully pass the tests. Maybe operating in this way I can avoid creation of useless code.</p>
+<h2 id="conclusions">Conclusions</h2>
+<p>Router Tree is possible and can give great performances to Vert.x Web. I cannot wait to start working on it!</p>
+<p>Stay tuned!</p>
+
+<ul class="links-nextprev"><li class="links-nextprev-prev">← Previous<br> <a href="/slinkydeveloper.github.io/blog/My-GSoC-2017-Slush-Vertx/">My GSoC 2017 - Slush-vertx</a></li><li class="links-nextprev-next">Next →<br><a href="/slinkydeveloper.github.io/blog/Routing-With-Eclipse-Collections/">Routing with Eclipse Collections</a></li>
+</ul>
+
+			</heading-anchors>
+		</main>
+
+		<footer>
+			<p>
+				<em>Built with <a href="https://www.11ty.dev/">Eleventy v3.1.2</a></em>
+			</p>
+		</footer>
+
+		<!-- This page `/blog/Routing-Tree-vs-SkipList/` was built on 2025-10-05T17:01:29.967Z -->
+		<script type="module" src="/slinkydeveloper.github.io/dist/cC8wS6ZjFU.js"></script>
+	</body>
+</html>

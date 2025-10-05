@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Designing APIs for vibe coding</title>
+		<meta name="description" content="Developer experience in the age of vibe coding">
+		<link rel="alternate" href="/slinkydeveloper.github.io/feed/feed.xml" type="application/atom+xml" title="slinkydeveloper">
+		
+		
+		
+		<style>/* This is an arbitrary CSS string added to the bundle */
+/* Defaults */
+:root {
+	--font-family: -apple-system, system-ui, sans-serif;
+	--font-family-monospace: Consolas, Menlo, Monaco, Andale Mono WT, Andale Mono, Lucida Console, Lucida Sans Typewriter, DejaVu Sans Mono, Bitstream Vera Sans Mono, Liberation Mono, Nimbus Mono L, Courier New, Courier, monospace;
+}
+
+/* Theme colors */
+:root {
+	--color-gray-20: #e0e0e0;
+	--color-gray-50: #C0C0C0;
+	--color-gray-90: #333;
+
+	--background-color: #fff;
+
+	--text-color: var(--color-gray-90);
+	--text-color-link: #082840;
+	--text-color-link-active: #5f2b48;
+	--text-color-link-visited: #17050F;
+
+	--syntax-tab-size: 2;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-gray-20: #e0e0e0;
+		--color-gray-50: #C0C0C0;
+		--color-gray-90: #dad8d8;
+
+		/* --text-color is assigned to --color-gray-_ above */
+		--text-color-link: #1493fb;
+		--text-color-link-active: #6969f7;
+		--text-color-link-visited: #a6a6f8;
+
+		--background-color: #15202b;
+	}
+}
+
+
+/* Global stylesheet */
+* {
+	box-sizing: border-box;
+}
+
+@view-transition {
+	navigation: auto;
+}
+
+html,
+body {
+	padding: 0;
+	margin: 0 auto;
+	font-family: var(--font-family);
+	color: var(--text-color);
+	background-color: var(--background-color);
+}
+html {
+	overflow-y: scroll;
+}
+body {
+	max-width: 75em;
+}
+
+/* https://www.a11yproject.com/posts/how-to-hide-content/ */
+.visually-hidden:not(:focus):not(:active) {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+/* Fluid images via https://www.zachleat.com/web/fluid-images/ */
+img{
+  max-width: 100%;
+}
+img[width][height] {
+  height: auto;
+}
+img[src$=".svg"] {
+  width: 100%;
+  height: auto;
+  max-width: none;
+}
+video,
+iframe {
+	width: 100%;
+	height: auto;
+}
+iframe {
+	aspect-ratio: 16/9;
+}
+
+p:last-child {
+	margin-bottom: 0;
+}
+p {
+	line-height: 1.5;
+}
+
+li {
+	line-height: 1.5;
+}
+
+a[href] {
+	color: var(--text-color-link);
+}
+a[href]:visited {
+	color: var(--text-color-link-visited);
+}
+a[href]:hover,
+a[href]:active {
+	color: var(--text-color-link-active);
+}
+
+main,
+footer {
+	padding: 1rem;
+}
+main :first-child {
+	margin-top: 0;
+}
+
+header {
+	border-bottom: 1px dashed var(--color-gray-20);
+}
+
+#skip-link {
+	text-decoration: none;
+	background: var(--background-color);
+	color: var(--text-color);
+	padding: 0.5rem 1rem;
+	border: 1px solid var(--color-gray-90);
+	border-radius: 2px;
+}
+
+/* Prevent visually-hidden skip link fom pushing content around when focused */
+#skip-link.visually-hidden:focus {
+	position: absolute;
+	top: 1rem;
+	left: 1rem;
+	/* Ensure it is positioned on top of everything else when it is shown */
+	z-index: 999;
+}
+
+.links-nextprev {
+	display: flex;
+	justify-content: space-between;
+	gap: .5em 1em;
+	list-style: "";
+	border-top: 1px dashed var(--color-gray-20);
+	padding: 1em 0;
+}
+.links-nextprev > * {
+	flex-grow: 1;
+}
+.links-nextprev-next {
+	text-align: right;
+}
+
+table {
+	margin: 1em 0;
+}
+table td,
+table th {
+	padding-right: 1em;
+}
+
+pre,
+code {
+	font-family: var(--font-family-monospace);
+}
+pre:not([class*="language-"]) {
+	margin: .5em 0;
+	line-height: 1.375; /* 22px /16 */
+	-moz-tab-size: var(--syntax-tab-size);
+	-o-tab-size: var(--syntax-tab-size);
+	tab-size: var(--syntax-tab-size);
+	-webkit-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+	direction: ltr;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	overflow-x: auto;
+}
+code {
+	word-break: break-all;
+}
+
+/* Header */
+header {
+	display: flex;
+	gap: 1em;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1em;
+}
+.home-link {
+	flex-grow: 1;
+	font-size: 1em; /* 16px /16 */
+	font-weight: 700;
+}
+.home-link:link:not(:hover) {
+	text-decoration: none;
+}
+
+/* Nav */
+.nav {
+	display: flex;
+	gap: .5em 1em;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+.nav-item {
+	display: inline-block;
+}
+.nav-item a[href]:not(:hover) {
+	text-decoration: none;
+}
+.nav a[href][aria-current="page"] {
+	text-decoration: underline;
+}
+
+/* Posts list */
+.postlist {
+	counter-reset: start-from var(--postlist-index);
+	list-style: none;
+	padding: 0;
+	padding-left: 1.5rem;
+}
+.postlist-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	counter-increment: start-from -1;
+	margin-bottom: 1em;
+}
+.postlist-item:before {
+	display: inline-block;
+	pointer-events: none;
+	content: "" counter(start-from, decimal-leading-zero) ". ";
+	line-height: 100%;
+	text-align: right;
+	margin-left: -1.5rem;
+}
+.postlist-date,
+.postlist-item:before {
+	font-size: 0.8125em; /* 13px /16 */
+	color: var(--color-gray-90);
+}
+.postlist-date {
+	word-spacing: -0.5px;
+}
+.postlist-link {
+	font-size: 1.1875em; /* 19px /16 */
+	font-weight: 700;
+	flex-basis: calc(100% - 1.5rem);
+	padding-left: .25em;
+	padding-right: .5em;
+	text-underline-position: from-font;
+	text-underline-offset: 0;
+	text-decoration-thickness: 1px;
+}
+.postlist-item-active .postlist-link {
+	font-weight: bold;
+}
+
+/* Tags */
+.post-tag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-transform: capitalize;
+	font-style: italic;
+}
+.postlist-item > .post-tag {
+	align-self: center;
+}
+
+/* Tags list */
+.post-metadata {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: .5em;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.post-metadata time {
+	margin-right: 1em;
+}
+
+/* Hero image */
+.hero-image-container {
+	position: relative;
+	display: inline-block;
+}
+.hero-image-container img {
+	display: block;
+	border: 12px solid white;
+	border-radius: 12px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.hero-image-caption {
+	position: absolute;
+	bottom: 24px;
+	right: 24px;
+	font-family: 'Georgia', 'Garamond', serif;
+	font-style: italic;
+	font-size: 0.95rem;
+	color: white !important;
+	text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+	padding: 0.5rem 0.75rem;
+	background: rgba(0, 0, 0, 0.3);
+	border-radius: 4px;
+	backdrop-filter: blur(4px);
+	text-decoration: none !important;
+	transition: background 0.2s ease;
+}
+.hero-image-caption:hover {
+	background: rgba(0, 0, 0, 0.5);
+	color: white !important;
+}
+.hero-image-caption:visited {
+	color: white !important;
+}
+.hero-image-caption:active {
+	color: white !important;
+}
+
+/* Timeline container */
+.timeline-container {
+  width: 100%;
+  margin: 1ch;
+}
+
+.timeline-item {
+  padding: 3em 2em 2em;
+  position: relative;
+  color: rgba(0, 0, 0, 0.7);
+  border-left: 2px solid rgba(0, 0, 0, 0.3);
+}
+.timeline-item p {
+  font-size: 1rem;
+}
+.timeline-item::before {
+  content: attr(date-is);
+  position: absolute;
+  left: 2em;
+  font-weight: bold;
+  top: 1em;
+  display: block;
+  font-size: .9rem;
+}
+.timeline-item::after {
+  width: 10px;
+  height: 10px;
+  display: block;
+  top: 1em;
+  position: absolute;
+  left: -7px;
+  border-radius: 10px;
+  content: '';
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  background: white;
+}
+.timeline-item:last-child {
+  -o-border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+  border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+}
+/**
+ * okaidia theme for JavaScript, CSS and HTML
+ * Loosely based on Monokai textmate theme by http://www.monokai.nl/
+ * @author ocodia
+ */
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: #f8f8f2;
+	background: none;
+	text-shadow: 0 1px rgba(0, 0, 0, 0.3);
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-size: 1em;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+	border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background: #272822;
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+	white-space: normal;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: #8292a2;
+}
+
+.token.punctuation {
+	color: #f8f8f2;
+}
+
+.token.namespace {
+	opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.constant,
+.token.symbol,
+.token.deleted {
+	color: #f92672;
+}
+
+.token.boolean,
+.token.number {
+	color: #ae81ff;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+	color: #a6e22e;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string,
+.token.variable {
+	color: #f8f8f2;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.function,
+.token.class-name {
+	color: #e6db74;
+}
+
+.token.keyword {
+	color: #66d9ef;
+}
+
+.token.regex,
+.token.important {
+	color: #fd971f;
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+/*
+ * New diff- syntax
+ */
+
+pre[class*="language-diff-"] {
+	--eleventy-code-padding: 1.25em;
+	padding-left: var(--eleventy-code-padding);
+	padding-right: var(--eleventy-code-padding);
+}
+.token.deleted {
+	background-color: hsl(0, 51%, 37%);
+	color: inherit;
+}
+.token.inserted {
+	background-color: hsl(126, 31%, 39%);
+	color: inherit;
+}
+
+/* Make the + and - characters unselectable for copy/paste */
+.token.prefix.unchanged,
+.token.prefix.inserted,
+.token.prefix.deleted {
+	-webkit-user-select: none;
+	user-select: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+.token.prefix.inserted,
+.token.prefix.deleted {
+	width: var(--eleventy-code-padding);
+	background-color: rgba(0,0,0,.2);
+}
+
+/* Optional: full-width background color */
+.token.inserted:not(.prefix),
+.token.deleted:not(.prefix) {
+	display: block;
+	margin-left: calc(-1 * var(--eleventy-code-padding));
+	margin-right: calc(-1 * var(--eleventy-code-padding));
+	text-decoration: none; /* override del, ins, mark defaults */
+	color: inherit; /* override del, ins, mark defaults */
+}</style>
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+	</head>
+	<body>
+		<a href="#main" id="skip-link" class="visually-hidden">Skip to main content</a>
+
+		<header>
+			<a href="/slinkydeveloper.github.io/" class="home-link">slinkydeveloper</a>
+			<nav>
+				<h2 class="visually-hidden" id="top-level-navigation-menu">Top level navigation menu</h2>
+				<ul class="nav">
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/">Home</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/blog/">Posts</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/landscapes/">Landscapes</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/about/">About</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/feed/feed.xml">Feed</a></li>
+					<li class="nav-item"><a href="https://github.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github"></i></a></li>
+					<li class="nav-item"><a href="https://bsky.app/profile/slinkydeveloper.bsky.social" target="_blank" rel="noopener noreferrer" aria-label="Bluesky"><i class="fa-brands fa-bluesky"></i></a></li>
+					<li class="nav-item"><a href="https://x.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></a></li>
+					<li class="nav-item"><a href="https://www.linkedin.com/in/francesco-guardiani/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-square-linkedin"></i></a></li>
+				</ul>
+			</nav>
+		</header>
+
+		<main id="main">
+			<heading-anchors>
+				
+
+
+<h1 id="designing-apis-for-vibe-coding">Designing APIs for vibe coding</h1>
+
+<ul class="post-metadata">
+	<li><time datetime="2025-10-03">03 October 2025</time></li>
+	<li><a href="/slinkydeveloper.github.io/tags/devex/" class="post-tag">devex</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/vibe-coding/" class="post-tag">vibe coding</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/typescript/" class="post-tag">typescript</a></li>
+</ul>
+
+<p>Vibe coding is a point of no return. The <em>fine art</em> of designing APIs and crafting great DevEx? It needs to adapt to this new reality.</p>
+<p>So how do we actually do that?</p>
+<h2 id="before-vibe-coding">Before vibe coding</h2>
+<p>I've been doing API design for a while now, nitpicking on parameter names, function overloads, you name it.
+Over the years, I picked up from my mentors a few principles that I'd call <strong>Developer Experience canon</strong>.</p>
+<p>First, your API needs to be <strong>idiomatic</strong> for the target audience.
+Being idiomatic covers a lot of ground: obvious stuff like naming conventions, but also the more subtle unwritten rules.
+If factory methods in a language follow a certain pattern in popular libraries, you better have a damn good reason to do it differently.</p>
+<p><strong>Integrability</strong> is another big one. Your API doesn't live in a vacuum—it's used alongside other APIs.
+If you're returning something iterable, use the standard library iterator type, as this most likely makes your type usable with other APIs.</p>
+<p>And finally, <strong>discoverability</strong>: can people actually <em>find</em> your API features?
+Developers discover APIs in different ways: skimming docs, reading examples, or just downloading a template and <code>CTRL</code> + <code>Space</code>-ing their way through.
+As an API designer, you need to optimize for one or more of these learning paths.</p>
+<p>To get concrete, let's look at the design choices behind the <code>Context</code> API from the Restate TypeScript SDK:</p>
+<pre class="language-typescript" tabindex="0"><code class="language-typescript"><span class="token keyword">import</span> <span class="token operator">*</span> <span class="token keyword">as</span> restate <span class="token keyword">from</span> <span class="token string">"@restatedev/restate-sdk"</span><span class="token punctuation">;</span>
+
+<span class="token keyword">async</span> <span class="token keyword">function</span> <span class="token function">myFn</span><span class="token punctuation">(</span>ctx<span class="token operator">:</span> restate<span class="token punctuation">.</span>Context<span class="token punctuation">,</span> input<span class="token operator">:</span> Input<span class="token punctuation">)</span><span class="token operator">:</span> <span class="token builtin">Promise</span><span class="token operator">&lt;</span>Output<span class="token operator">></span> <span class="token punctuation">{</span>
+  <span class="token keyword">await</span> ctx<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>mySideEffect<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<p>Here's the problem: <strong>people don't know what Restate can do</strong> unless they read a good chunk of the docs and examples.
+So we put all the important features in one type called <code>Context</code> (a pretty common name for this kind of thing).
+Users can just hit <code>CTRL</code> + <code>SPACE</code> and boom—all the features we want them to discover:</p>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/designing-apis-for-vibe-coding/uXMK5kUGQO-1112.avif 1112w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/designing-apis-for-vibe-coding/uXMK5kUGQO-1112.webp 1112w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/designing-apis-for-vibe-coding/uXMK5kUGQO-1112.png" alt="Vs code autocompletion for Context" title="Vs code autocompletion for Context" width="1112" height="536"></picture></p>
+<p>You get <code>run</code> for recording side effects, <code>sleep</code> for delaying execution, <code>serviceClient</code> for calling other services, and more.</p>
+<p>We went even further: when you define a restate function using <code>restate.serve({...options})</code>, the <code>Context</code> parameter is required by the type system—you'll get a type error without it.
+Technically Restate functions don't <em>need</em> the <code>Context</code>, but we make it mandatory anyway so users <strong>know</strong> it exists.</p>
+<p>This works well for us, but we could've gone different routes.</p>
+<p>For example, we could've just had individual functions you import and ditched the <code>Context</code> entirely:</p>
+<pre class="language-typescript" tabindex="0"><code class="language-typescript"><span class="token keyword">import</span> <span class="token operator">*</span> <span class="token keyword">as</span> restate <span class="token keyword">from</span> <span class="token string">"@restatedev/restate-sdk"</span><span class="token punctuation">;</span>
+
+<span class="token keyword">async</span> <span class="token keyword">function</span> <span class="token function">myFn</span><span class="token punctuation">(</span>input<span class="token operator">:</span> Input<span class="token punctuation">)</span><span class="token operator">:</span> <span class="token builtin">Promise</span><span class="token operator">&lt;</span>Output<span class="token operator">></span> <span class="token punctuation">{</span>
+  <span class="token keyword">await</span> restate<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>mySideEffect<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<p>Sure, this looks cleaner in examples, but discoverability takes a hit. <code>CTRL</code> + <code>Space</code> would give you a ton of results, including stuff you shouldn't use inside a restate function (like <code>serve</code>).
+How do you fix that? Maybe another import like <code>import * as restateFeature from &quot;@restatedev/restate-sdk/features&quot;</code>? But then users need to know about that import. And good luck naming that namespace!</p>
+<p>Every design has tradeoffs. With our <code>Context</code> approach, you have to pass it through your code instead of just importing a function anywhere. There's no free lunch!</p>
+<h2 id="what-changed-with-vibe-coding">What changed with vibe coding</h2>
+<p>Let's look at the example that gave me the idea for this post:</p>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/designing-apis-for-vibe-coding/RFlYvsreOk-825.avif 825w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/designing-apis-for-vibe-coding/RFlYvsreOk-825.webp 825w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/designing-apis-for-vibe-coding/RFlYvsreOk-825.png" alt="Vs code autocompletion for service client" title="Vs code autocompletion for service client" width="825" height="205"></picture></p>
+<p>This API is another example of optimizing for autocompletion: you pass the service to <code>ctx.serviceClient</code>, and some TypeScript type manipulation plus <code>Proxy</code> gives you a fully typed client with autocompletion.</p>
+<p>Let me run a test with Copilot using GPT as the model:</p>
+<pre><code>In my function, can you call anotherFn using the context?
+</code></pre>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/designing-apis-for-vibe-coding/oI8kw20SuB-1228.avif 1228w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/designing-apis-for-vibe-coding/oI8kw20SuB-1228.webp 1228w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/designing-apis-for-vibe-coding/oI8kw20SuB-1228.png" alt="First prompt result" title="First prompt result" width="1228" height="215"></picture></p>
+<p>Hallucinating methods that don't exist. Let me try again:</p>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/designing-apis-for-vibe-coding/taHgiLnX9k-1102.avif 1102w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/designing-apis-for-vibe-coding/taHgiLnX9k-1102.webp 1102w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/designing-apis-for-vibe-coding/taHgiLnX9k-1102.png" alt="Second prompt result" title="Second prompt result" width="1102" height="182"></picture></p>
+<p>Still making things up. Different prompt:</p>
+<pre><code>In my function, can you send a request to anotherFn using the context?
+</code></pre>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/designing-apis-for-vibe-coding/ULD_RnLG3i-1256.avif 1256w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/designing-apis-for-vibe-coding/ULD_RnLG3i-1256.webp 1256w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/designing-apis-for-vibe-coding/ULD_RnLG3i-1256.png" alt="Fourth prompt result" title="Fourth prompt result" width="1256" height="207"></picture></p>
+<p>Switch to Claude Sonnet 4, and after a few tries, we finally get it right:</p>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/designing-apis-for-vibe-coding/LFWTTMGukp-627.avif 627w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/designing-apis-for-vibe-coding/LFWTTMGukp-627.webp 627w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/designing-apis-for-vibe-coding/LFWTTMGukp-627.png" alt="Third prompt result" title="Third prompt result" width="627" height="1188"></picture></p>
+<p>With older models, Copilot would make up even more unique stuff, trying to invent a <code>fetch</code>-like API:</p>
+<pre class="language-typescript" tabindex="0"><code class="language-typescript">ctx<span class="token punctuation">.</span><span class="token function">request</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+  service<span class="token operator">:</span> <span class="token string">"anotherService"</span><span class="token punctuation">,</span>
+  handler<span class="token operator">:</span> <span class="token string">"anotherFn"</span><span class="token punctuation">,</span>
+  body<span class="token operator">:</span> <span class="token string">"my input"</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span></code></pre>
+<p>This is creative, but completely made up.</p>
+<p>Sure, LLMs get better over time. Eventually they get trained on your APIs or pick up feedback. And yeah, they're probabilistic—they won't always nail it.</p>
+<p>But here's the thing: a vibe coder will throw prompts like these at your API, and you want them building features, not debugging LLM hallucinations.
+They won't discover your API by reading docs—they'll discover it by <strong>asking the LLM to solve a problem</strong>.</p>
+<p>This leads to a new design principle: maximize your API's <strong>vibe-ability</strong>—the ease with which developers can <strong>discover and correctly use</strong> your API through LLM-assisted coding.</p>
+<h2 id="why-is-the-vibe-ability-so-low">Why is the vibe-ability so low?</h2>
+<p>Not totally sure, but I've got a few theories for <code>serviceClient</code>.</p>
+<p>First, the type manipulation/proxy approach. The LLM needs specific training on that:
+it can't just look at the <code>Context</code> type, pick the right method, and fill in the parameters.
+It needs to deeply understand TypeScript's type system, perhaps using the LSP output in a feedback loop. That, or it needs to be trained on your API examples.</p>
+<p>Second theory: in the concept space of <em>TypeScript</em> and <em>requests</em>,
+<code>fetch</code> and plain function calls are the closest neighbors the LLM can think of.
+During training, the model probably saw <code>fetch</code> way more than client APIs like ours.</p>
+<h2 id="how-do-i-increase-vibe-ability">How do I increase vibe-ability?</h2>
+<p>I don't have a scientific answer—and I'd love to know if one exists.
+But after testing different prompts against our APIs, my empirical takeaway is simple: <strong>flat and verbose</strong> beats concise, <strong>conformity</strong> beats originality.</p>
+<p>It's a bit unfortunate—this likely means less innovative API designs will make it into the wild. Perhaps even worse, adoption will become a tougher game for new programming languages.</p>
+<p>Now every API I design gets a final test: I throw it at ChatGPT, Gemini, and Claude, ask them to assume the API exists, then see how close they get to what I've designed.
+To check if the new API vibes for real 🔮👩‍💻🌌</p>
+
+<ul class="links-nextprev"><li class="links-nextprev-prev">← Previous<br> <a href="/slinkydeveloper.github.io/blog/rust-macros-are-not-just-about-dry/">Rust macros are not just about DRY</a></li>
+</ul>
+
+			</heading-anchors>
+		</main>
+
+		<footer>
+			<p>
+				<em>Built with <a href="https://www.11ty.dev/">Eleventy v3.1.2</a></em>
+			</p>
+		</footer>
+
+		<!-- This page `/blog/designing-apis-for-vibe-coding/` was built on 2025-10-05T17:01:29.968Z -->
+		<script type="module" src="/slinkydeveloper.github.io/dist/cC8wS6ZjFU.js"></script>
+	</body>
+</html>

@@ -1,0 +1,1072 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Debts Manager Tutorial Part 2: Contract Design</title>
+		<meta name="description" content="In this second chapter of Debts Manager Tutorial I would like to show you how I have designed the REST API of Debts Manager. I&#39;m going to follow the API First approach, documenting all aspects of the API Design with OpenAPI 3.">
+		<link rel="alternate" href="/slinkydeveloper.github.io/feed/feed.xml" type="application/atom+xml" title="slinkydeveloper">
+		
+		
+		
+		<style>/* This is an arbitrary CSS string added to the bundle */
+/* Defaults */
+:root {
+	--font-family: -apple-system, system-ui, sans-serif;
+	--font-family-monospace: Consolas, Menlo, Monaco, Andale Mono WT, Andale Mono, Lucida Console, Lucida Sans Typewriter, DejaVu Sans Mono, Bitstream Vera Sans Mono, Liberation Mono, Nimbus Mono L, Courier New, Courier, monospace;
+}
+
+/* Theme colors */
+:root {
+	--color-gray-20: #e0e0e0;
+	--color-gray-50: #C0C0C0;
+	--color-gray-90: #333;
+
+	--background-color: #fff;
+
+	--text-color: var(--color-gray-90);
+	--text-color-link: #082840;
+	--text-color-link-active: #5f2b48;
+	--text-color-link-visited: #17050F;
+
+	--syntax-tab-size: 2;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-gray-20: #e0e0e0;
+		--color-gray-50: #C0C0C0;
+		--color-gray-90: #dad8d8;
+
+		/* --text-color is assigned to --color-gray-_ above */
+		--text-color-link: #1493fb;
+		--text-color-link-active: #6969f7;
+		--text-color-link-visited: #a6a6f8;
+
+		--background-color: #15202b;
+	}
+}
+
+
+/* Global stylesheet */
+* {
+	box-sizing: border-box;
+}
+
+@view-transition {
+	navigation: auto;
+}
+
+html,
+body {
+	padding: 0;
+	margin: 0 auto;
+	font-family: var(--font-family);
+	color: var(--text-color);
+	background-color: var(--background-color);
+}
+html {
+	overflow-y: scroll;
+}
+body {
+	max-width: 75em;
+}
+
+/* https://www.a11yproject.com/posts/how-to-hide-content/ */
+.visually-hidden:not(:focus):not(:active) {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+/* Fluid images via https://www.zachleat.com/web/fluid-images/ */
+img{
+  max-width: 100%;
+}
+img[width][height] {
+  height: auto;
+}
+img[src$=".svg"] {
+  width: 100%;
+  height: auto;
+  max-width: none;
+}
+video,
+iframe {
+	width: 100%;
+	height: auto;
+}
+iframe {
+	aspect-ratio: 16/9;
+}
+
+p:last-child {
+	margin-bottom: 0;
+}
+p {
+	line-height: 1.5;
+}
+
+li {
+	line-height: 1.5;
+}
+
+a[href] {
+	color: var(--text-color-link);
+}
+a[href]:visited {
+	color: var(--text-color-link-visited);
+}
+a[href]:hover,
+a[href]:active {
+	color: var(--text-color-link-active);
+}
+
+main,
+footer {
+	padding: 1rem;
+}
+main :first-child {
+	margin-top: 0;
+}
+
+header {
+	border-bottom: 1px dashed var(--color-gray-20);
+}
+
+#skip-link {
+	text-decoration: none;
+	background: var(--background-color);
+	color: var(--text-color);
+	padding: 0.5rem 1rem;
+	border: 1px solid var(--color-gray-90);
+	border-radius: 2px;
+}
+
+/* Prevent visually-hidden skip link fom pushing content around when focused */
+#skip-link.visually-hidden:focus {
+	position: absolute;
+	top: 1rem;
+	left: 1rem;
+	/* Ensure it is positioned on top of everything else when it is shown */
+	z-index: 999;
+}
+
+.links-nextprev {
+	display: flex;
+	justify-content: space-between;
+	gap: .5em 1em;
+	list-style: "";
+	border-top: 1px dashed var(--color-gray-20);
+	padding: 1em 0;
+}
+.links-nextprev > * {
+	flex-grow: 1;
+}
+.links-nextprev-next {
+	text-align: right;
+}
+
+table {
+	margin: 1em 0;
+}
+table td,
+table th {
+	padding-right: 1em;
+}
+
+pre,
+code {
+	font-family: var(--font-family-monospace);
+}
+pre:not([class*="language-"]) {
+	margin: .5em 0;
+	line-height: 1.375; /* 22px /16 */
+	-moz-tab-size: var(--syntax-tab-size);
+	-o-tab-size: var(--syntax-tab-size);
+	tab-size: var(--syntax-tab-size);
+	-webkit-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+	direction: ltr;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	overflow-x: auto;
+}
+code {
+	word-break: break-all;
+}
+
+/* Header */
+header {
+	display: flex;
+	gap: 1em;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1em;
+}
+.home-link {
+	flex-grow: 1;
+	font-size: 1em; /* 16px /16 */
+	font-weight: 700;
+}
+.home-link:link:not(:hover) {
+	text-decoration: none;
+}
+
+/* Nav */
+.nav {
+	display: flex;
+	gap: .5em 1em;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+.nav-item {
+	display: inline-block;
+}
+.nav-item a[href]:not(:hover) {
+	text-decoration: none;
+}
+.nav a[href][aria-current="page"] {
+	text-decoration: underline;
+}
+
+/* Posts list */
+.postlist {
+	counter-reset: start-from var(--postlist-index);
+	list-style: none;
+	padding: 0;
+	padding-left: 1.5rem;
+}
+.postlist-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	counter-increment: start-from -1;
+	margin-bottom: 1em;
+}
+.postlist-item:before {
+	display: inline-block;
+	pointer-events: none;
+	content: "" counter(start-from, decimal-leading-zero) ". ";
+	line-height: 100%;
+	text-align: right;
+	margin-left: -1.5rem;
+}
+.postlist-date,
+.postlist-item:before {
+	font-size: 0.8125em; /* 13px /16 */
+	color: var(--color-gray-90);
+}
+.postlist-date {
+	word-spacing: -0.5px;
+}
+.postlist-link {
+	font-size: 1.1875em; /* 19px /16 */
+	font-weight: 700;
+	flex-basis: calc(100% - 1.5rem);
+	padding-left: .25em;
+	padding-right: .5em;
+	text-underline-position: from-font;
+	text-underline-offset: 0;
+	text-decoration-thickness: 1px;
+}
+.postlist-item-active .postlist-link {
+	font-weight: bold;
+}
+
+/* Tags */
+.post-tag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-transform: capitalize;
+	font-style: italic;
+}
+.postlist-item > .post-tag {
+	align-self: center;
+}
+
+/* Tags list */
+.post-metadata {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: .5em;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.post-metadata time {
+	margin-right: 1em;
+}
+
+/* Hero image */
+.hero-image-container {
+	position: relative;
+	display: inline-block;
+}
+.hero-image-container img {
+	display: block;
+	border: 12px solid white;
+	border-radius: 12px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.hero-image-caption {
+	position: absolute;
+	bottom: 24px;
+	right: 24px;
+	font-family: 'Georgia', 'Garamond', serif;
+	font-style: italic;
+	font-size: 0.95rem;
+	color: white !important;
+	text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+	padding: 0.5rem 0.75rem;
+	background: rgba(0, 0, 0, 0.3);
+	border-radius: 4px;
+	backdrop-filter: blur(4px);
+	text-decoration: none !important;
+	transition: background 0.2s ease;
+}
+.hero-image-caption:hover {
+	background: rgba(0, 0, 0, 0.5);
+	color: white !important;
+}
+.hero-image-caption:visited {
+	color: white !important;
+}
+.hero-image-caption:active {
+	color: white !important;
+}
+
+/* Timeline container */
+.timeline-container {
+  width: 100%;
+  margin: 1ch;
+}
+
+.timeline-item {
+  padding: 3em 2em 2em;
+  position: relative;
+  color: rgba(0, 0, 0, 0.7);
+  border-left: 2px solid rgba(0, 0, 0, 0.3);
+}
+.timeline-item p {
+  font-size: 1rem;
+}
+.timeline-item::before {
+  content: attr(date-is);
+  position: absolute;
+  left: 2em;
+  font-weight: bold;
+  top: 1em;
+  display: block;
+  font-size: .9rem;
+}
+.timeline-item::after {
+  width: 10px;
+  height: 10px;
+  display: block;
+  top: 1em;
+  position: absolute;
+  left: -7px;
+  border-radius: 10px;
+  content: '';
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  background: white;
+}
+.timeline-item:last-child {
+  -o-border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+  border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+}
+/**
+ * okaidia theme for JavaScript, CSS and HTML
+ * Loosely based on Monokai textmate theme by http://www.monokai.nl/
+ * @author ocodia
+ */
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: #f8f8f2;
+	background: none;
+	text-shadow: 0 1px rgba(0, 0, 0, 0.3);
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-size: 1em;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+	border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background: #272822;
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+	white-space: normal;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: #8292a2;
+}
+
+.token.punctuation {
+	color: #f8f8f2;
+}
+
+.token.namespace {
+	opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.constant,
+.token.symbol,
+.token.deleted {
+	color: #f92672;
+}
+
+.token.boolean,
+.token.number {
+	color: #ae81ff;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+	color: #a6e22e;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string,
+.token.variable {
+	color: #f8f8f2;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.function,
+.token.class-name {
+	color: #e6db74;
+}
+
+.token.keyword {
+	color: #66d9ef;
+}
+
+.token.regex,
+.token.important {
+	color: #fd971f;
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+/*
+ * New diff- syntax
+ */
+
+pre[class*="language-diff-"] {
+	--eleventy-code-padding: 1.25em;
+	padding-left: var(--eleventy-code-padding);
+	padding-right: var(--eleventy-code-padding);
+}
+.token.deleted {
+	background-color: hsl(0, 51%, 37%);
+	color: inherit;
+}
+.token.inserted {
+	background-color: hsl(126, 31%, 39%);
+	color: inherit;
+}
+
+/* Make the + and - characters unselectable for copy/paste */
+.token.prefix.unchanged,
+.token.prefix.inserted,
+.token.prefix.deleted {
+	-webkit-user-select: none;
+	user-select: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+.token.prefix.inserted,
+.token.prefix.deleted {
+	width: var(--eleventy-code-padding);
+	background-color: rgba(0,0,0,.2);
+}
+
+/* Optional: full-width background color */
+.token.inserted:not(.prefix),
+.token.deleted:not(.prefix) {
+	display: block;
+	margin-left: calc(-1 * var(--eleventy-code-padding));
+	margin-right: calc(-1 * var(--eleventy-code-padding));
+	text-decoration: none; /* override del, ins, mark defaults */
+	color: inherit; /* override del, ins, mark defaults */
+}</style>
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+	</head>
+	<body>
+		<a href="#main" id="skip-link" class="visually-hidden">Skip to main content</a>
+
+		<header>
+			<a href="/slinkydeveloper.github.io/" class="home-link">slinkydeveloper</a>
+			<nav>
+				<h2 class="visually-hidden" id="top-level-navigation-menu">Top level navigation menu</h2>
+				<ul class="nav">
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/">Home</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/blog/">Posts</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/landscapes/">Landscapes</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/about/">About</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/feed/feed.xml">Feed</a></li>
+					<li class="nav-item"><a href="https://github.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github"></i></a></li>
+					<li class="nav-item"><a href="https://bsky.app/profile/slinkydeveloper.bsky.social" target="_blank" rel="noopener noreferrer" aria-label="Bluesky"><i class="fa-brands fa-bluesky"></i></a></li>
+					<li class="nav-item"><a href="https://x.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></a></li>
+					<li class="nav-item"><a href="https://www.linkedin.com/in/francesco-guardiani/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-square-linkedin"></i></a></li>
+				</ul>
+			</nav>
+		</header>
+
+		<main id="main">
+			<heading-anchors>
+				
+
+
+<h1 id="debts-manager-tutorial-part-2-contract-design">Debts Manager Tutorial Part 2: Contract Design</h1>
+
+<ul class="post-metadata">
+	<li><time datetime="2019-01-20">20 January 2019</time></li>
+	<li><a href="/slinkydeveloper.github.io/tags/development/" class="post-tag">development</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/web/" class="post-tag">web</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/web-api-contract/" class="post-tag">web api contract</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/vertx/" class="post-tag">vertx</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/openapi/" class="post-tag">openapi</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/openapi-3/" class="post-tag">openapi 3</a></li>
+</ul>
+
+<p>Hi guys! Welcome back to this tutorial!</p>
+<p>In this second chapter of Debts Manager Tutorial I would like to show you how I have designed the REST API of Debts Manager. I'm going to follow the <em>API First</em> approach, documenting all aspects of the API Design with OpenAPI 3.</p>
+<p>This post doesn't aim to provide you a full guide of how to design REST APIs: if you want more resources to learn it, <a href="#Some-resources-to-learn-Web-API-Design-and-OpenAPI">look at the end of this post</a></p>
+<h2 id="analysis">Analysis</h2>
+<p>The REST APIs, in contrast with RPC, are driven by the data the services wants to expose. In the previous chapter I gave you an idea of the entities we must expose. Now I tabulate these and the relative operations on it.</p>
+<table>
+<thead>
+<tr>
+<th>Entity</th>
+<th>Create</th>
+<th>Retrieve</th>
+<th>Update</th>
+<th>Delete</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>User</td>
+<td>✔️</td>
+<td>✔️</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>User relationship</td>
+<td>✔️</td>
+<td>✔️</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Transaction</td>
+<td>✔️</td>
+<td>✔️</td>
+<td>✔️</td>
+<td>✔️</td>
+</tr>
+<tr>
+<td>Status</td>
+<td>❌</td>
+<td>✔️</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+</tbody>
+</table>
+<p>This table is a pretty good starting point, but I must refine the analysis enforcing our methods with policies and logics.</p>
+<p>These policies are primarly based on <em>who is making the request</em>. I'm going to define a login phase together with JWT to provide authorization and authentication. Each endpoint, except <code>login</code> and <code>register</code>, is secured with a JWT auth. My objective is expose, for each user, only a subset of data relative to the user itself.</p>
+<h2 id="models">Models</h2>
+<p>Before defining the endpoints I must formally describe the data models representing the service entities. OpenAPI has its own Json Schema dialect to define models: <a href="https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#schemaObject">OpenAPI Schema</a>. This is an extended subset of <a href="http://json-schema.org/specification-links.html#draft-5">Json Schema Draft 5</a>. Meanwhile I'm writing, there is a proposal to allow usage of every version of Json Schema, including the newer versions, with an extension <a href="https://github.com/OAI/OpenAPI-Specification/issues/1532">https://github.com/OAI/OpenAPI-Specification/issues/1532</a>.</p>
+<p>I place these schemas in main OpenAPI file under <code>components</code> and <code>schemas</code> keywords. I can refeer to it using Json schema references (<code>$ref</code> keyword).</p>
+<p>The simplest model here is the user. I want to expose only the username, so I represent it with a simple <code>string</code>. This is the definition using OpenAPI Schema:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">Username</span><span class="token punctuation">:</span>
+  <span class="token key atrule">minLength</span><span class="token punctuation">:</span> <span class="token number">5</span>
+  <span class="token key atrule">type</span><span class="token punctuation">:</span> string</code></pre>
+<p>The status is represented by a map with users as keys and total debts\credits as values. In OpenAPI Schema:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">Status</span><span class="token punctuation">:</span>
+  <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Map with username as keys and debt as value'</span>
+  <span class="token key atrule">type</span><span class="token punctuation">:</span> object
+  <span class="token key atrule">additionalProperties</span><span class="token punctuation">:</span>
+    <span class="token key atrule">type</span><span class="token punctuation">:</span> number</code></pre>
+<p>In JSON maps are usually represented or as json array of tuples key-value or as a json object. The json object is the natural way to represent it, but it has an important restriction: keys are strings. In my case I need to represent a map string → number, so json object representation fits good. The map values schema are defined using <code>additionalProperties</code> and, only with Json Schema Draft 7 or newer, keys schema are defined using <code>propertyNames</code>.</p>
+<p>The main transaction model is described below:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">Transaction</span><span class="token punctuation">:</span>
+  <span class="token key atrule">type</span><span class="token punctuation">:</span> object
+  <span class="token key atrule">properties</span><span class="token punctuation">:</span>
+    <span class="token key atrule">id</span><span class="token punctuation">:</span>
+      <span class="token key atrule">type</span><span class="token punctuation">:</span> string
+    <span class="token key atrule">from</span><span class="token punctuation">:</span>
+      <span class="token key atrule">$ref</span><span class="token punctuation">:</span> <span class="token string">'#/components/schemas/Username'</span>
+    <span class="token key atrule">to</span><span class="token punctuation">:</span>
+      <span class="token key atrule">$ref</span><span class="token punctuation">:</span> <span class="token string">'#/components/schemas/Username'</span>
+    <span class="token key atrule">at</span><span class="token punctuation">:</span>
+      <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">"Insertion datetime"</span>
+      <span class="token key atrule">format</span><span class="token punctuation">:</span> date<span class="token punctuation">-</span>time
+      <span class="token key atrule">type</span><span class="token punctuation">:</span> string
+    <span class="token key atrule">value</span><span class="token punctuation">:</span>
+      <span class="token key atrule">type</span><span class="token punctuation">:</span> number
+    <span class="token key atrule">description</span><span class="token punctuation">:</span>
+      <span class="token key atrule">minLength</span><span class="token punctuation">:</span> <span class="token number">1</span>
+      <span class="token key atrule">type</span><span class="token punctuation">:</span> string
+  <span class="token key atrule">required</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> from
+    <span class="token punctuation">-</span> to
+    <span class="token punctuation">-</span> id
+    <span class="token punctuation">-</span> description
+    <span class="token punctuation">-</span> value
+    <span class="token punctuation">-</span> at</code></pre>
+<p><code>$ref</code> keyword points to the <code>Username</code> schema I defined before.</p>
+<p>This model doesn't fit good for my usage, because for each <code>Transaction</code> endpoint I want to apply some policies. A very common example is the <code>id</code> field: when user inserts a new transaction I want to designate the database to fill the <code>id</code> value. When the user creates a new transaction it shouldn't add the <code>id</code> field: that means that I can't use the <code>Transaction</code> model to describe the &quot;create transaction&quot; request body. Let's look at all restrictions I want to apply on various transaction endpoints:</p>
+<ul>
+<li><code>id</code> and <code>at</code> are filled by the backend when user adds a new transaction and they are immutable from the API perspective</li>
+<li>When user updates a transaction he can't update the <code>from</code> (sender) and <code>to</code> (receiver) fields</li>
+<li>When user adds a new transaction he doesn't need to fill the <code>from</code> field because the backend fills it with the logged user</li>
+</ul>
+<p>To apply these restrictions I create a new model for each endpoint. I'm going to refactor <code>Transaction</code> into 3 different models: <code>UpdateTransaction</code>, <code>NewTransaction</code> and <code>Transaction</code>.</p>
+<p>These new models lead to a new problem: duplication of model fields definitions. Json schema solves the duplication with schema composition keywords: <code>allOf</code>, <code>anyOf</code> and <code>oneOf</code>. In particular I will use <code>allOf</code> to achieve inheritance of schemas.</p>
+<p>This is the final result:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">UpdateTransaction</span><span class="token punctuation">:</span>
+  <span class="token key atrule">type</span><span class="token punctuation">:</span> object
+  <span class="token key atrule">properties</span><span class="token punctuation">:</span>
+    <span class="token key atrule">value</span><span class="token punctuation">:</span>
+      <span class="token key atrule">type</span><span class="token punctuation">:</span> number
+    <span class="token key atrule">description</span><span class="token punctuation">:</span>
+      <span class="token key atrule">minLength</span><span class="token punctuation">:</span> <span class="token number">1</span>
+      <span class="token key atrule">type</span><span class="token punctuation">:</span> string
+<span class="token key atrule">NewTransaction</span><span class="token punctuation">:</span>
+  <span class="token key atrule">allOf</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">$ref</span><span class="token punctuation">:</span> <span class="token string">'#/components/schemas/UpdateTransaction'</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">properties</span><span class="token punctuation">:</span>
+        <span class="token key atrule">to</span><span class="token punctuation">:</span>
+          <span class="token key atrule">$ref</span><span class="token punctuation">:</span> <span class="token string">'#/components/schemas/Username'</span>
+      <span class="token key atrule">required</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> to
+        <span class="token punctuation">-</span> description
+        <span class="token punctuation">-</span> value
+      <span class="token key atrule">type</span><span class="token punctuation">:</span> object
+<span class="token key atrule">Transaction</span><span class="token punctuation">:</span>
+  <span class="token key atrule">allOf</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">$ref</span><span class="token punctuation">:</span> <span class="token string">'#/components/schemas/NewTransaction'</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">required</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> from
+        <span class="token punctuation">-</span> to
+        <span class="token punctuation">-</span> id
+        <span class="token punctuation">-</span> description
+        <span class="token punctuation">-</span> value
+        <span class="token punctuation">-</span> at
+      <span class="token key atrule">type</span><span class="token punctuation">:</span> object
+      <span class="token key atrule">properties</span><span class="token punctuation">:</span>
+        <span class="token key atrule">from</span><span class="token punctuation">:</span>
+          <span class="token key atrule">$ref</span><span class="token punctuation">:</span> <span class="token string">'#/components/schemas/Username'</span>
+        <span class="token key atrule">id</span><span class="token punctuation">:</span>
+          <span class="token key atrule">type</span><span class="token punctuation">:</span> string
+        <span class="token key atrule">at</span><span class="token punctuation">:</span>
+          <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">"Insertion datetime"</span>
+          <span class="token key atrule">format</span><span class="token punctuation">:</span> date<span class="token punctuation">-</span>time
+          <span class="token key atrule">type</span><span class="token punctuation">:</span> string</code></pre>
+<p>The schemas inheritance tree is <code>UpdateTransaction</code>←<code>NewTransaction</code>←<code>Transaction</code></p>
+<h2 id="endpoints">Endpoints</h2>
+<p>OpenAPI document structures the endpoint definitions as follow:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">paths</span><span class="token punctuation">:</span>
+  <span class="token key atrule">/pathA</span><span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+  <span class="token key atrule">/pathB</span><span class="token punctuation">:</span>
+    <span class="token key atrule">get</span><span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+    <span class="token key atrule">post</span><span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+    <span class="token key atrule">put</span><span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+  /pathC/<span class="token punctuation">{</span>paramA<span class="token punctuation">}</span><span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span></code></pre>
+<p>OpenAPI path strings allow path parameters using <code>{paramName}</code> and doesn't require an explicit definition of query parameters.</p>
+<p>In OpenAPI terminology an <strong>operation</strong> is an API endpoint identified by a path and an HTTP method. Every operation could be uniquely identified with an <code>operationId</code>. The OpenAPI Specification (OAS) documents this field as optional, but I strongly suggest to specify it if you don't want to see your tooling explode. Most code generation tooling asserts that <code>operationId</code> is present. If it's not present they try to infeer it from path and http method producing unexpected results.</p>
+<p>For each operation we are going to define:</p>
+<ul>
+<li><code>operationId</code></li>
+<li><code>parameters</code> (if any): List of <code>header</code>, <code>path</code>, <code>query</code> and <code>cookie</code> parameters</li>
+<li><code>requestBody</code> (if any): Content type and content schema of request bodies</li>
+<li><code>responses</code>: Status code with response content type and schemas</li>
+</ul>
+<p>I also fill the <code>security</code> field for each operation to require a JWT token to execute it.</p>
+<h3 id="transactions-and-status">Transactions and Status</h3>
+<p>Let's start with transaction CRUDs:</p>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th><code>operationId</code></th>
+<th>CRUD</th>
+<th>Path</th>
+<th>HTTP Method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Create a new transaction</td>
+<td><code>createTransaction</code></td>
+<td><strong>C</strong>reate</td>
+<td><code>/transactions</code></td>
+<td>POST</td>
+</tr>
+<tr>
+<td>Get a single transaction</td>
+<td><code>getTransaction</code></td>
+<td><strong>R</strong>etrieve</td>
+<td><code>/transactions/{transactionId}</code></td>
+<td>GET</td>
+</tr>
+<tr>
+<td>Get user related transactions</td>
+<td><code>getTransactions</code></td>
+<td><strong>R</strong>etrieve multiple</td>
+<td><code>/transactions</code></td>
+<td>GET</td>
+</tr>
+<tr>
+<td>Update a transaction</td>
+<td><code>updateTransaction</code></td>
+<td><strong>U</strong>pdate</td>
+<td><code>/transactions/{transactionId}</code></td>
+<td>PUT</td>
+</tr>
+<tr>
+<td>Delete a transaction</td>
+<td><code>deleteTransaction</code></td>
+<td><strong>D</strong>elete</td>
+<td><code>/transactions/{transactionId}</code></td>
+<td>DELETE</td>
+</tr>
+</tbody>
+</table>
+<p>In OpenAPI:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml">  <span class="token key atrule">/transactions</span><span class="token punctuation">:</span>
+    <span class="token key atrule">get</span><span class="token punctuation">:</span>
+      <span class="token key atrule">operationId</span><span class="token punctuation">:</span> getTransactions
+      <span class="token key atrule">responses</span><span class="token punctuation">:</span>
+        <span class="token key atrule">'200'</span><span class="token punctuation">:</span>
+          <span class="token key atrule">content</span><span class="token punctuation">:</span>
+            <span class="token key atrule">application/json</span><span class="token punctuation">:</span>
+              <span class="token key atrule">schema</span><span class="token punctuation">:</span>
+                <span class="token key atrule">type</span><span class="token punctuation">:</span> array
+                <span class="token key atrule">items</span><span class="token punctuation">:</span>
+                  <span class="token key atrule">$ref</span><span class="token punctuation">:</span> <span class="token string">'#/components/schemas/Transaction'</span>
+        <span class="token key atrule">'401'</span><span class="token punctuation">:</span>
+          <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Expired token'</span>
+      <span class="token key atrule">security</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token key atrule">loggedUserToken</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    <span class="token key atrule">post</span><span class="token punctuation">:</span>
+      <span class="token key atrule">operationId</span><span class="token punctuation">:</span> createTransaction
+      <span class="token key atrule">requestBody</span><span class="token punctuation">:</span>
+        <span class="token key atrule">content</span><span class="token punctuation">:</span>
+          <span class="token key atrule">application/json</span><span class="token punctuation">:</span>
+            <span class="token key atrule">schema</span><span class="token punctuation">:</span>
+              <span class="token key atrule">$ref</span><span class="token punctuation">:</span> <span class="token string">'#/components/schemas/NewTransaction'</span>
+        <span class="token key atrule">required</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+      <span class="token key atrule">responses</span><span class="token punctuation">:</span>
+        <span class="token key atrule">'201'</span><span class="token punctuation">:</span>
+          <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Successful response.'</span>
+        <span class="token key atrule">'401'</span><span class="token punctuation">:</span>
+          <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Expired Token'</span>
+        <span class="token key atrule">'403'</span><span class="token punctuation">:</span>
+          <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">"Trying to create a transaction with receiver not connected to logged user"</span>
+      <span class="token key atrule">security</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token key atrule">loggedUserToken</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+  <span class="token key atrule">'/transactions/{transactionId}'</span><span class="token punctuation">:</span>
+    <span class="token key atrule">get</span><span class="token punctuation">:</span>
+      <span class="token key atrule">operationId</span><span class="token punctuation">:</span> getTransaction
+      <span class="token key atrule">responses</span><span class="token punctuation">:</span>
+        <span class="token key atrule">'200'</span><span class="token punctuation">:</span>
+          <span class="token key atrule">content</span><span class="token punctuation">:</span>
+            <span class="token key atrule">application/json</span><span class="token punctuation">:</span>
+              <span class="token key atrule">schema</span><span class="token punctuation">:</span>
+                <span class="token key atrule">$ref</span><span class="token punctuation">:</span> <span class="token string">'#/components/schemas/Transaction'</span>
+        <span class="token key atrule">'401'</span><span class="token punctuation">:</span>
+          <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Expired Token'</span>
+        <span class="token key atrule">'403'</span><span class="token punctuation">:</span>
+          <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">"Trying to get a transaction where `from` or `to` is not the logged user"</span>
+      <span class="token key atrule">security</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token key atrule">loggedUserToken</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    <span class="token key atrule">put</span><span class="token punctuation">:</span>
+      <span class="token key atrule">operationId</span><span class="token punctuation">:</span> updateTransaction
+      <span class="token key atrule">requestBody</span><span class="token punctuation">:</span>
+        <span class="token key atrule">content</span><span class="token punctuation">:</span>
+          <span class="token key atrule">application/json</span><span class="token punctuation">:</span>
+            <span class="token key atrule">schema</span><span class="token punctuation">:</span>
+              <span class="token key atrule">$ref</span><span class="token punctuation">:</span> <span class="token string">'#/components/schemas/UpdateTransaction'</span>
+        <span class="token key atrule">required</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+      <span class="token key atrule">responses</span><span class="token punctuation">:</span>
+        <span class="token key atrule">'202'</span><span class="token punctuation">:</span>
+          <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Successful response.'</span>
+        <span class="token key atrule">'401'</span><span class="token punctuation">:</span>
+          <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Expired Token'</span>
+        <span class="token key atrule">'403'</span><span class="token punctuation">:</span>
+          <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Trying to update a transaction where `from` is not the logged user'</span>
+      <span class="token key atrule">security</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token key atrule">loggedUserToken</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    <span class="token key atrule">delete</span><span class="token punctuation">:</span>
+      <span class="token key atrule">operationId</span><span class="token punctuation">:</span> deleteTransaction
+      <span class="token key atrule">responses</span><span class="token punctuation">:</span>
+        <span class="token key atrule">'204'</span><span class="token punctuation">:</span>
+          <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Successful response.'</span>
+        <span class="token key atrule">'401'</span><span class="token punctuation">:</span>
+          <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Expired Token '</span>
+        <span class="token key atrule">'403'</span><span class="token punctuation">:</span>
+          <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Trying to remove a transaction where `from` is not the logged user'</span>
+      <span class="token key atrule">security</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token key atrule">loggedUserToken</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    <span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> transactionId
+        <span class="token key atrule">in</span><span class="token punctuation">:</span> path
+        <span class="token key atrule">required</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+        <span class="token key atrule">schema</span><span class="token punctuation">:</span>
+          <span class="token key atrule">type</span><span class="token punctuation">:</span> string</code></pre>
+<p>Note that for all operations under <code>/transactions/{transactionId}</code> path I haven't redefined every time the parameter <code>transactionId</code>: I have defined once at path level.</p>
+<p>Status has only the <em>retrieve</em> operation, but I want to let user customize the output based on transactions insertion datetime: clients can use query parameter <code>till</code> to ask the status till the date time provided, excluding newer transactions. You can use it to throw back in your house mate face that he didn't pay the bills for a quite long time.</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">/status</span><span class="token punctuation">:</span>
+  <span class="token key atrule">get</span><span class="token punctuation">:</span>
+    <span class="token key atrule">operationId</span><span class="token punctuation">:</span> getUserStatus
+    <span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> till
+        <span class="token key atrule">in</span><span class="token punctuation">:</span> query
+        <span class="token key atrule">required</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+        <span class="token key atrule">schema</span><span class="token punctuation">:</span>
+          <span class="token key atrule">type</span><span class="token punctuation">:</span> string
+          <span class="token key atrule">format</span><span class="token punctuation">:</span> <span class="token string">'date-time'</span>
+    <span class="token key atrule">responses</span><span class="token punctuation">:</span>
+      <span class="token key atrule">'200'</span><span class="token punctuation">:</span>
+        <span class="token key atrule">content</span><span class="token punctuation">:</span>
+          <span class="token key atrule">application/json</span><span class="token punctuation">:</span>
+            <span class="token key atrule">schema</span><span class="token punctuation">:</span>
+              <span class="token key atrule">$ref</span><span class="token punctuation">:</span> <span class="token string">'#/components/schemas/Status'</span>
+      <span class="token key atrule">'401'</span><span class="token punctuation">:</span>
+        <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Expired token'</span>
+    <span class="token key atrule">security</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">loggedUserToken</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span></code></pre>
+<h3 id="user-and-user-relationships">User and User relationships</h3>
+<p>The service supports creation and retrieval of users and user relationships. For simplicity I avoided to include <strong>U</strong> and <strong>D</strong> operations for user and user relationships.</p>
+<p>I want to expose an endpoint to retrieve all registered users and an endpoint to retrieve only users that have a relationship with logged user:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">/users</span><span class="token punctuation">:</span>
+  <span class="token key atrule">get</span><span class="token punctuation">:</span>
+    <span class="token key atrule">operationId</span><span class="token punctuation">:</span> getUsers
+    <span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> filter
+        <span class="token key atrule">required</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+        <span class="token key atrule">in</span><span class="token punctuation">:</span> query
+        <span class="token key atrule">schema</span><span class="token punctuation">:</span>
+          <span class="token key atrule">type</span><span class="token punctuation">:</span> string
+    <span class="token key atrule">responses</span><span class="token punctuation">:</span>
+      <span class="token key atrule">'200'</span><span class="token punctuation">:</span>
+        <span class="token key atrule">content</span><span class="token punctuation">:</span>
+          <span class="token key atrule">application/json</span><span class="token punctuation">:</span>
+            <span class="token key atrule">schema</span><span class="token punctuation">:</span>
+              <span class="token key atrule">type</span><span class="token punctuation">:</span> array
+              <span class="token key atrule">items</span><span class="token punctuation">:</span>
+                <span class="token key atrule">$ref</span><span class="token punctuation">:</span> <span class="token string">'#/components/schemas/Username'</span>
+      <span class="token key atrule">'401'</span><span class="token punctuation">:</span>
+        <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Expired token'</span>
+    <span class="token key atrule">security</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">loggedUserToken</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token key atrule">/users/connected</span><span class="token punctuation">:</span>
+  <span class="token key atrule">get</span><span class="token punctuation">:</span>
+    <span class="token key atrule">operationId</span><span class="token punctuation">:</span> getConnectedUsers
+    <span class="token key atrule">responses</span><span class="token punctuation">:</span>
+      <span class="token key atrule">'200'</span><span class="token punctuation">:</span>
+        <span class="token key atrule">content</span><span class="token punctuation">:</span>
+          <span class="token key atrule">application/json</span><span class="token punctuation">:</span>
+            <span class="token key atrule">schema</span><span class="token punctuation">:</span>
+              <span class="token key atrule">type</span><span class="token punctuation">:</span> object
+              <span class="token key atrule">properties</span><span class="token punctuation">:</span>
+                <span class="token key atrule">allowedTo</span><span class="token punctuation">:</span>
+                  <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">"Users that logged user can bill"</span>
+                  <span class="token key atrule">type</span><span class="token punctuation">:</span> array
+                  <span class="token key atrule">items</span><span class="token punctuation">:</span>
+                    <span class="token key atrule">$ref</span><span class="token punctuation">:</span> <span class="token string">'#/components/schemas/Username'</span>
+                <span class="token key atrule">allowedFrom</span><span class="token punctuation">:</span>
+                  <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">"Users that can bill the logged user"</span>
+                  <span class="token key atrule">type</span><span class="token punctuation">:</span> array
+                  <span class="token key atrule">items</span><span class="token punctuation">:</span>
+                    <span class="token key atrule">$ref</span><span class="token punctuation">:</span> <span class="token string">'#/components/schemas/Username'</span>
+      <span class="token key atrule">'401'</span><span class="token punctuation">:</span>
+        <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Expired token'</span>
+    <span class="token key atrule">security</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">loggedUserToken</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span></code></pre>
+<p>In <code>getUsers</code> we defined a very basic search functionality with the optional query parameter <code>filter</code></p>
+<p>In <code>getConnectedUser</code> I prefeered to define the request schema directly inside the request body definition because It's a schema strictly related to this operation and It isn't parent of any other schema.</p>
+<p>This is the endpoint to create a user connection (user relationship):</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml">/users/connected/<span class="token punctuation">{</span>userToConnect<span class="token punctuation">}</span><span class="token punctuation">:</span>
+  <span class="token key atrule">post</span><span class="token punctuation">:</span>
+    <span class="token key atrule">operationId</span><span class="token punctuation">:</span> connectUser
+    <span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> userToConnect
+        <span class="token key atrule">required</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+        <span class="token key atrule">in</span><span class="token punctuation">:</span> path
+        <span class="token key atrule">schema</span><span class="token punctuation">:</span>
+          <span class="token key atrule">$ref</span><span class="token punctuation">:</span> <span class="token string">'#/components/schemas/Username'</span>
+    <span class="token key atrule">responses</span><span class="token punctuation">:</span>
+      <span class="token key atrule">'201'</span><span class="token punctuation">:</span>
+        <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'User connected'</span>
+      <span class="token key atrule">'401'</span><span class="token punctuation">:</span>
+        <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Expired token'</span>
+    <span class="token key atrule">security</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">loggedUserToken</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span></code></pre>
+<h3 id="login-registration-and-jwt">Login, registration and JWT</h3>
+<p>When an user wants to start using this API he must <strong>authenticate</strong> with his credentials following this process:</p>
+<ol>
+<li>User calls the <code>/login</code> endpoint passing his credentials in the request body</li>
+<li>The backend checks if credentials are correct</li>
+<li>The backend writes the response with a JWT token containing the username inside the payload</li>
+<li>User stores the received JWT token</li>
+</ol>
+<p>For each request the server must <strong>authorize</strong> the user. The user must include inside each request the header <code>Authorization: Bearer &lt;jwt token&gt;</code>. When the backend receives the request it checks the signature validity and the token expiration time. If the token is valid It parses the payload, where It can read the username of the logged user.</p>
+<p>This is the <code>login</code> operation definition:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">/login</span><span class="token punctuation">:</span>
+  <span class="token key atrule">post</span><span class="token punctuation">:</span>
+    <span class="token key atrule">operationId</span><span class="token punctuation">:</span> login
+    <span class="token key atrule">requestBody</span><span class="token punctuation">:</span>
+      <span class="token key atrule">content</span><span class="token punctuation">:</span>
+        <span class="token key atrule">application/json</span><span class="token punctuation">:</span>
+          <span class="token key atrule">schema</span><span class="token punctuation">:</span>
+            <span class="token key atrule">required</span><span class="token punctuation">:</span>
+              <span class="token punctuation">-</span> username
+              <span class="token punctuation">-</span> password
+            <span class="token key atrule">type</span><span class="token punctuation">:</span> object
+            <span class="token key atrule">properties</span><span class="token punctuation">:</span>
+              <span class="token key atrule">username</span><span class="token punctuation">:</span>
+                <span class="token key atrule">$ref</span><span class="token punctuation">:</span> <span class="token string">'#/components/schemas/Username'</span>
+              <span class="token key atrule">password</span><span class="token punctuation">:</span>
+                <span class="token key atrule">type</span><span class="token punctuation">:</span> string
+      <span class="token key atrule">required</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+    <span class="token key atrule">responses</span><span class="token punctuation">:</span>
+      <span class="token key atrule">'200'</span><span class="token punctuation">:</span>
+        <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Returns the JWT token'</span>
+        <span class="token key atrule">content</span><span class="token punctuation">:</span>
+          <span class="token key atrule">text/plain</span><span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+      <span class="token key atrule">'400'</span><span class="token punctuation">:</span>
+        <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Wrong username or password'</span></code></pre>
+<p>The <code>register</code> operation creates a new user and logins it:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">/register</span><span class="token punctuation">:</span>
+  <span class="token key atrule">post</span><span class="token punctuation">:</span>
+    <span class="token key atrule">operationId</span><span class="token punctuation">:</span> register
+    <span class="token key atrule">requestBody</span><span class="token punctuation">:</span>
+      <span class="token key atrule">content</span><span class="token punctuation">:</span>
+        <span class="token key atrule">application/json</span><span class="token punctuation">:</span>
+          <span class="token key atrule">schema</span><span class="token punctuation">:</span>
+            <span class="token key atrule">required</span><span class="token punctuation">:</span>
+              <span class="token punctuation">-</span> username
+              <span class="token punctuation">-</span> password
+            <span class="token key atrule">type</span><span class="token punctuation">:</span> object
+            <span class="token key atrule">properties</span><span class="token punctuation">:</span>
+              <span class="token key atrule">username</span><span class="token punctuation">:</span>
+                <span class="token key atrule">$ref</span><span class="token punctuation">:</span> <span class="token string">'#/components/schemas/Username'</span>
+              <span class="token key atrule">password</span><span class="token punctuation">:</span>
+                <span class="token key atrule">type</span><span class="token punctuation">:</span> string
+      <span class="token key atrule">required</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+    <span class="token key atrule">responses</span><span class="token punctuation">:</span>
+      <span class="token key atrule">'200'</span><span class="token punctuation">:</span>
+        <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Returns the JWT Token'</span>
+        <span class="token key atrule">content</span><span class="token punctuation">:</span>
+          <span class="token key atrule">text/plain</span><span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+      <span class="token key atrule">'400'</span><span class="token punctuation">:</span>
+        <span class="token key atrule">description</span><span class="token punctuation">:</span> <span class="token string">'Username already exists'</span></code></pre>
+<p>I don't cover in this tutorial the logout process, but I want to give you a tip: create a whitelist or blacklist of tokens.</p>
+<p>As you already saw, each secured operation has the <code>security</code> field:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">security</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">loggedUserToken</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span></code></pre>
+<p>The <code>security</code> field is called <strong>security requirement</strong> and it tells the user that he needs <code>loggedUserToken</code> <strong>security schema</strong> to access to this endpoint. Security schemas must be defined under <code>#/components/securitySchemes</code>:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">securitySchemes</span><span class="token punctuation">:</span>
+  <span class="token key atrule">loggedUserToken</span><span class="token punctuation">:</span>
+    <span class="token key atrule">type</span><span class="token punctuation">:</span> http
+    <span class="token key atrule">scheme</span><span class="token punctuation">:</span> bearer</code></pre>
+<h2 id="some-resources-to-learn-web-api-design-and-openapi">Some resources to learn Web API Design and OpenAPI</h2>
+<p>I give you a couple of useful links:</p>
+<ul>
+<li><a href="https://www.restapitutorial.com/">Rest API Tutorial</a>: Very simple and coincise tutorial for newbies of REST APIs world</li>
+<li><a href="http://apistylebook.com/">API Stylebook</a>: Collection of API styleguides from different IT companies</li>
+<li><a href="https://github.com/OAI/OpenAPI-Specification/">OpenAPI Specification repository</a>: Contains the spec and examples</li>
+<li><a href="https://apis.guru/browse-apis/">OpenAPI Directory</a>: Collection of OpenAPIs of different public APIs</li>
+</ul>
+<h2 id="conclusion">Conclusion</h2>
+<p>You can find the complete OpenAPI definition here: <a href="https://github.com/slinkydeveloper/debts-manager/blob/master/src/main/resources/debts_manager_api.yaml">/src/main/resources/debts_manager_api.yaml</a></p>
+<p>After you learnt how to design a REST API, approacching to OpenAPI is very simple. The operation definition is very intuitive because of 1:1 mapping with HTTP (methods, parameters, status codes, content types and so on). The tricky and magic part, for me, is definining and organizing the JSON Schemas. When you define simple models, you tend to put everything inside the same file. But when you raise the complexity using composed schemas, you get flooded by smaller and unclear schemas. My suggestion for you is to document the schemas with <code>title</code> and <code>description</code> keywords and organize these in multiple files.</p>
+<p>In next chapter I'm going to bootstrap the project and start writing first Vert.x code, stay tuned!</p>
+
+<ul class="links-nextprev"><li class="links-nextprev-prev">← Previous<br> <a href="/slinkydeveloper.github.io/blog/Debts-Manager-Tutorial-Introduction/">Debts Manager Tutorial Part 1: Introduction</a></li><li class="links-nextprev-next">Next →<br><a href="/slinkydeveloper.github.io/blog/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/">Debts Manager Tutorial Part 3: Vert.x Web API Contract &amp; Service</a></li>
+</ul>
+
+			</heading-anchors>
+		</main>
+
+		<footer>
+			<p>
+				<em>Built with <a href="https://www.11ty.dev/">Eleventy v3.1.2</a></em>
+			</p>
+		</footer>
+
+		<!-- This page `/blog/Debts-Manager-Tutorial-Contract-Design/` was built on 2025-10-05T17:01:29.965Z -->
+		<script type="module" src="/slinkydeveloper.github.io/dist/cC8wS6ZjFU.js"></script>
+	</body>
+</html>

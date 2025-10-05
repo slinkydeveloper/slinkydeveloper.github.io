@@ -1,0 +1,899 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Reproducibility of benchmarks in Kubernetes</title>
+		<meta name="description" content="Today I&#39;m going to talk you about how I&#39;ve managed to run a benchmark inside Kubernetes in a reproducible manner">
+		<link rel="alternate" href="/slinkydeveloper.github.io/feed/feed.xml" type="application/atom+xml" title="slinkydeveloper">
+		
+		
+		
+		<style>/* This is an arbitrary CSS string added to the bundle */
+/* Defaults */
+:root {
+	--font-family: -apple-system, system-ui, sans-serif;
+	--font-family-monospace: Consolas, Menlo, Monaco, Andale Mono WT, Andale Mono, Lucida Console, Lucida Sans Typewriter, DejaVu Sans Mono, Bitstream Vera Sans Mono, Liberation Mono, Nimbus Mono L, Courier New, Courier, monospace;
+}
+
+/* Theme colors */
+:root {
+	--color-gray-20: #e0e0e0;
+	--color-gray-50: #C0C0C0;
+	--color-gray-90: #333;
+
+	--background-color: #fff;
+
+	--text-color: var(--color-gray-90);
+	--text-color-link: #082840;
+	--text-color-link-active: #5f2b48;
+	--text-color-link-visited: #17050F;
+
+	--syntax-tab-size: 2;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-gray-20: #e0e0e0;
+		--color-gray-50: #C0C0C0;
+		--color-gray-90: #dad8d8;
+
+		/* --text-color is assigned to --color-gray-_ above */
+		--text-color-link: #1493fb;
+		--text-color-link-active: #6969f7;
+		--text-color-link-visited: #a6a6f8;
+
+		--background-color: #15202b;
+	}
+}
+
+
+/* Global stylesheet */
+* {
+	box-sizing: border-box;
+}
+
+@view-transition {
+	navigation: auto;
+}
+
+html,
+body {
+	padding: 0;
+	margin: 0 auto;
+	font-family: var(--font-family);
+	color: var(--text-color);
+	background-color: var(--background-color);
+}
+html {
+	overflow-y: scroll;
+}
+body {
+	max-width: 75em;
+}
+
+/* https://www.a11yproject.com/posts/how-to-hide-content/ */
+.visually-hidden:not(:focus):not(:active) {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+/* Fluid images via https://www.zachleat.com/web/fluid-images/ */
+img{
+  max-width: 100%;
+}
+img[width][height] {
+  height: auto;
+}
+img[src$=".svg"] {
+  width: 100%;
+  height: auto;
+  max-width: none;
+}
+video,
+iframe {
+	width: 100%;
+	height: auto;
+}
+iframe {
+	aspect-ratio: 16/9;
+}
+
+p:last-child {
+	margin-bottom: 0;
+}
+p {
+	line-height: 1.5;
+}
+
+li {
+	line-height: 1.5;
+}
+
+a[href] {
+	color: var(--text-color-link);
+}
+a[href]:visited {
+	color: var(--text-color-link-visited);
+}
+a[href]:hover,
+a[href]:active {
+	color: var(--text-color-link-active);
+}
+
+main,
+footer {
+	padding: 1rem;
+}
+main :first-child {
+	margin-top: 0;
+}
+
+header {
+	border-bottom: 1px dashed var(--color-gray-20);
+}
+
+#skip-link {
+	text-decoration: none;
+	background: var(--background-color);
+	color: var(--text-color);
+	padding: 0.5rem 1rem;
+	border: 1px solid var(--color-gray-90);
+	border-radius: 2px;
+}
+
+/* Prevent visually-hidden skip link fom pushing content around when focused */
+#skip-link.visually-hidden:focus {
+	position: absolute;
+	top: 1rem;
+	left: 1rem;
+	/* Ensure it is positioned on top of everything else when it is shown */
+	z-index: 999;
+}
+
+.links-nextprev {
+	display: flex;
+	justify-content: space-between;
+	gap: .5em 1em;
+	list-style: "";
+	border-top: 1px dashed var(--color-gray-20);
+	padding: 1em 0;
+}
+.links-nextprev > * {
+	flex-grow: 1;
+}
+.links-nextprev-next {
+	text-align: right;
+}
+
+table {
+	margin: 1em 0;
+}
+table td,
+table th {
+	padding-right: 1em;
+}
+
+pre,
+code {
+	font-family: var(--font-family-monospace);
+}
+pre:not([class*="language-"]) {
+	margin: .5em 0;
+	line-height: 1.375; /* 22px /16 */
+	-moz-tab-size: var(--syntax-tab-size);
+	-o-tab-size: var(--syntax-tab-size);
+	tab-size: var(--syntax-tab-size);
+	-webkit-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+	direction: ltr;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	overflow-x: auto;
+}
+code {
+	word-break: break-all;
+}
+
+/* Header */
+header {
+	display: flex;
+	gap: 1em;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1em;
+}
+.home-link {
+	flex-grow: 1;
+	font-size: 1em; /* 16px /16 */
+	font-weight: 700;
+}
+.home-link:link:not(:hover) {
+	text-decoration: none;
+}
+
+/* Nav */
+.nav {
+	display: flex;
+	gap: .5em 1em;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+.nav-item {
+	display: inline-block;
+}
+.nav-item a[href]:not(:hover) {
+	text-decoration: none;
+}
+.nav a[href][aria-current="page"] {
+	text-decoration: underline;
+}
+
+/* Posts list */
+.postlist {
+	counter-reset: start-from var(--postlist-index);
+	list-style: none;
+	padding: 0;
+	padding-left: 1.5rem;
+}
+.postlist-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	counter-increment: start-from -1;
+	margin-bottom: 1em;
+}
+.postlist-item:before {
+	display: inline-block;
+	pointer-events: none;
+	content: "" counter(start-from, decimal-leading-zero) ". ";
+	line-height: 100%;
+	text-align: right;
+	margin-left: -1.5rem;
+}
+.postlist-date,
+.postlist-item:before {
+	font-size: 0.8125em; /* 13px /16 */
+	color: var(--color-gray-90);
+}
+.postlist-date {
+	word-spacing: -0.5px;
+}
+.postlist-link {
+	font-size: 1.1875em; /* 19px /16 */
+	font-weight: 700;
+	flex-basis: calc(100% - 1.5rem);
+	padding-left: .25em;
+	padding-right: .5em;
+	text-underline-position: from-font;
+	text-underline-offset: 0;
+	text-decoration-thickness: 1px;
+}
+.postlist-item-active .postlist-link {
+	font-weight: bold;
+}
+
+/* Tags */
+.post-tag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-transform: capitalize;
+	font-style: italic;
+}
+.postlist-item > .post-tag {
+	align-self: center;
+}
+
+/* Tags list */
+.post-metadata {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: .5em;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.post-metadata time {
+	margin-right: 1em;
+}
+
+/* Hero image */
+.hero-image-container {
+	position: relative;
+	display: inline-block;
+}
+.hero-image-container img {
+	display: block;
+	border: 12px solid white;
+	border-radius: 12px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.hero-image-caption {
+	position: absolute;
+	bottom: 24px;
+	right: 24px;
+	font-family: 'Georgia', 'Garamond', serif;
+	font-style: italic;
+	font-size: 0.95rem;
+	color: white !important;
+	text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+	padding: 0.5rem 0.75rem;
+	background: rgba(0, 0, 0, 0.3);
+	border-radius: 4px;
+	backdrop-filter: blur(4px);
+	text-decoration: none !important;
+	transition: background 0.2s ease;
+}
+.hero-image-caption:hover {
+	background: rgba(0, 0, 0, 0.5);
+	color: white !important;
+}
+.hero-image-caption:visited {
+	color: white !important;
+}
+.hero-image-caption:active {
+	color: white !important;
+}
+
+/* Timeline container */
+.timeline-container {
+  width: 100%;
+  margin: 1ch;
+}
+
+.timeline-item {
+  padding: 3em 2em 2em;
+  position: relative;
+  color: rgba(0, 0, 0, 0.7);
+  border-left: 2px solid rgba(0, 0, 0, 0.3);
+}
+.timeline-item p {
+  font-size: 1rem;
+}
+.timeline-item::before {
+  content: attr(date-is);
+  position: absolute;
+  left: 2em;
+  font-weight: bold;
+  top: 1em;
+  display: block;
+  font-size: .9rem;
+}
+.timeline-item::after {
+  width: 10px;
+  height: 10px;
+  display: block;
+  top: 1em;
+  position: absolute;
+  left: -7px;
+  border-radius: 10px;
+  content: '';
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  background: white;
+}
+.timeline-item:last-child {
+  -o-border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+  border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+}
+/**
+ * okaidia theme for JavaScript, CSS and HTML
+ * Loosely based on Monokai textmate theme by http://www.monokai.nl/
+ * @author ocodia
+ */
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: #f8f8f2;
+	background: none;
+	text-shadow: 0 1px rgba(0, 0, 0, 0.3);
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-size: 1em;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+	border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background: #272822;
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+	white-space: normal;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: #8292a2;
+}
+
+.token.punctuation {
+	color: #f8f8f2;
+}
+
+.token.namespace {
+	opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.constant,
+.token.symbol,
+.token.deleted {
+	color: #f92672;
+}
+
+.token.boolean,
+.token.number {
+	color: #ae81ff;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+	color: #a6e22e;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string,
+.token.variable {
+	color: #f8f8f2;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.function,
+.token.class-name {
+	color: #e6db74;
+}
+
+.token.keyword {
+	color: #66d9ef;
+}
+
+.token.regex,
+.token.important {
+	color: #fd971f;
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+/*
+ * New diff- syntax
+ */
+
+pre[class*="language-diff-"] {
+	--eleventy-code-padding: 1.25em;
+	padding-left: var(--eleventy-code-padding);
+	padding-right: var(--eleventy-code-padding);
+}
+.token.deleted {
+	background-color: hsl(0, 51%, 37%);
+	color: inherit;
+}
+.token.inserted {
+	background-color: hsl(126, 31%, 39%);
+	color: inherit;
+}
+
+/* Make the + and - characters unselectable for copy/paste */
+.token.prefix.unchanged,
+.token.prefix.inserted,
+.token.prefix.deleted {
+	-webkit-user-select: none;
+	user-select: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+.token.prefix.inserted,
+.token.prefix.deleted {
+	width: var(--eleventy-code-padding);
+	background-color: rgba(0,0,0,.2);
+}
+
+/* Optional: full-width background color */
+.token.inserted:not(.prefix),
+.token.deleted:not(.prefix) {
+	display: block;
+	margin-left: calc(-1 * var(--eleventy-code-padding));
+	margin-right: calc(-1 * var(--eleventy-code-padding));
+	text-decoration: none; /* override del, ins, mark defaults */
+	color: inherit; /* override del, ins, mark defaults */
+}</style>
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+	</head>
+	<body>
+		<a href="#main" id="skip-link" class="visually-hidden">Skip to main content</a>
+
+		<header>
+			<a href="/slinkydeveloper.github.io/" class="home-link">slinkydeveloper</a>
+			<nav>
+				<h2 class="visually-hidden" id="top-level-navigation-menu">Top level navigation menu</h2>
+				<ul class="nav">
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/">Home</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/blog/">Posts</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/landscapes/">Landscapes</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/about/">About</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/feed/feed.xml">Feed</a></li>
+					<li class="nav-item"><a href="https://github.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github"></i></a></li>
+					<li class="nav-item"><a href="https://bsky.app/profile/slinkydeveloper.bsky.social" target="_blank" rel="noopener noreferrer" aria-label="Bluesky"><i class="fa-brands fa-bluesky"></i></a></li>
+					<li class="nav-item"><a href="https://x.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></a></li>
+					<li class="nav-item"><a href="https://www.linkedin.com/in/francesco-guardiani/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-square-linkedin"></i></a></li>
+				</ul>
+			</nav>
+		</header>
+
+		<main id="main">
+			<heading-anchors>
+				
+
+
+<h1 id="reproducibility-of-benchmarks-in-kubernetes">Reproducibility of benchmarks in Kubernetes</h1>
+
+<ul class="post-metadata">
+	<li><time datetime="2019-12-02">02 December 2019</time></li>
+	<li><a href="/slinkydeveloper.github.io/tags/cloud/" class="post-tag">cloud</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/kubernetes/" class="post-tag">kubernetes</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/serverless/" class="post-tag">serverless</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/knative/" class="post-tag">knative</a></li>
+</ul>
+
+<p>Hi everybody! Today I'm going to talk you about how I've managed to run a benchmark <strong>inside</strong> Kubernetes in a <strong>reproducible</strong> manner.</p>
+<h2 id="reproducibility-what-and-why">Reproducibility: What and Why</h2>
+<p><strong>Reproducibility</strong> means that different runs of the same benchmark, testing the same system, running in the same environment, should lead to similar results.</p>
+<p>This is one of the most important traits that every benchmark should respect, because without it, the test can't be trusted.</p>
+<p>For example, let's assume your boss gave you to optimize the most important system in production. You begin writing a benchmark to understand how it performs and, without caring about reproducibility, you jump to start searching where the performance hotspots are and operate to solve them. Now you run again the tests and results are better than the beginning but, while you're already feeling the bonus on the next paycheck, a colleague comments your &quot;40% performance boost&quot; PR saying &quot;I tried to run the benchmark and results look worse than the beginning!&quot;. What the heck? Did your PR improves the performance or not?</p>
+<p>You can't really answer that question, because your benchmark is not reproducible! You can try to run it several times but you'll continue to get deniable and not correlated results, that can answer positively or negatively to your question.</p>
+<p>Making the test reproducible, for a good part, depends on the environment where you run the test.</p>
+<p>Kubernetes is a virtualized environment designed to scale up &amp; down workloads, depending on resource demands. So it can arbitrarily schedule your application to run where it wants, imposing precise cpu/memory resources. I'll show you   what countermeasures I've took in my methodology to run benchmarks <strong>inside</strong> K8s to prevent such problems.</p>
+<h2 id="system-under-test-knative-eventing">System under test: Knative Eventing</h2>
+<p>A couple of months I've started working on a project called Knative Eventing, an event mesh for Kubernetes. One of the goals of Knative Eventing is to enable message consuming &amp; producing through HTTP, acting as a bridge between a &quot;traditional&quot; messaging system (such as Kafka) and an HTTP application.</p>
+<p>I won't cover all aspects of Knative Eventing, If you want to learn more about it check out the <a href="https://knative.dev/docs/eventing/">Knative Eventing documentation</a></p>
+<p>Knative, among the others, provides the concept of <code>Channel</code>, a flow of events from one or more producers to one or more subscribed consumers:</p>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Reproducibility-of-benchmarks-in-Kubernetes/EU-eVHX0V--767.avif 767w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Reproducibility-of-benchmarks-in-Kubernetes/EU-eVHX0V--767.webp 767w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Reproducibility-of-benchmarks-in-Kubernetes/EU-eVHX0V--767.png" alt="From source to user application, through a Channel" title="From source to user application, through a Channel" width="767" height="141"></picture></p>
+<p>To push events into the channel you interact with its HTTP interface, while to receive events from the channel you subscribe to it, specifying at what HTTP endpoint the channel should send the events. Behind the hood, a pod called <em>dispatcher</em> is actually serving the HTTP interface for inbound events, managing the interaction with the messaging system and dispatching the events to the subscribers.</p>
+<p>In this post I will use the test that calculates <code>KafkaChannel</code>'s throughput and latency.</p>
+<h2 id="test-and-cluster">Test &amp; Cluster</h2>
+<p>The test components are:</p>
+<ul>
+<li>a sender container that forces a configurable load for a certain amount of time on the Channel</li>
+<li>a receiver container that subscribes to the channel</li>
+<li>an aggregator container that fetches results from sender and receiver containers and calculates latencies and throughputs</li>
+</ul>
+<p>All these three components runs inside the cluster.</p>
+<p>I won't spend words in this post to explain how such components, designed together with Knative community, work in deep. If you want to know more about it, look at the <a href="https://github.com/knative/eventing/tree/master/test/test_images/performance"><code>README</code></a>.</p>
+<p>The cluster where I'm running the tests is composed by three bare metal machines in the same rack and they're running <strong>only these tests</strong>. It's quite important to run on bare metal, otherwise you will need to make further steps to make your virtualization environment reproducible, depending on the VM system you use.</p>
+<h2 id="step-0-how-to-determine-reproducibility">Step 0: How to determine reproducibility?</h2>
+<p>The question that arises is: what metric should be used to determine reproducibility? A wise answer could be that the standard deviation of the metric used to determine a performance improvement should be used to determine reproducibility.</p>
+<p>In my case I'm going to use standard deviation of the <strong>percentiles</strong> of E2E latency (from sender to receiver) across several runs. The lower is the standard deviation, more reproducible is the test.</p>
+<p>To improve reproducibility, I'll start by configuring and running the test 5 times, to calculate a baseline standard deviation. Then I'll show you the tweaks I've made to reduce the standard deviation to an acceptable value:</p>
+<ol>
+<li>Configure the test to don't blow up the system</li>
+<li>Pin containers to nodes</li>
+<li>Restart the system after each run</li>
+<li>Configure the resource limits</li>
+</ol>
+<h2 id="step-1-configure-the-test-to-dont-blow-up-the-system">Step 1: Configure the test to don't blow up the system</h2>
+<p>The first step is to configure the test to correctly generate a load that doesn't blow up the system. System must be stressed, but in such a way that doesn't lead to a complete degradation, or even a crash.</p>
+<p>I've configured my test to force 500 requests per second for 30 seconds, which I've found, experimentally, that is a good configuration the system can hold. Bear in mind that different &quot;requests per second&quot; configurations leads to different latencies!</p>
+<p>I've collected the 99%, 99.9% and 99.99% percentiles but I'll focus on 99% percentile because I've managed to do only few and short test runs, and in such situations outliers are more visible and not filtered out in higher percentiles. In a &quot;production run&quot; of the test, you should run it for more than 30 seconds, to understand if higher latencies happens frequently.</p>
+<p>After a first run, just configuring the test and running it for 5 times, I've these results:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>P99</th>
+<th>P99.9</th>
+<th>P99.99</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Run 1</td>
+<td>266.266179</td>
+<td>276.945500</td>
+<td>284.709000</td>
+</tr>
+<tr>
+<td>Run 2</td>
+<td>264.750750</td>
+<td>278.127000</td>
+<td>283.149000</td>
+</tr>
+<tr>
+<td>Run 3</td>
+<td>250.629000</td>
+<td>263.994500</td>
+<td>271.937000</td>
+</tr>
+<tr>
+<td>Run 4</td>
+<td>250.594875</td>
+<td>261.605000</td>
+<td>272.635000</td>
+</tr>
+<tr>
+<td>Run 5</td>
+<td>266.224393</td>
+<td>282.690500</td>
+<td>290.529000</td>
+</tr>
+</tbody>
+</table>
+<p>The SD of P99 is 8.312 and, in particular, the relative standard deviation is 3.2%.</p>
+<p>From experimental evidence I've found that the relative standard deviation is not linearly related with the test configuration, which means that the more stress is applied by the load generator, the more could be the <strong>relative</strong> standard deviation.</p>
+<p>Let's try to dig into why these numbers are so different and how I've lowered them.</p>
+<h2 id="step-2-pin-containers-to-nodes">Step 2: Pin containers to nodes</h2>
+<p>The first thing you can notice is that the third an fourth run performed with generally lower numbers than the others. Digging a bit with <code>kubectl describe nodes</code> I've found that Kubernetes was scheduling on each run pods in different nodes. Sometimes it scheduled the sender and receiver in the same node of Kafka Channel dispatcher, letting them communicate with lower latencies!</p>
+<p>To let Kubernetes deploy the pods always in the same nodes, I've configured the affinity of sender, receiver and all SUTs (system under test, which in my case means the Kafka Channel dispatcher and the Kafka cluster).
+To do it, I've defined three labels:</p>
+<ul>
+<li><code>bench-role: kafka</code>: Where Kafka cluster and Zookeeper are deployed</li>
+<li><code>bench-role: eventing</code>: Where the kafka dispatcher is deployed</li>
+<li><code>bench-role: sender</code>: Where both sender and receiver are deployed</li>
+</ul>
+<p>And then, I set these labels in my cluster using:</p>
+<pre class="language-bash" tabindex="0"><code class="language-bash">kubectl label nodes node_name bench-role<span class="token operator">=</span>eventing</code></pre>
+<p>On every deployment/pod descriptor, I've configured affinity in my various deployment descriptors.</p>
+<p>I deployed Kafka using <a href="https://strimzi.io/">Strimzi</a> and, thanks to its <code>Kafka</code> CRD, I can easily configure the <a href="https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity">affinity</a> too (I've omitted irrelevant parts of this config):</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">kafka</span><span class="token punctuation">:</span>
+  <span class="token key atrule">template</span><span class="token punctuation">:</span>
+    <span class="token key atrule">pod</span><span class="token punctuation">:</span>
+      <span class="token key atrule">affinity</span><span class="token punctuation">:</span>
+        <span class="token key atrule">nodeAffinity</span><span class="token punctuation">:</span>
+          <span class="token key atrule">requiredDuringSchedulingIgnoredDuringExecution</span><span class="token punctuation">:</span>
+            <span class="token key atrule">nodeSelectorTerms</span><span class="token punctuation">:</span>
+              <span class="token punctuation">-</span> <span class="token key atrule">matchExpressions</span><span class="token punctuation">:</span>
+                  <span class="token punctuation">-</span> <span class="token key atrule">key</span><span class="token punctuation">:</span> bench<span class="token punctuation">-</span>role
+                    <span class="token key atrule">operator</span><span class="token punctuation">:</span> In
+                    <span class="token key atrule">values</span><span class="token punctuation">:</span>
+                      <span class="token punctuation">-</span> kafka
+<span class="token key atrule">zookeeper</span><span class="token punctuation">:</span>
+  <span class="token key atrule">template</span><span class="token punctuation">:</span>
+    <span class="token key atrule">pod</span><span class="token punctuation">:</span>
+      <span class="token key atrule">affinity</span><span class="token punctuation">:</span>
+        <span class="token key atrule">nodeAffinity</span><span class="token punctuation">:</span>
+          <span class="token key atrule">requiredDuringSchedulingIgnoredDuringExecution</span><span class="token punctuation">:</span>
+            <span class="token key atrule">nodeSelectorTerms</span><span class="token punctuation">:</span>
+              <span class="token punctuation">-</span> <span class="token key atrule">matchExpressions</span><span class="token punctuation">:</span>
+                  <span class="token punctuation">-</span> <span class="token key atrule">key</span><span class="token punctuation">:</span> bench<span class="token punctuation">-</span>role
+                    <span class="token key atrule">operator</span><span class="token punctuation">:</span> In
+                    <span class="token key atrule">values</span><span class="token punctuation">:</span>
+                      <span class="token punctuation">-</span> kafka</code></pre>
+<p>For <code>kafka-ch-dispatcher</code>, I just modified the original <a href="https://github.com/knative/eventing-contrib/blob/master/kafka/channel/config/500-dispatcher.yaml">dispatcher yaml</a> adding the <a href="https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector"><code>nodeSelector</code></a> (which is in fact a short version of the <code>nodeAffinity</code>) and I redeployed from source using ko:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> apps/v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Deployment
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> kafka<span class="token punctuation">-</span>ch<span class="token punctuation">-</span>dispatcher
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> knative<span class="token punctuation">-</span>eventing
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">template</span><span class="token punctuation">:</span>
+    <span class="token key atrule">spec</span><span class="token punctuation">:</span>
+      <span class="token key atrule">nodeSelector</span><span class="token punctuation">:</span>
+        <span class="token key atrule">bench-role</span><span class="token punctuation">:</span> eventing
+      <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> dispatcher</code></pre>
+<p>Now the <code>sender</code> and <code>receiver</code>:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml">
+<span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Pod
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> channel<span class="token punctuation">-</span>perf<span class="token punctuation">-</span>send
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> perf<span class="token punctuation">-</span>eventing
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">nodeSelector</span><span class="token punctuation">:</span>
+    <span class="token key atrule">bench-role</span><span class="token punctuation">:</span> sender
+  <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> sender
+
+<span class="token punctuation">---</span>
+
+<span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Pod
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> channel<span class="token punctuation">-</span>perf<span class="token punctuation">-</span>receive
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> perf<span class="token punctuation">-</span>eventing
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">nodeSelector</span><span class="token punctuation">:</span>
+    <span class="token key atrule">bench-role</span><span class="token punctuation">:</span> sender
+  <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> receiver</code></pre>
+<h2 id="step-3-restart-the-system-after-each-run">Step 3: Restart the system after each run</h2>
+<p>After pinning the workload to different nodes, I've ran again the tests:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>P99</th>
+<th>P99.9</th>
+<th>P99.99</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Run 1</td>
+<td>263.552250</td>
+<td>268.646500</td>
+<td>272.223000</td>
+</tr>
+<tr>
+<td>Run 2</td>
+<td>266.060133</td>
+<td>280.979000</td>
+<td>285.983000</td>
+</tr>
+<tr>
+<td>Run 3</td>
+<td>266.994500</td>
+<td>282.858000</td>
+<td>292.864000</td>
+</tr>
+<tr>
+<td>Run 4</td>
+<td>268.234000</td>
+<td>297.516000</td>
+<td>326.862000</td>
+</tr>
+<tr>
+<td>Run 5</td>
+<td>265.809929</td>
+<td>281.717000</td>
+<td>288.665000</td>
+</tr>
+</tbody>
+</table>
+<p>As you may notice, the first four runs looks incrementally worse. This happens because every run depends on the SUTs states caused by the previous run. The Kafka cluster and/or the Kafka channel dispatcher could be in a degradated state before a new run begins and this obviously reduces the chances to have same results over multiple runs. All systems involved in the road from sender to receiver must be reset, so every run starts stressing the system under the same conditions, ensuring that the latency of a run doesn't depend on previous runs.</p>
+<p>In my case just deleting all pods does the trick, since the <code>Deployment</code>s spin up a new ones:</p>
+<pre class="language-bash" tabindex="0"><code class="language-bash">kubectl delete pods <span class="token parameter variable">-n</span> knative-eventing <span class="token parameter variable">--all</span>
+kubectl delete kt --all-namespaces <span class="token parameter variable">--all</span> <span class="token comment"># Delete all KafkaTopics</span>
+kubectl delete pods <span class="token parameter variable">-n</span> kafka <span class="token parameter variable">--all</span>
+
+kubectl <span class="token function">wait</span> pod <span class="token parameter variable">-n</span> knative-eventing <span class="token parameter variable">--for</span><span class="token operator">=</span>condition<span class="token operator">=</span>Ready <span class="token parameter variable">--all</span>
+kubectl <span class="token function">wait</span> pod <span class="token parameter variable">-n</span> kafka <span class="token parameter variable">--for</span><span class="token operator">=</span>condition<span class="token operator">=</span>Ready <span class="token parameter variable">--all</span></code></pre>
+<h2 id="step-4-configure-the-resource-limits">Step 4: Configure the resource limits</h2>
+<p>As explained at beginning of this post, Kubernetes is designed to scale up &amp; down workloads. What if the scheduler decides to schedule up and down our benchmark resources while the test is running? The benchmark needs to have granted the resources it needs &amp; these should not change while is running. To do so, resource <code>request</code> &amp; <code>limits</code> must be configured the same for every test and SUT, like:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">resources</span><span class="token punctuation">:</span>
+  <span class="token key atrule">requests</span><span class="token punctuation">:</span>
+    <span class="token key atrule">cpu</span><span class="token punctuation">:</span> <span class="token number">16</span>
+    <span class="token key atrule">memory</span><span class="token punctuation">:</span> <span class="token string">"8Gi"</span>
+  <span class="token key atrule">limits</span><span class="token punctuation">:</span>
+    <span class="token key atrule">cpu</span><span class="token punctuation">:</span> <span class="token number">16</span>
+    <span class="token key atrule">memory</span><span class="token punctuation">:</span> <span class="token string">"8Gi"</span></code></pre>
+<p>This leads Kubernetes to schedule pods with QoS class <a href="https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-guaranteed"><code>Guaranteed</code></a>, so it can't scale up &amp; down resources.</p>
+<p>The nodes where I'm running the benchmarks are configured with AMD EPYC 7401P 24 cores CPUs (so 48 logical cores) and 24Gb of RAM.
+I've tried to match these limits as following:</p>
+<ul>
+<li>Kafka has 16 cpus and 8Gi of memory, same for Zookeeper</li>
+<li>Kafka channel dispatcher has 44 cpus and 22Gi of memory</li>
+<li>Sender has 16 cpus and 8Gi of memory, same for receiver</li>
+</ul>
+<p>The problem is, even if containers are configured with <code>Guaranteed</code> QoS, there are no guarantees that the workload is pinned and it has exclusive access to the cores. By default, even in <code>Guaranteed</code> QoS, Kubernetes can move the workload to different cores depending on whether the pod is throttled and which CPU cores are available at scheduling time. The Kube scheduler does it defining the <a href="https://www.kernel.org/doc/Documentation/scheduler/sched-bwc.txt">CFS Quota</a> for the running container, so it asks to the kernel scheduler to allocate a fixed time to such containers.</p>
+<p>Luckily there is a way to force the CPU pinning, enabling the <a href="https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies/#static-policy">static CPU management</a>. This can be done only configuring the <a href="https://kubernetes.io/docs/tasks/administer-cluster/kubelet-config-file/">Kubelet config file</a> for each node. To do so:</p>
+<ol>
+<li>If the node is already running and connected to the cluster, it must be <a href="https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#drain">drained</a> using <code>kubectl drain &lt;node name&gt; --delete-local-data --force --ignore-daemonsets</code></li>
+<li>Kubelet config file should contain the following entry: <code>cpuManagerPolicy: static</code></li>
+<li>Kubernetes system containers should have statically assigned resources. To do it, Kubelet config file should contain a configuration like:</li>
+</ol>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">systemReserved</span><span class="token punctuation">:</span>
+  <span class="token key atrule">cpu</span><span class="token punctuation">:</span> <span class="token string">"1"</span>
+  <span class="token key atrule">memory</span><span class="token punctuation">:</span> <span class="token string">"1Gi"</span></code></pre>
+<h2 id="results">Results</h2>
+<p>I've tried to ran the tests after all these tweaks:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>P99</th>
+<th>P99.9</th>
+<th>P99.99</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Run 1</td>
+<td>265.955238</td>
+<td>271.344500</td>
+<td>276.415000</td>
+</tr>
+<tr>
+<td>Run 2</td>
+<td>264.850000</td>
+<td>271.462000</td>
+<td>279.283000</td>
+</tr>
+<tr>
+<td>Run 3</td>
+<td>266.283643</td>
+<td>291.772500</td>
+<td>335.116000</td>
+</tr>
+<tr>
+<td>Run 4</td>
+<td>266.065179</td>
+<td>272.497000</td>
+<td>279.553000</td>
+</tr>
+<tr>
+<td>Run 5</td>
+<td>264.828300</td>
+<td>271.254500</td>
+<td>278.362000</td>
+</tr>
+</tbody>
+</table>
+<p>This results looks far better! Now relative SD of P99 is down to 0.26% (0.7014114246) vs the initial 3.2%!</p>
+<p>I still have some outliers at higher percentiles, but now the results looks more trusty than the previous 3.2% of relative SD.</p>
+<p>To wrap up, I want to underline that these tweaks worked for me but they could not be enough for all benchmark configurations.</p>
+<p>Get in touch with me if you have more tweaks to show, and stay tuned for more updates!</p>
+
+<ul class="links-nextprev"><li class="links-nextprev-prev">← Previous<br> <a href="/slinkydeveloper.github.io/blog/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/">Debts Manager Tutorial Part 3: Vert.x Web API Contract &amp; Service</a></li><li class="links-nextprev-next">Next →<br><a href="/slinkydeveloper.github.io/blog/Kubernetes-controllers-A-New-Hope/">Kubernetes Controllers - A new hope</a></li>
+</ul>
+
+			</heading-anchors>
+		</main>
+
+		<footer>
+			<p>
+				<em>Built with <a href="https://www.11ty.dev/">Eleventy v3.1.2</a></em>
+			</p>
+		</footer>
+
+		<!-- This page `/blog/Reproducibility-of-benchmarks-in-Kubernetes/` was built on 2025-10-05T17:01:29.967Z -->
+		<script type="module" src="/slinkydeveloper.github.io/dist/cC8wS6ZjFU.js"></script>
+	</body>
+</html>

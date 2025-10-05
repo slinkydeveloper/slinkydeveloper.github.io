@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>My GSoC 2017 - OpenAPI 3 Vert.x support</title>
+		<meta name="description" content="Good library it&#39;s all about good interface">
+		<link rel="alternate" href="/slinkydeveloper.github.io/feed/feed.xml" type="application/atom+xml" title="slinkydeveloper">
+		
+		
+		
+		<style>/* This is an arbitrary CSS string added to the bundle */
+/* Defaults */
+:root {
+	--font-family: -apple-system, system-ui, sans-serif;
+	--font-family-monospace: Consolas, Menlo, Monaco, Andale Mono WT, Andale Mono, Lucida Console, Lucida Sans Typewriter, DejaVu Sans Mono, Bitstream Vera Sans Mono, Liberation Mono, Nimbus Mono L, Courier New, Courier, monospace;
+}
+
+/* Theme colors */
+:root {
+	--color-gray-20: #e0e0e0;
+	--color-gray-50: #C0C0C0;
+	--color-gray-90: #333;
+
+	--background-color: #fff;
+
+	--text-color: var(--color-gray-90);
+	--text-color-link: #082840;
+	--text-color-link-active: #5f2b48;
+	--text-color-link-visited: #17050F;
+
+	--syntax-tab-size: 2;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-gray-20: #e0e0e0;
+		--color-gray-50: #C0C0C0;
+		--color-gray-90: #dad8d8;
+
+		/* --text-color is assigned to --color-gray-_ above */
+		--text-color-link: #1493fb;
+		--text-color-link-active: #6969f7;
+		--text-color-link-visited: #a6a6f8;
+
+		--background-color: #15202b;
+	}
+}
+
+
+/* Global stylesheet */
+* {
+	box-sizing: border-box;
+}
+
+@view-transition {
+	navigation: auto;
+}
+
+html,
+body {
+	padding: 0;
+	margin: 0 auto;
+	font-family: var(--font-family);
+	color: var(--text-color);
+	background-color: var(--background-color);
+}
+html {
+	overflow-y: scroll;
+}
+body {
+	max-width: 75em;
+}
+
+/* https://www.a11yproject.com/posts/how-to-hide-content/ */
+.visually-hidden:not(:focus):not(:active) {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+/* Fluid images via https://www.zachleat.com/web/fluid-images/ */
+img{
+  max-width: 100%;
+}
+img[width][height] {
+  height: auto;
+}
+img[src$=".svg"] {
+  width: 100%;
+  height: auto;
+  max-width: none;
+}
+video,
+iframe {
+	width: 100%;
+	height: auto;
+}
+iframe {
+	aspect-ratio: 16/9;
+}
+
+p:last-child {
+	margin-bottom: 0;
+}
+p {
+	line-height: 1.5;
+}
+
+li {
+	line-height: 1.5;
+}
+
+a[href] {
+	color: var(--text-color-link);
+}
+a[href]:visited {
+	color: var(--text-color-link-visited);
+}
+a[href]:hover,
+a[href]:active {
+	color: var(--text-color-link-active);
+}
+
+main,
+footer {
+	padding: 1rem;
+}
+main :first-child {
+	margin-top: 0;
+}
+
+header {
+	border-bottom: 1px dashed var(--color-gray-20);
+}
+
+#skip-link {
+	text-decoration: none;
+	background: var(--background-color);
+	color: var(--text-color);
+	padding: 0.5rem 1rem;
+	border: 1px solid var(--color-gray-90);
+	border-radius: 2px;
+}
+
+/* Prevent visually-hidden skip link fom pushing content around when focused */
+#skip-link.visually-hidden:focus {
+	position: absolute;
+	top: 1rem;
+	left: 1rem;
+	/* Ensure it is positioned on top of everything else when it is shown */
+	z-index: 999;
+}
+
+.links-nextprev {
+	display: flex;
+	justify-content: space-between;
+	gap: .5em 1em;
+	list-style: "";
+	border-top: 1px dashed var(--color-gray-20);
+	padding: 1em 0;
+}
+.links-nextprev > * {
+	flex-grow: 1;
+}
+.links-nextprev-next {
+	text-align: right;
+}
+
+table {
+	margin: 1em 0;
+}
+table td,
+table th {
+	padding-right: 1em;
+}
+
+pre,
+code {
+	font-family: var(--font-family-monospace);
+}
+pre:not([class*="language-"]) {
+	margin: .5em 0;
+	line-height: 1.375; /* 22px /16 */
+	-moz-tab-size: var(--syntax-tab-size);
+	-o-tab-size: var(--syntax-tab-size);
+	tab-size: var(--syntax-tab-size);
+	-webkit-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+	direction: ltr;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	overflow-x: auto;
+}
+code {
+	word-break: break-all;
+}
+
+/* Header */
+header {
+	display: flex;
+	gap: 1em;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1em;
+}
+.home-link {
+	flex-grow: 1;
+	font-size: 1em; /* 16px /16 */
+	font-weight: 700;
+}
+.home-link:link:not(:hover) {
+	text-decoration: none;
+}
+
+/* Nav */
+.nav {
+	display: flex;
+	gap: .5em 1em;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+.nav-item {
+	display: inline-block;
+}
+.nav-item a[href]:not(:hover) {
+	text-decoration: none;
+}
+.nav a[href][aria-current="page"] {
+	text-decoration: underline;
+}
+
+/* Posts list */
+.postlist {
+	counter-reset: start-from var(--postlist-index);
+	list-style: none;
+	padding: 0;
+	padding-left: 1.5rem;
+}
+.postlist-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	counter-increment: start-from -1;
+	margin-bottom: 1em;
+}
+.postlist-item:before {
+	display: inline-block;
+	pointer-events: none;
+	content: "" counter(start-from, decimal-leading-zero) ". ";
+	line-height: 100%;
+	text-align: right;
+	margin-left: -1.5rem;
+}
+.postlist-date,
+.postlist-item:before {
+	font-size: 0.8125em; /* 13px /16 */
+	color: var(--color-gray-90);
+}
+.postlist-date {
+	word-spacing: -0.5px;
+}
+.postlist-link {
+	font-size: 1.1875em; /* 19px /16 */
+	font-weight: 700;
+	flex-basis: calc(100% - 1.5rem);
+	padding-left: .25em;
+	padding-right: .5em;
+	text-underline-position: from-font;
+	text-underline-offset: 0;
+	text-decoration-thickness: 1px;
+}
+.postlist-item-active .postlist-link {
+	font-weight: bold;
+}
+
+/* Tags */
+.post-tag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-transform: capitalize;
+	font-style: italic;
+}
+.postlist-item > .post-tag {
+	align-self: center;
+}
+
+/* Tags list */
+.post-metadata {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: .5em;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.post-metadata time {
+	margin-right: 1em;
+}
+
+/* Hero image */
+.hero-image-container {
+	position: relative;
+	display: inline-block;
+}
+.hero-image-container img {
+	display: block;
+	border: 12px solid white;
+	border-radius: 12px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.hero-image-caption {
+	position: absolute;
+	bottom: 24px;
+	right: 24px;
+	font-family: 'Georgia', 'Garamond', serif;
+	font-style: italic;
+	font-size: 0.95rem;
+	color: white !important;
+	text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+	padding: 0.5rem 0.75rem;
+	background: rgba(0, 0, 0, 0.3);
+	border-radius: 4px;
+	backdrop-filter: blur(4px);
+	text-decoration: none !important;
+	transition: background 0.2s ease;
+}
+.hero-image-caption:hover {
+	background: rgba(0, 0, 0, 0.5);
+	color: white !important;
+}
+.hero-image-caption:visited {
+	color: white !important;
+}
+.hero-image-caption:active {
+	color: white !important;
+}
+
+/* Timeline container */
+.timeline-container {
+  width: 100%;
+  margin: 1ch;
+}
+
+.timeline-item {
+  padding: 3em 2em 2em;
+  position: relative;
+  color: rgba(0, 0, 0, 0.7);
+  border-left: 2px solid rgba(0, 0, 0, 0.3);
+}
+.timeline-item p {
+  font-size: 1rem;
+}
+.timeline-item::before {
+  content: attr(date-is);
+  position: absolute;
+  left: 2em;
+  font-weight: bold;
+  top: 1em;
+  display: block;
+  font-size: .9rem;
+}
+.timeline-item::after {
+  width: 10px;
+  height: 10px;
+  display: block;
+  top: 1em;
+  position: absolute;
+  left: -7px;
+  border-radius: 10px;
+  content: '';
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  background: white;
+}
+.timeline-item:last-child {
+  -o-border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+  border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+}
+/**
+ * okaidia theme for JavaScript, CSS and HTML
+ * Loosely based on Monokai textmate theme by http://www.monokai.nl/
+ * @author ocodia
+ */
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: #f8f8f2;
+	background: none;
+	text-shadow: 0 1px rgba(0, 0, 0, 0.3);
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-size: 1em;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+	border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background: #272822;
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+	white-space: normal;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: #8292a2;
+}
+
+.token.punctuation {
+	color: #f8f8f2;
+}
+
+.token.namespace {
+	opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.constant,
+.token.symbol,
+.token.deleted {
+	color: #f92672;
+}
+
+.token.boolean,
+.token.number {
+	color: #ae81ff;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+	color: #a6e22e;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string,
+.token.variable {
+	color: #f8f8f2;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.function,
+.token.class-name {
+	color: #e6db74;
+}
+
+.token.keyword {
+	color: #66d9ef;
+}
+
+.token.regex,
+.token.important {
+	color: #fd971f;
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+/*
+ * New diff- syntax
+ */
+
+pre[class*="language-diff-"] {
+	--eleventy-code-padding: 1.25em;
+	padding-left: var(--eleventy-code-padding);
+	padding-right: var(--eleventy-code-padding);
+}
+.token.deleted {
+	background-color: hsl(0, 51%, 37%);
+	color: inherit;
+}
+.token.inserted {
+	background-color: hsl(126, 31%, 39%);
+	color: inherit;
+}
+
+/* Make the + and - characters unselectable for copy/paste */
+.token.prefix.unchanged,
+.token.prefix.inserted,
+.token.prefix.deleted {
+	-webkit-user-select: none;
+	user-select: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+.token.prefix.inserted,
+.token.prefix.deleted {
+	width: var(--eleventy-code-padding);
+	background-color: rgba(0,0,0,.2);
+}
+
+/* Optional: full-width background color */
+.token.inserted:not(.prefix),
+.token.deleted:not(.prefix) {
+	display: block;
+	margin-left: calc(-1 * var(--eleventy-code-padding));
+	margin-right: calc(-1 * var(--eleventy-code-padding));
+	text-decoration: none; /* override del, ins, mark defaults */
+	color: inherit; /* override del, ins, mark defaults */
+}</style>
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+	</head>
+	<body>
+		<a href="#main" id="skip-link" class="visually-hidden">Skip to main content</a>
+
+		<header>
+			<a href="/slinkydeveloper.github.io/" class="home-link">slinkydeveloper</a>
+			<nav>
+				<h2 class="visually-hidden" id="top-level-navigation-menu">Top level navigation menu</h2>
+				<ul class="nav">
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/">Home</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/blog/">Posts</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/landscapes/">Landscapes</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/about/">About</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/feed/feed.xml">Feed</a></li>
+					<li class="nav-item"><a href="https://github.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github"></i></a></li>
+					<li class="nav-item"><a href="https://bsky.app/profile/slinkydeveloper.bsky.social" target="_blank" rel="noopener noreferrer" aria-label="Bluesky"><i class="fa-brands fa-bluesky"></i></a></li>
+					<li class="nav-item"><a href="https://x.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></a></li>
+					<li class="nav-item"><a href="https://www.linkedin.com/in/francesco-guardiani/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-square-linkedin"></i></a></li>
+				</ul>
+			</nav>
+		</header>
+
+		<main id="main">
+			<heading-anchors>
+				
+
+
+<h1 id="my-gsoc-2017-openapi-3-vert-x-support">My GSoC 2017 - OpenAPI 3 Vert.x support</h1>
+
+<ul class="post-metadata">
+	<li><time datetime="2017-08-12">12 August 2017</time></li>
+	<li><a href="/slinkydeveloper.github.io/tags/web-development/" class="post-tag">web development</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/gsoc-2017/" class="post-tag">gsoc 2017</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/gsoc/" class="post-tag">gsoc</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/vertx/" class="post-tag">vertx</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/vertx-web/" class="post-tag">vertx web</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/openapi/" class="post-tag">openapi</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/openapi3/" class="post-tag">openapi3</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/router-factory/" class="post-tag">router factory</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/factory/" class="post-tag">factory</a></li>
+</ul>
+
+<p>The support to OpenAPI 3 it's located in maven package <code>vertx-web-api-contract-openapi</code>, and most classes extends/subclass from interfaces/classes inside maven package <code>vertx-web-api-contract-common</code> (the package designed to contain all API Specs standards common classes). Most important interfaces of <code>vertx-web-api-contract-openapi</code> are:</p>
+<ul>
+<li>The <code>OpenAPI3ValidationHandler</code> class that fills <a href="https://slinkydeveloper.github.io/articles/My-GSoC-2017-Validation/#structure-of-validation-framework"><code>BaseValidationHandler</code> maps</a></li>
+<li>The <code>OpenAPI3RouterFactory</code>, the interface that enable users create a router with your API spec</li>
+</ul>
+<p>As I said in a <a href="https://slinkydeveloper.github.io/articles/Whats-New-In-OAS3-Parameters/">previous blog post</a>, OpenAPI 3 added a lot of new things, in particular about serialization styles and complex form bodies (url encoded and multipart). So when I started working on OpenAPI 3 requests validations, I had to add a lot of things to validation framework that I haven't expected before.</p>
+<h2 id="the-validation-handler">The validation handler</h2>
+<p><code>OpenAPI3ValidationHandler</code> is an interface extension of <code>HTTPOperationRequestValidationHandler</code> (located inside <code>vertx-web-api-contract-common</code>), that is an interface extension of <code>ValidationHandler</code>. This class contains all methods to elaborate the <code>Operation</code> object (Java representation of <a href="https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#operationObject">OAS3 operation object</a>) and the list of <code>Parameter</code> objects (Java representation of <a href="https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#parameterObject">OAS3 parameter object</a>).</p>
+<p>When constructed, it generates all <code>ParameterValidationRule</code> and <code>ParameterTypeValidator</code> it needs: in fact, <strong>It doesn't elaborate the api spec nor work with api spec Java models during the validation</strong>. It does everything when It's constructed, so It iterates through various parameters and It generates objects needed for validation.</p>
+<p class="image-pull-right">
+<img src="content/images/messy_code_fry.jpg" alt="">
+</p>
+If you read this class, It seems messy, because It's messy :smile:. This is because of complexity of OAS 3, that forced me to write some little tricks to support all things (like for example to manage the `deepObject` serialization style).
+<p>To give a quick explanation of how this class elaborates parameters:</p>
+<ol>
+<li>It checks if it's supported (parameters with <code>allowReserved: true</code> are not supported)</li>
+<li>It checks if the parameter needs a <em>workaround</em> to get validation working and applies the specific <em>workaround</em></li>
+<li>If none workaround is needed, it constructs the correct type validator</li>
+</ol>
+<p>Behind the scenes all the validation work is done by <a href="https://slinkydeveloper.github.io/articles/My-GSoC-2017-Validation/">validation framework</a></p>
+<h2 id="the-router-factory">The router factory</h2>
+<p>The router factory is intended to give the most simple user interface to generate a router based on an API Spec. In fact, it provides this functionalities:</p>
+<ul>
+<li>Async loading of specification and its schema dependencies</li>
+<li>OpenAPI 3 compliant API specification validation (thanks to <a href="https://github.com/RepreZen/KaiZen-OpenApi-Parser">Kaizen-OpenApi-Parser</a>)</li>
+<li>Load handlers and failure handlers with operationId</li>
+<li>Automatic 501 (Not implemented) response for operations with missing handlers (can be enabled/disabled with <code>mountOperationsWithoutHandlers(boolean)</code>)</li>
+<li>Automatic <code>ValidationException</code> failure handler (can be enabled/disabled with <code>enableValidationFailureHandler()</code> and manually configured with <code>setValidationFailureHandler()</code>)</li>
+<li>Path's regular expression generation (to support <code>matrix</code> and <code>label</code> style unsupported natively from Vert.x)</li>
+<li>Lazy methods: the generation of the <code>Router</code> is done only when you call <code>getRouter()</code></li>
+<li>Automatic mount of security validation handlers</li>
+</ul>
+<h3 id="lazy-methods">Lazy methods</h3>
+<p>It's usual to run into problems regards route declaration order. For example if you declare two routes in this order:</p>
+<ol>
+<li><code>GET /hello/{parameter}</code></li>
+<li><code>GET /hello/world</code></li>
+</ol>
+<p>With actual Vert.x <code>Router</code> implementation, <code>/hello/world</code> handler will never called, unless you explicitly call <code>RoutingContext#next()</code> inside <code>/hello/{parameter}</code> handler (that causes <code>Router</code> to run the next route matching the pattern). With lazy methods It's guaranteed that routes will be loaded with order declared inside API specification.</p>
+<p>I choose lazy methods also for code style reasons, It helps a lot to manage the code of router factory.</p>
+<h2 id="and-the-final-result">And the final result</h2>
+<p>With this tools, user can bring OpenAPI 3 power to its Vert.x server implementation as simple as:</p>
+<pre class="language-java" tabindex="0"><code class="language-java"><span class="token class-name">OpenAPI3RouterFactory</span><span class="token punctuation">.</span><span class="token function">createRouterFactoryFromFile</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>vertx<span class="token punctuation">,</span> <span class="token string">"src/main/resources/petstore.yaml"</span><span class="token punctuation">,</span> ar <span class="token operator">-></span> <span class="token punctuation">{</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>ar<span class="token punctuation">.</span><span class="token function">succeeded</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                <span class="token comment">// Spec loaded with success</span>
+                <span class="token class-name">OpenAPI3RouterFactory</span> routerFactory <span class="token operator">=</span> ar<span class="token punctuation">.</span><span class="token function">result</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+                <span class="token comment">// Add some handlers</span>
+                routerFactory<span class="token punctuation">.</span><span class="token function">addHandlerByOperationId</span><span class="token punctuation">(</span><span class="token string">"listPets"</span><span class="token punctuation">,</span> routingContext <span class="token operator">-></span> <span class="token punctuation">{</span>
+                    <span class="token class-name">RequestParameters</span> params <span class="token operator">=</span> routingContext<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token string">"parsedParameters"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token comment">// Handle listPets operation</span>
+                <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                routerFactory<span class="token punctuation">.</span><span class="token function">addFailureHandlerByOperationId</span><span class="token punctuation">(</span><span class="token string">"listPets"</span><span class="token punctuation">,</span> routingContext <span class="token operator">-></span> <span class="token punctuation">{</span>
+                    <span class="token class-name">Throwable</span> failure <span class="token operator">=</span> routingContext<span class="token punctuation">.</span><span class="token function">failure</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token comment">// Something really bad happened during listPets handling</span>
+                <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+                <span class="token comment">// Add a security handler</span>
+                routerFactory<span class="token punctuation">.</span><span class="token function">addSecurityHandler</span><span class="token punctuation">(</span><span class="token string">"api_key"</span><span class="token punctuation">,</span> routingContext <span class="token operator">-></span> <span class="token punctuation">{</span>
+                    <span class="token comment">// Handle security here and then call next()</span>
+                    routingContext<span class="token punctuation">.</span><span class="token function">next</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+                <span class="token comment">// Now you have to generate the router</span>
+                <span class="token class-name">Router</span> router <span class="token operator">=</span> routerFactory<span class="token punctuation">.</span><span class="token function">getRouter</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+                <span class="token comment">// Now you can use your Router instance</span>
+                <span class="token class-name">HttpServer</span> server <span class="token operator">=</span> vertx<span class="token punctuation">.</span><span class="token function">createHttpServer</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">HttpServerOptions</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setPort</span><span class="token punctuation">(</span><span class="token number">8080</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setHost</span><span class="token punctuation">(</span><span class="token string">"localhost"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                server<span class="token punctuation">.</span><span class="token function">requestHandler</span><span class="token punctuation">(</span>router<span class="token operator">::</span><span class="token function">accept</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">listen</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+            <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+                <span class="token comment">// Something went wrong during router factory initialization</span>
+                <span class="token class-name">Throwable</span> exception <span class="token operator">=</span> ar<span class="token punctuation">.</span><span class="token function">cause</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>Next time I'm going to introduce you <code>slush-vertx</code>, a new generator for Vert.x project. Stay tuned!</p>
+
+<ul class="links-nextprev"><li class="links-nextprev-prev">← Previous<br> <a href="/slinkydeveloper.github.io/blog/My-GSoC-2017-Validation/">My GSoC 2017 - Requests validation</a></li><li class="links-nextprev-next">Next →<br><a href="/slinkydeveloper.github.io/blog/My-GSoC-2017-Slush-Vertx/">My GSoC 2017 - Slush-vertx</a></li>
+</ul>
+
+			</heading-anchors>
+		</main>
+
+		<footer>
+			<p>
+				<em>Built with <a href="https://www.11ty.dev/">Eleventy v3.1.2</a></em>
+			</p>
+		</footer>
+
+		<!-- This page `/blog/My-GSoC-2017-OAS3-Router-Factory/` was built on 2025-10-05T17:01:29.966Z -->
+		<script type="module" src="/slinkydeveloper.github.io/dist/cC8wS6ZjFU.js"></script>
+	</body>
+</html>

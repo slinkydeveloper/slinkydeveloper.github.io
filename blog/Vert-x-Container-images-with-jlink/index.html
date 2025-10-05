@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Vert.x container images with jlink</title>
+		<meta name="description" content="In this blog post I&#39;m gonna show you how I managed to reduce the container image size of an Eclipse Vert.x application, creating a smaller JDK with jdeps and jlink.">
+		<link rel="alternate" href="/slinkydeveloper.github.io/feed/feed.xml" type="application/atom+xml" title="slinkydeveloper">
+		
+		
+		
+		<style>/* This is an arbitrary CSS string added to the bundle */
+/* Defaults */
+:root {
+	--font-family: -apple-system, system-ui, sans-serif;
+	--font-family-monospace: Consolas, Menlo, Monaco, Andale Mono WT, Andale Mono, Lucida Console, Lucida Sans Typewriter, DejaVu Sans Mono, Bitstream Vera Sans Mono, Liberation Mono, Nimbus Mono L, Courier New, Courier, monospace;
+}
+
+/* Theme colors */
+:root {
+	--color-gray-20: #e0e0e0;
+	--color-gray-50: #C0C0C0;
+	--color-gray-90: #333;
+
+	--background-color: #fff;
+
+	--text-color: var(--color-gray-90);
+	--text-color-link: #082840;
+	--text-color-link-active: #5f2b48;
+	--text-color-link-visited: #17050F;
+
+	--syntax-tab-size: 2;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-gray-20: #e0e0e0;
+		--color-gray-50: #C0C0C0;
+		--color-gray-90: #dad8d8;
+
+		/* --text-color is assigned to --color-gray-_ above */
+		--text-color-link: #1493fb;
+		--text-color-link-active: #6969f7;
+		--text-color-link-visited: #a6a6f8;
+
+		--background-color: #15202b;
+	}
+}
+
+
+/* Global stylesheet */
+* {
+	box-sizing: border-box;
+}
+
+@view-transition {
+	navigation: auto;
+}
+
+html,
+body {
+	padding: 0;
+	margin: 0 auto;
+	font-family: var(--font-family);
+	color: var(--text-color);
+	background-color: var(--background-color);
+}
+html {
+	overflow-y: scroll;
+}
+body {
+	max-width: 75em;
+}
+
+/* https://www.a11yproject.com/posts/how-to-hide-content/ */
+.visually-hidden:not(:focus):not(:active) {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+/* Fluid images via https://www.zachleat.com/web/fluid-images/ */
+img{
+  max-width: 100%;
+}
+img[width][height] {
+  height: auto;
+}
+img[src$=".svg"] {
+  width: 100%;
+  height: auto;
+  max-width: none;
+}
+video,
+iframe {
+	width: 100%;
+	height: auto;
+}
+iframe {
+	aspect-ratio: 16/9;
+}
+
+p:last-child {
+	margin-bottom: 0;
+}
+p {
+	line-height: 1.5;
+}
+
+li {
+	line-height: 1.5;
+}
+
+a[href] {
+	color: var(--text-color-link);
+}
+a[href]:visited {
+	color: var(--text-color-link-visited);
+}
+a[href]:hover,
+a[href]:active {
+	color: var(--text-color-link-active);
+}
+
+main,
+footer {
+	padding: 1rem;
+}
+main :first-child {
+	margin-top: 0;
+}
+
+header {
+	border-bottom: 1px dashed var(--color-gray-20);
+}
+
+#skip-link {
+	text-decoration: none;
+	background: var(--background-color);
+	color: var(--text-color);
+	padding: 0.5rem 1rem;
+	border: 1px solid var(--color-gray-90);
+	border-radius: 2px;
+}
+
+/* Prevent visually-hidden skip link fom pushing content around when focused */
+#skip-link.visually-hidden:focus {
+	position: absolute;
+	top: 1rem;
+	left: 1rem;
+	/* Ensure it is positioned on top of everything else when it is shown */
+	z-index: 999;
+}
+
+.links-nextprev {
+	display: flex;
+	justify-content: space-between;
+	gap: .5em 1em;
+	list-style: "";
+	border-top: 1px dashed var(--color-gray-20);
+	padding: 1em 0;
+}
+.links-nextprev > * {
+	flex-grow: 1;
+}
+.links-nextprev-next {
+	text-align: right;
+}
+
+table {
+	margin: 1em 0;
+}
+table td,
+table th {
+	padding-right: 1em;
+}
+
+pre,
+code {
+	font-family: var(--font-family-monospace);
+}
+pre:not([class*="language-"]) {
+	margin: .5em 0;
+	line-height: 1.375; /* 22px /16 */
+	-moz-tab-size: var(--syntax-tab-size);
+	-o-tab-size: var(--syntax-tab-size);
+	tab-size: var(--syntax-tab-size);
+	-webkit-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+	direction: ltr;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	overflow-x: auto;
+}
+code {
+	word-break: break-all;
+}
+
+/* Header */
+header {
+	display: flex;
+	gap: 1em;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1em;
+}
+.home-link {
+	flex-grow: 1;
+	font-size: 1em; /* 16px /16 */
+	font-weight: 700;
+}
+.home-link:link:not(:hover) {
+	text-decoration: none;
+}
+
+/* Nav */
+.nav {
+	display: flex;
+	gap: .5em 1em;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+.nav-item {
+	display: inline-block;
+}
+.nav-item a[href]:not(:hover) {
+	text-decoration: none;
+}
+.nav a[href][aria-current="page"] {
+	text-decoration: underline;
+}
+
+/* Posts list */
+.postlist {
+	counter-reset: start-from var(--postlist-index);
+	list-style: none;
+	padding: 0;
+	padding-left: 1.5rem;
+}
+.postlist-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	counter-increment: start-from -1;
+	margin-bottom: 1em;
+}
+.postlist-item:before {
+	display: inline-block;
+	pointer-events: none;
+	content: "" counter(start-from, decimal-leading-zero) ". ";
+	line-height: 100%;
+	text-align: right;
+	margin-left: -1.5rem;
+}
+.postlist-date,
+.postlist-item:before {
+	font-size: 0.8125em; /* 13px /16 */
+	color: var(--color-gray-90);
+}
+.postlist-date {
+	word-spacing: -0.5px;
+}
+.postlist-link {
+	font-size: 1.1875em; /* 19px /16 */
+	font-weight: 700;
+	flex-basis: calc(100% - 1.5rem);
+	padding-left: .25em;
+	padding-right: .5em;
+	text-underline-position: from-font;
+	text-underline-offset: 0;
+	text-decoration-thickness: 1px;
+}
+.postlist-item-active .postlist-link {
+	font-weight: bold;
+}
+
+/* Tags */
+.post-tag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-transform: capitalize;
+	font-style: italic;
+}
+.postlist-item > .post-tag {
+	align-self: center;
+}
+
+/* Tags list */
+.post-metadata {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: .5em;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.post-metadata time {
+	margin-right: 1em;
+}
+
+/* Hero image */
+.hero-image-container {
+	position: relative;
+	display: inline-block;
+}
+.hero-image-container img {
+	display: block;
+	border: 12px solid white;
+	border-radius: 12px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.hero-image-caption {
+	position: absolute;
+	bottom: 24px;
+	right: 24px;
+	font-family: 'Georgia', 'Garamond', serif;
+	font-style: italic;
+	font-size: 0.95rem;
+	color: white !important;
+	text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+	padding: 0.5rem 0.75rem;
+	background: rgba(0, 0, 0, 0.3);
+	border-radius: 4px;
+	backdrop-filter: blur(4px);
+	text-decoration: none !important;
+	transition: background 0.2s ease;
+}
+.hero-image-caption:hover {
+	background: rgba(0, 0, 0, 0.5);
+	color: white !important;
+}
+.hero-image-caption:visited {
+	color: white !important;
+}
+.hero-image-caption:active {
+	color: white !important;
+}
+
+/* Timeline container */
+.timeline-container {
+  width: 100%;
+  margin: 1ch;
+}
+
+.timeline-item {
+  padding: 3em 2em 2em;
+  position: relative;
+  color: rgba(0, 0, 0, 0.7);
+  border-left: 2px solid rgba(0, 0, 0, 0.3);
+}
+.timeline-item p {
+  font-size: 1rem;
+}
+.timeline-item::before {
+  content: attr(date-is);
+  position: absolute;
+  left: 2em;
+  font-weight: bold;
+  top: 1em;
+  display: block;
+  font-size: .9rem;
+}
+.timeline-item::after {
+  width: 10px;
+  height: 10px;
+  display: block;
+  top: 1em;
+  position: absolute;
+  left: -7px;
+  border-radius: 10px;
+  content: '';
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  background: white;
+}
+.timeline-item:last-child {
+  -o-border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+  border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+}
+/**
+ * okaidia theme for JavaScript, CSS and HTML
+ * Loosely based on Monokai textmate theme by http://www.monokai.nl/
+ * @author ocodia
+ */
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: #f8f8f2;
+	background: none;
+	text-shadow: 0 1px rgba(0, 0, 0, 0.3);
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-size: 1em;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+	border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background: #272822;
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+	white-space: normal;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: #8292a2;
+}
+
+.token.punctuation {
+	color: #f8f8f2;
+}
+
+.token.namespace {
+	opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.constant,
+.token.symbol,
+.token.deleted {
+	color: #f92672;
+}
+
+.token.boolean,
+.token.number {
+	color: #ae81ff;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+	color: #a6e22e;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string,
+.token.variable {
+	color: #f8f8f2;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.function,
+.token.class-name {
+	color: #e6db74;
+}
+
+.token.keyword {
+	color: #66d9ef;
+}
+
+.token.regex,
+.token.important {
+	color: #fd971f;
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+/*
+ * New diff- syntax
+ */
+
+pre[class*="language-diff-"] {
+	--eleventy-code-padding: 1.25em;
+	padding-left: var(--eleventy-code-padding);
+	padding-right: var(--eleventy-code-padding);
+}
+.token.deleted {
+	background-color: hsl(0, 51%, 37%);
+	color: inherit;
+}
+.token.inserted {
+	background-color: hsl(126, 31%, 39%);
+	color: inherit;
+}
+
+/* Make the + and - characters unselectable for copy/paste */
+.token.prefix.unchanged,
+.token.prefix.inserted,
+.token.prefix.deleted {
+	-webkit-user-select: none;
+	user-select: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+.token.prefix.inserted,
+.token.prefix.deleted {
+	width: var(--eleventy-code-padding);
+	background-color: rgba(0,0,0,.2);
+}
+
+/* Optional: full-width background color */
+.token.inserted:not(.prefix),
+.token.deleted:not(.prefix) {
+	display: block;
+	margin-left: calc(-1 * var(--eleventy-code-padding));
+	margin-right: calc(-1 * var(--eleventy-code-padding));
+	text-decoration: none; /* override del, ins, mark defaults */
+	color: inherit; /* override del, ins, mark defaults */
+}</style>
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+	</head>
+	<body>
+		<a href="#main" id="skip-link" class="visually-hidden">Skip to main content</a>
+
+		<header>
+			<a href="/slinkydeveloper.github.io/" class="home-link">slinkydeveloper</a>
+			<nav>
+				<h2 class="visually-hidden" id="top-level-navigation-menu">Top level navigation menu</h2>
+				<ul class="nav">
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/">Home</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/blog/">Posts</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/landscapes/">Landscapes</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/about/">About</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/feed/feed.xml">Feed</a></li>
+					<li class="nav-item"><a href="https://github.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github"></i></a></li>
+					<li class="nav-item"><a href="https://bsky.app/profile/slinkydeveloper.bsky.social" target="_blank" rel="noopener noreferrer" aria-label="Bluesky"><i class="fa-brands fa-bluesky"></i></a></li>
+					<li class="nav-item"><a href="https://x.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></a></li>
+					<li class="nav-item"><a href="https://www.linkedin.com/in/francesco-guardiani/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-square-linkedin"></i></a></li>
+				</ul>
+			</nav>
+		</header>
+
+		<main id="main">
+			<heading-anchors>
+				
+
+
+<h1 id="vert-x-container-images-with-jlink">Vert.x container images with jlink</h1>
+
+<ul class="post-metadata">
+	<li><time datetime="2020-10-08">08 October 2020</time></li>
+	<li><a href="/slinkydeveloper.github.io/tags/development/" class="post-tag">development</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/container/" class="post-tag">container</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/cloud/" class="post-tag">cloud</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/vertx/" class="post-tag">vertx</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/java/" class="post-tag">java</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/jlink/" class="post-tag">jlink</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/jdeps/" class="post-tag">jdeps</a></li>
+</ul>
+
+<p>In this blog post I'm gonna show you how I managed to reduce the container image size of an Eclipse Vert.x application, creating a smaller JDK with <code>jdeps</code> and <code>jlink</code>.</p>
+<p>The application is the data plane of <a href="https://github.com/knative-sandbox/eventing-kafka-broker">Knative Eventing Kafka Broker</a>, an implementation of Knative <code>Broker</code> tailored on Kafka.</p>
+<h2 id="fat-jar">Fat-jar</h2>
+<p>We didn't handwritten nor generated a <code>module-info.java</code> for our application, we just ship a fat-jar. To generate a fat-jar, configure the <code>maven-shade-plugin</code>:</p>
+<pre class="language-xml" tabindex="0"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugin</span><span class="token punctuation">></span></span>
+   <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>org.apache.maven.plugins<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+   <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>maven-shade-plugin<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+   <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>${maven.shade.plugin.version}<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
+   <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
+     <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>minimizeJar</span><span class="token punctuation">></span></span>true<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>minimizeJar</span><span class="token punctuation">></span></span>
+   <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">></span></span>
+   <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>executions</span><span class="token punctuation">></span></span>
+     <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>execution</span><span class="token punctuation">></span></span>
+       <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>phase</span><span class="token punctuation">></span></span>package<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>phase</span><span class="token punctuation">></span></span>
+       <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>goals</span><span class="token punctuation">></span></span>
+         <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>goal</span><span class="token punctuation">></span></span>shade<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>goal</span><span class="token punctuation">></span></span>
+       <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>goals</span><span class="token punctuation">></span></span>
+       <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
+         <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>transformers</span><span class="token punctuation">></span></span>
+           <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>transformer</span>
+             <span class="token attr-name">implementation</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>org.apache.maven.plugins.shade.resource.ManifestResourceTransformer<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+             <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>mainClass</span><span class="token punctuation">></span></span>
+               ${main-class}
+             <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>mainClass</span><span class="token punctuation">></span></span>
+           <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>transformer</span><span class="token punctuation">></span></span>
+         <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>transformers</span><span class="token punctuation">></span></span>
+       <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">></span></span>
+     <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>execution</span><span class="token punctuation">></span></span>
+   <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>executions</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugin</span><span class="token punctuation">></span></span></code></pre>
+<h2 id="jdeps">Jdeps</h2>
+<p><code>jdeps</code> is the tool you must use to figure which JDK modules you depend on. If you run <code>jdeps</code> just with the fat-jar as argument, you'll get a list of all the packages in your jar and the JDK modules it depends on:</p>
+<pre class="language-shell" tabindex="0"><code class="language-shell">% jdeps receiver/target/receiver-1.0-SNAPSHOT.jar
+<span class="token punctuation">[</span><span class="token punctuation">..</span>.<span class="token punctuation">]</span>
+   dev.knative.eventing.kafka.broker.core             -<span class="token operator">></span> java.lang                                          java.base
+   dev.knative.eventing.kafka.broker.core             -<span class="token operator">></span> java.lang.invoke                                   java.base
+   dev.knative.eventing.kafka.broker.core             -<span class="token operator">></span> java.net                                           java.base
+   dev.knative.eventing.kafka.broker.core             -<span class="token operator">></span> java.time                                          java.base
+   dev.knative.eventing.kafka.broker.core             -<span class="token operator">></span> java.time.format                                   java.base
+   dev.knative.eventing.kafka.broker.core             -<span class="token operator">></span> java.util                                          java.base
+   dev.knative.eventing.kafka.broker.core             -<span class="token operator">></span> java.util.concurrent                               java.base
+   dev.knative.eventing.kafka.broker.core             -<span class="token operator">></span> java.util.function                                 java.base
+   dev.knative.eventing.kafka.broker.core             -<span class="token operator">></span> java.util.stream                                   java.base
+<span class="token punctuation">[</span><span class="token punctuation">..</span>.<span class="token punctuation">]</span></code></pre>
+<p>Note that <code>jdeps</code> analyzes only the imports so, if you perform some reflections at runtime of JDK classes, they won't be found by the tool.</p>
+<p>To get an output that you can directly pass to <code>jlink</code>:</p>
+<pre class="language-shell" tabindex="0"><code class="language-shell">% jdeps <span class="token parameter variable">-q</span> --print-module-deps --ignore-missing-deps receiver/target/receiver-1.0-SNAPSHOT.jar
+java.base,java.compiler,java.naming,java.security.jgss,java.security.sasl,java.sql,jdk.management,jdk.unsupported</code></pre>
+<p>This is the list of jdk modules we depend on. Doing a quick check, I've found that:</p>
+<ul>
+<li><code>java.base</code> it's the module that contains all the core features of the jdk</li>
+<li><code>java.compiler</code> contains the compiler types. It's brought in by Guava and Vert.x CLI feature.</li>
+<li><code>java.naming</code> contains some JNDI types, to perform names lookups. This is required to perform DNS queries by Vert.x</li>
+<li><code>java.security.jgss</code> and <code>java.security.sasl</code> contains some security protocols implementation. They're used by the Java Kafka client.</li>
+<li><code>java.sql</code> contains JDBC. Jackson databind and Google Gson (that we import transitively via Protobuf json) depends on it because they provide marshallers/unmarshallers for JDBC types.</li>
+<li><code>jdk.management</code> contains some interfaces to manage the JDK. This is used by Micrometer to instrument the JVM and collect metrics.</li>
+<li><code>jdk.unsupported</code> contains <code>sun.misc.Unsafe</code>. Netty and Protobuf use it to perform off-heap allocations.</li>
+</ul>
+<h2 id="zero-days-since-it-was-dns">Zero days since it was DNS</h2>
+<p>Because some reflection is happening behind the hood to choose the Vert.x DNS resolver, <code>jdeps</code> doesn't discover the module <code>jdk.naming.dns</code>, that you need in your Vert.x application to enable the DNS.</p>
+<p>To resolve the deps and add the dns module:</p>
+<pre class="language-shell" tabindex="0"><code class="language-shell"><span class="token assign-left variable">MODS</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span>jdeps <span class="token parameter variable">-q</span> --print-module-deps --ignore-missing-deps receiver/target/receiver-1.0-SNAPSHOT.jar<span class="token variable">)</span></span>
+<span class="token builtin class-name">echo</span> <span class="token string">"Computed mods = '<span class="token variable">$MODS</span>'"</span>
+<span class="token comment"># Patch adding the dns</span>
+<span class="token assign-left variable">MODS</span><span class="token operator">=</span><span class="token string">"<span class="token variable">$MODS</span>,jdk.naming.dns"</span></code></pre>
+<h2 id="create-the-jdk">Create the JDK</h2>
+<p>Now you just need to invoke <code>jlink</code> to generate your custom JDK:</p>
+<pre class="language-shell" tabindex="0"><code class="language-shell">% jlink <span class="token parameter variable">--verbose</span> <span class="token punctuation">\</span>
+  --no-header-files <span class="token punctuation">\</span>
+  --no-man-pages <span class="token punctuation">\</span>
+  <span class="token parameter variable">--compress</span><span class="token operator">=</span><span class="token number">2</span> <span class="token punctuation">\</span>
+  --strip-debug <span class="token punctuation">\</span>
+  --add-modules <span class="token string">"<span class="token variable">$MODS</span>"</span> <span class="token punctuation">\</span>
+  <span class="token parameter variable">--output</span> ./jdk
+java.base file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.base.jmod
+java.compiler file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.compiler.jmod
+java.logging file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.logging.jmod
+java.management file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.management.jmod
+java.naming file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.naming.jmod
+java.security.jgss file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.security.jgss.jmod
+java.security.sasl file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.security.sasl.jmod
+java.sql file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.sql.jmod
+java.transaction.xa file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.transaction.xa.jmod
+java.xml file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/java.xml.jmod
+jdk.management file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/jdk.management.jmod
+jdk.naming.dns file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/jdk.naming.dns.jmod
+jdk.unsupported file:///usr/lib/jvm/java-15-openjdk-15.0.0.36-1.rolling.fc32.x86_64/jmods/jdk.unsupported.jmod
+
+Providers:
+  java.base provides java.nio.file.spi.FileSystemProvider used by java.base
+  java.naming provides java.security.Provider used by java.base
+  java.security.jgss provides java.security.Provider used by java.base
+  java.security.sasl provides java.security.Provider used by java.base
+  jdk.naming.dns provides javax.naming.spi.InitialContextFactory used by java.naming
+  java.management provides javax.security.auth.spi.LoginModule used by java.base
+  java.logging provides jdk.internal.logger.DefaultLoggerFinder used by java.base
+  jdk.management provides sun.management.spi.PlatformMBeanProvider used by java.management</code></pre>
+<p>This command will grab the modules you provided from your local machine and will create a JDK without manual, header files, debug symbols:</p>
+<pre class="language-shell" tabindex="0"><code class="language-shell">jdk
+├── bin
+│   ├── <span class="token function">java</span>
+│   └── keytool
+├── conf
+│   ├── logging.properties
+│   ├── net.properties
+│   ├── sdp
+│   └── security
+<span class="token punctuation">[</span><span class="token punctuation">..</span>.<span class="token punctuation">]</span>
+├── lib
+<span class="token punctuation">[</span><span class="token punctuation">..</span>.<span class="token punctuation">]</span>
+└── release</code></pre>
+<h2 id="complete-script-and-dockerfile">Complete script and Dockerfile</h2>
+<p>This is the complete Dockerfile (simplified) that builds the project and generates the JDK:</p>
+<pre class="language-dockerfile" tabindex="0"><code class="language-dockerfile"><span class="token instruction"><span class="token keyword">ARG</span> JAVA_IMAGE=docker.io/adoptopenjdk:14-jdk-hotspot</span>
+<span class="token instruction"><span class="token keyword">ARG</span> BASE_IMAGE=docker.io/ubuntu:bionic</span>
+
+<span class="token instruction"><span class="token keyword">FROM</span> <span class="token variable">${JAVA_IMAGE}</span> <span class="token keyword">as</span> builder</span>
+
+<span class="token instruction"><span class="token keyword">WORKDIR</span> /app</span>
+
+<span class="token comment"># https://github.com/AdoptOpenJDK/openjdk-docker/issues/260</span>
+<span class="token instruction"><span class="token keyword">RUN</span> apt-get update &amp;&amp; apt-get install -y binutils</span>
+
+<span class="token comment"># Copy all my project stuff inside the container</span>
+<span class="token instruction"><span class="token keyword">COPY</span> . .</span>
+
+<span class="token comment"># Build the project</span>
+<span class="token instruction"><span class="token keyword">RUN</span> ./mvnw package -DskipTests -Deditorconfig.skip --no-transfer-progress</span>
+
+<span class="token comment"># Generate the sdk using the script (shown below)</span>
+<span class="token instruction"><span class="token keyword">RUN</span> ./generate_jdk.sh /app/receiver/target/receiver-1.0-SNAPSHOT.jar</span>
+
+<span class="token comment"># Prod image</span>
+<span class="token instruction"><span class="token keyword">FROM</span> <span class="token variable">${BASE_IMAGE}</span> <span class="token keyword">as</span> running</span>
+
+<span class="token comment"># Create appuser and directories</span>
+<span class="token instruction"><span class="token keyword">RUN</span> groupadd -g 999 appuser &amp;&amp; useradd -r -u 999 -g appuser appuser &amp;&amp; <span class="token operator">\</span>
+  mkdir /tmp/vertx-cache &amp;&amp; chown -R appuser:appuser /tmp/vertx-cache &amp;&amp; <span class="token operator">\</span>
+  mkdir /app</span>
+
+<span class="token comment"># Copy jar and jdk inside /app</span>
+<span class="token instruction"><span class="token keyword">COPY</span> <span class="token options"><span class="token property">--from</span><span class="token punctuation">=</span><span class="token string">builder</span></span> /app/jdk /app/jdk</span>
+<span class="token instruction"><span class="token keyword">COPY</span> <span class="token options"><span class="token property">--from</span><span class="token punctuation">=</span><span class="token string">builder</span></span> /app/receiver/target/receiver-1.0-SNAPSHOT.jar /app/app.jar</span>
+<span class="token instruction"><span class="token keyword">RUN</span> chown -R appuser:appuser /app</span>
+
+<span class="token comment"># Set appuser and configure PATH</span>
+<span class="token instruction"><span class="token keyword">USER</span> appuser</span>
+<span class="token instruction"><span class="token keyword">WORKDIR</span> /app</span>
+<span class="token comment"># Add jdk bin to the path, so you can run the java command</span>
+<span class="token instruction"><span class="token keyword">ENV</span> PATH=<span class="token string">"/app/jdk/bin:${PATH}"</span></span></code></pre>
+<p>And the <code>generate_jdk.sh</code> script:</p>
+<pre class="language-shell" tabindex="0"><code class="language-shell"><span class="token shebang important">#!/usr/bin/env sh</span>
+
+<span class="token keyword">if</span> <span class="token punctuation">[</span> <span class="token variable">$#</span> <span class="token parameter variable">-eq</span> <span class="token number">0</span> <span class="token punctuation">]</span>
+  <span class="token keyword">then</span>
+    <span class="token builtin class-name">echo</span> <span class="token string">"No arguments supplied, You must provide the jar"</span>
+<span class="token keyword">fi</span>
+
+<span class="token builtin class-name">echo</span> <span class="token string">"Computing mods for <span class="token variable">$1</span>"</span>
+<span class="token assign-left variable">MODS</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span>jdeps <span class="token parameter variable">-q</span> --print-module-deps --ignore-missing-deps <span class="token string">"<span class="token variable">$1</span>"</span> <span class="token operator">|</span> <span class="token function">sed</span> <span class="token parameter variable">-e</span> <span class="token string">'s/^[ \t]*//'</span><span class="token variable">)</span></span>
+<span class="token builtin class-name">echo</span> <span class="token string">"Computed mods = '<span class="token variable">$MODS</span>'"</span>
+
+<span class="token comment"># Patch adding the dns</span>
+<span class="token assign-left variable">MODS</span><span class="token operator">=</span><span class="token string">"<span class="token variable">$MODS</span>,jdk.naming.dns"</span>
+<span class="token builtin class-name">echo</span> <span class="token string">"Patched modules shipped with the generated jdk = '<span class="token variable">$MODS</span>'"</span>
+
+jlink <span class="token parameter variable">--verbose</span> --no-header-files --no-man-pages <span class="token parameter variable">--compress</span><span class="token operator">=</span><span class="token number">2</span> --strip-debug --add-modules <span class="token string">"<span class="token variable">$MODS</span>"</span> <span class="token parameter variable">--output</span> /app/jdk</code></pre>
+<p>You can run the built container with:</p>
+<pre class="language-shell" tabindex="0"><code class="language-shell">% <span class="token function">docker</span> run imagename <span class="token function">java</span> <span class="token parameter variable">-jar</span> /app/app.jar</code></pre>
+<h2 id="conclusions">Conclusions</h2>
+<p>Using <code>jdeps</code> and <code>jlink</code> our container image size is 2.5x smaller, which is a great achievement for us. We also plan to reduce it even further, in fact we want to:</p>
+<ul>
+<li>Investigate some modules we depend on, but that we probably don't need: <code>java.compiler</code> and <code>java.sql</code> are two good candidates.</li>
+<li>Rebase our base image on <code>alpine</code>, which uses <code>musl</code> as libc. Look at <a href="https://openjdk.java.net/projects/portola/">Project Portola</a> for more details.</li>
+</ul>
+<p>Check out the full PR: https://github.com/knative-sandbox/eventing-kafka-broker/pull/265</p>
+
+<ul class="links-nextprev"><li class="links-nextprev-prev">← Previous<br> <a href="/slinkydeveloper.github.io/blog/Kubernetes-controllers-The-Empire-Strikes-Back/">Kubernetes controllers - The Empire Strikes Back</a></li><li class="links-nextprev-next">Next →<br><a href="/slinkydeveloper.github.io/blog/JUnit-5-Parallel-tests-Extensions-and-ThreadLocal/">JUnit 5, Parallel tests, Extensions and ThreadLocal</a></li>
+</ul>
+
+			</heading-anchors>
+		</main>
+
+		<footer>
+			<p>
+				<em>Built with <a href="https://www.11ty.dev/">Eleventy v3.1.2</a></em>
+			</p>
+		</footer>
+
+		<!-- This page `/blog/Vert-x-Container-images-with-jlink/` was built on 2025-10-05T17:01:29.967Z -->
+		<script type="module" src="/slinkydeveloper.github.io/dist/cC8wS6ZjFU.js"></script>
+	</body>
+</html>

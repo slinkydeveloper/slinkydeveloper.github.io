@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Debts Manager Tutorial Part 3: Vert.x Web API Contract &amp; Service</title>
+		<meta name="description" content="Today I&#39;m going to bootstrap the project starting from the contract I have already created in the previous chapter. The aim of this chapter is to show you Vert.x Web, Vert.x Web API Contract and Vert.x Web API Service">
+		<link rel="alternate" href="/slinkydeveloper.github.io/feed/feed.xml" type="application/atom+xml" title="slinkydeveloper">
+		
+		
+		
+		<style>/* This is an arbitrary CSS string added to the bundle */
+/* Defaults */
+:root {
+	--font-family: -apple-system, system-ui, sans-serif;
+	--font-family-monospace: Consolas, Menlo, Monaco, Andale Mono WT, Andale Mono, Lucida Console, Lucida Sans Typewriter, DejaVu Sans Mono, Bitstream Vera Sans Mono, Liberation Mono, Nimbus Mono L, Courier New, Courier, monospace;
+}
+
+/* Theme colors */
+:root {
+	--color-gray-20: #e0e0e0;
+	--color-gray-50: #C0C0C0;
+	--color-gray-90: #333;
+
+	--background-color: #fff;
+
+	--text-color: var(--color-gray-90);
+	--text-color-link: #082840;
+	--text-color-link-active: #5f2b48;
+	--text-color-link-visited: #17050F;
+
+	--syntax-tab-size: 2;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-gray-20: #e0e0e0;
+		--color-gray-50: #C0C0C0;
+		--color-gray-90: #dad8d8;
+
+		/* --text-color is assigned to --color-gray-_ above */
+		--text-color-link: #1493fb;
+		--text-color-link-active: #6969f7;
+		--text-color-link-visited: #a6a6f8;
+
+		--background-color: #15202b;
+	}
+}
+
+
+/* Global stylesheet */
+* {
+	box-sizing: border-box;
+}
+
+@view-transition {
+	navigation: auto;
+}
+
+html,
+body {
+	padding: 0;
+	margin: 0 auto;
+	font-family: var(--font-family);
+	color: var(--text-color);
+	background-color: var(--background-color);
+}
+html {
+	overflow-y: scroll;
+}
+body {
+	max-width: 75em;
+}
+
+/* https://www.a11yproject.com/posts/how-to-hide-content/ */
+.visually-hidden:not(:focus):not(:active) {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+/* Fluid images via https://www.zachleat.com/web/fluid-images/ */
+img{
+  max-width: 100%;
+}
+img[width][height] {
+  height: auto;
+}
+img[src$=".svg"] {
+  width: 100%;
+  height: auto;
+  max-width: none;
+}
+video,
+iframe {
+	width: 100%;
+	height: auto;
+}
+iframe {
+	aspect-ratio: 16/9;
+}
+
+p:last-child {
+	margin-bottom: 0;
+}
+p {
+	line-height: 1.5;
+}
+
+li {
+	line-height: 1.5;
+}
+
+a[href] {
+	color: var(--text-color-link);
+}
+a[href]:visited {
+	color: var(--text-color-link-visited);
+}
+a[href]:hover,
+a[href]:active {
+	color: var(--text-color-link-active);
+}
+
+main,
+footer {
+	padding: 1rem;
+}
+main :first-child {
+	margin-top: 0;
+}
+
+header {
+	border-bottom: 1px dashed var(--color-gray-20);
+}
+
+#skip-link {
+	text-decoration: none;
+	background: var(--background-color);
+	color: var(--text-color);
+	padding: 0.5rem 1rem;
+	border: 1px solid var(--color-gray-90);
+	border-radius: 2px;
+}
+
+/* Prevent visually-hidden skip link fom pushing content around when focused */
+#skip-link.visually-hidden:focus {
+	position: absolute;
+	top: 1rem;
+	left: 1rem;
+	/* Ensure it is positioned on top of everything else when it is shown */
+	z-index: 999;
+}
+
+.links-nextprev {
+	display: flex;
+	justify-content: space-between;
+	gap: .5em 1em;
+	list-style: "";
+	border-top: 1px dashed var(--color-gray-20);
+	padding: 1em 0;
+}
+.links-nextprev > * {
+	flex-grow: 1;
+}
+.links-nextprev-next {
+	text-align: right;
+}
+
+table {
+	margin: 1em 0;
+}
+table td,
+table th {
+	padding-right: 1em;
+}
+
+pre,
+code {
+	font-family: var(--font-family-monospace);
+}
+pre:not([class*="language-"]) {
+	margin: .5em 0;
+	line-height: 1.375; /* 22px /16 */
+	-moz-tab-size: var(--syntax-tab-size);
+	-o-tab-size: var(--syntax-tab-size);
+	tab-size: var(--syntax-tab-size);
+	-webkit-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+	direction: ltr;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	overflow-x: auto;
+}
+code {
+	word-break: break-all;
+}
+
+/* Header */
+header {
+	display: flex;
+	gap: 1em;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1em;
+}
+.home-link {
+	flex-grow: 1;
+	font-size: 1em; /* 16px /16 */
+	font-weight: 700;
+}
+.home-link:link:not(:hover) {
+	text-decoration: none;
+}
+
+/* Nav */
+.nav {
+	display: flex;
+	gap: .5em 1em;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+.nav-item {
+	display: inline-block;
+}
+.nav-item a[href]:not(:hover) {
+	text-decoration: none;
+}
+.nav a[href][aria-current="page"] {
+	text-decoration: underline;
+}
+
+/* Posts list */
+.postlist {
+	counter-reset: start-from var(--postlist-index);
+	list-style: none;
+	padding: 0;
+	padding-left: 1.5rem;
+}
+.postlist-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	counter-increment: start-from -1;
+	margin-bottom: 1em;
+}
+.postlist-item:before {
+	display: inline-block;
+	pointer-events: none;
+	content: "" counter(start-from, decimal-leading-zero) ". ";
+	line-height: 100%;
+	text-align: right;
+	margin-left: -1.5rem;
+}
+.postlist-date,
+.postlist-item:before {
+	font-size: 0.8125em; /* 13px /16 */
+	color: var(--color-gray-90);
+}
+.postlist-date {
+	word-spacing: -0.5px;
+}
+.postlist-link {
+	font-size: 1.1875em; /* 19px /16 */
+	font-weight: 700;
+	flex-basis: calc(100% - 1.5rem);
+	padding-left: .25em;
+	padding-right: .5em;
+	text-underline-position: from-font;
+	text-underline-offset: 0;
+	text-decoration-thickness: 1px;
+}
+.postlist-item-active .postlist-link {
+	font-weight: bold;
+}
+
+/* Tags */
+.post-tag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-transform: capitalize;
+	font-style: italic;
+}
+.postlist-item > .post-tag {
+	align-self: center;
+}
+
+/* Tags list */
+.post-metadata {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: .5em;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.post-metadata time {
+	margin-right: 1em;
+}
+
+/* Hero image */
+.hero-image-container {
+	position: relative;
+	display: inline-block;
+}
+.hero-image-container img {
+	display: block;
+	border: 12px solid white;
+	border-radius: 12px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.hero-image-caption {
+	position: absolute;
+	bottom: 24px;
+	right: 24px;
+	font-family: 'Georgia', 'Garamond', serif;
+	font-style: italic;
+	font-size: 0.95rem;
+	color: white !important;
+	text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+	padding: 0.5rem 0.75rem;
+	background: rgba(0, 0, 0, 0.3);
+	border-radius: 4px;
+	backdrop-filter: blur(4px);
+	text-decoration: none !important;
+	transition: background 0.2s ease;
+}
+.hero-image-caption:hover {
+	background: rgba(0, 0, 0, 0.5);
+	color: white !important;
+}
+.hero-image-caption:visited {
+	color: white !important;
+}
+.hero-image-caption:active {
+	color: white !important;
+}
+
+/* Timeline container */
+.timeline-container {
+  width: 100%;
+  margin: 1ch;
+}
+
+.timeline-item {
+  padding: 3em 2em 2em;
+  position: relative;
+  color: rgba(0, 0, 0, 0.7);
+  border-left: 2px solid rgba(0, 0, 0, 0.3);
+}
+.timeline-item p {
+  font-size: 1rem;
+}
+.timeline-item::before {
+  content: attr(date-is);
+  position: absolute;
+  left: 2em;
+  font-weight: bold;
+  top: 1em;
+  display: block;
+  font-size: .9rem;
+}
+.timeline-item::after {
+  width: 10px;
+  height: 10px;
+  display: block;
+  top: 1em;
+  position: absolute;
+  left: -7px;
+  border-radius: 10px;
+  content: '';
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  background: white;
+}
+.timeline-item:last-child {
+  -o-border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+  border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+}
+/**
+ * okaidia theme for JavaScript, CSS and HTML
+ * Loosely based on Monokai textmate theme by http://www.monokai.nl/
+ * @author ocodia
+ */
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: #f8f8f2;
+	background: none;
+	text-shadow: 0 1px rgba(0, 0, 0, 0.3);
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-size: 1em;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+	border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background: #272822;
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+	white-space: normal;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: #8292a2;
+}
+
+.token.punctuation {
+	color: #f8f8f2;
+}
+
+.token.namespace {
+	opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.constant,
+.token.symbol,
+.token.deleted {
+	color: #f92672;
+}
+
+.token.boolean,
+.token.number {
+	color: #ae81ff;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+	color: #a6e22e;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string,
+.token.variable {
+	color: #f8f8f2;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.function,
+.token.class-name {
+	color: #e6db74;
+}
+
+.token.keyword {
+	color: #66d9ef;
+}
+
+.token.regex,
+.token.important {
+	color: #fd971f;
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+/*
+ * New diff- syntax
+ */
+
+pre[class*="language-diff-"] {
+	--eleventy-code-padding: 1.25em;
+	padding-left: var(--eleventy-code-padding);
+	padding-right: var(--eleventy-code-padding);
+}
+.token.deleted {
+	background-color: hsl(0, 51%, 37%);
+	color: inherit;
+}
+.token.inserted {
+	background-color: hsl(126, 31%, 39%);
+	color: inherit;
+}
+
+/* Make the + and - characters unselectable for copy/paste */
+.token.prefix.unchanged,
+.token.prefix.inserted,
+.token.prefix.deleted {
+	-webkit-user-select: none;
+	user-select: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+.token.prefix.inserted,
+.token.prefix.deleted {
+	width: var(--eleventy-code-padding);
+	background-color: rgba(0,0,0,.2);
+}
+
+/* Optional: full-width background color */
+.token.inserted:not(.prefix),
+.token.deleted:not(.prefix) {
+	display: block;
+	margin-left: calc(-1 * var(--eleventy-code-padding));
+	margin-right: calc(-1 * var(--eleventy-code-padding));
+	text-decoration: none; /* override del, ins, mark defaults */
+	color: inherit; /* override del, ins, mark defaults */
+}</style>
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+	</head>
+	<body>
+		<a href="#main" id="skip-link" class="visually-hidden">Skip to main content</a>
+
+		<header>
+			<a href="/slinkydeveloper.github.io/" class="home-link">slinkydeveloper</a>
+			<nav>
+				<h2 class="visually-hidden" id="top-level-navigation-menu">Top level navigation menu</h2>
+				<ul class="nav">
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/">Home</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/blog/">Posts</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/landscapes/">Landscapes</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/about/">About</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/feed/feed.xml">Feed</a></li>
+					<li class="nav-item"><a href="https://github.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github"></i></a></li>
+					<li class="nav-item"><a href="https://bsky.app/profile/slinkydeveloper.bsky.social" target="_blank" rel="noopener noreferrer" aria-label="Bluesky"><i class="fa-brands fa-bluesky"></i></a></li>
+					<li class="nav-item"><a href="https://x.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></a></li>
+					<li class="nav-item"><a href="https://www.linkedin.com/in/francesco-guardiani/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-square-linkedin"></i></a></li>
+				</ul>
+			</nav>
+		</header>
+
+		<main id="main">
+			<heading-anchors>
+				
+
+
+<h1 id="debts-manager-tutorial-part-3-vert-x-web-api-contract-and-service">Debts Manager Tutorial Part 3: Vert.x Web API Contract &amp; Service</h1>
+
+<ul class="post-metadata">
+	<li><time datetime="2019-02-13">13 February 2019</time></li>
+	<li><a href="/slinkydeveloper.github.io/tags/development/" class="post-tag">development</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/web/" class="post-tag">web</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/web-api-contract/" class="post-tag">web api contract</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/web-api-service/" class="post-tag">web api service</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/vertx-service-proxy/" class="post-tag">vertx service proxy</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/vertx/" class="post-tag">vertx</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/openapi/" class="post-tag">openapi</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/openapi-3/" class="post-tag">openapi 3</a></li>
+</ul>
+
+<p>Today I'm going to bootstrap the project starting from the contract I have already created in the <a href="Debts-Manager-Tutorial-Contract-Design">previous chapter</a>. The aim of this chapter is to show you Vert.x Web, Vert.x Web API Contract and Vert.x Web API Service. The combination of these three packages provides all functionalities you need to create a REST API. Then I'm going to use <a href="https://vertx-starter.jetdrone.xyz/#maven">pmlopes' vertx-starter</a> to scaffold the project.</p>
+<p>If you are new to Vert.x, before going further I strongly suggest you to read <a href="https://vertx.io/docs/vertx-core/java/">vertx-core documentation</a> and <a href="https://vertx.io/docs/vertx-web/java/">vertx-web documentation</a></p>
+<h2 id="vert-x-web-api-contract-and-api-services">Vert.x Web, API Contract and API Services</h2>
+<p><strong>Vert.x Web</strong> is a library built on top of Vert.x to create web applications. It provides high level features like routing, request body handling, authorization, etc. The core concept of Vert.x Web is the <code>Router</code> which an object that can route requests to one or more <code>Route</code>s based on a set of rules like HTTP method, HTTP path, accepted content types, etc. On each <code>Route</code> you can define one or more <code>Handler</code>s that contain the logic to process the request. When a <code>Router</code> receives a request it creates a <code>RoutingContext</code> object which has all methods to read the request, write the response, call the next <code>Handler</code> and fail the context. Each <code>Handler</code> that you register consumes the request's <code>RoutingContext</code>. Vert.x Web also provides some common handlers like the <code>BodyHandler</code> that parses the request body and the <code>AuthHandler</code> that manages authN/Z of the request</p>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/KWO_QD9yy6-809.avif 809w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/KWO_QD9yy6-809.webp 809w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/KWO_QD9yy6-809.png" alt="Example architecture using Vert.x Web" title="Example architecture using Vert.x Web" width="809" height="312"></picture></p>
+<p><strong>Vert.x Web API Contract</strong> generates a <code>Router</code> starting from an OpenAPI definition. Everything revolves around an object called <code>RouterFactory</code>: you create the contract, you specify to the <code>RouterFactory</code> what are the handlers for the defined operations and it generates the Vert.x Web <code>Router</code> for you. The <code>RouterFactory</code> does some magics behind the hood to provide you a <code>Router</code> that:</p>
+<ul>
+<li>Parses and validates the incoming requests (all kind of parameters and form or json bodies)</li>
+<li>Correctly routes the requests to the right operation handlers by generating the correct <code>Route</code> instances</li>
+<li>Has the required security handlers mounted in the right <code>Route</code>s</li>
+</ul>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/cyV3JeKjco-969.avif 969w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/cyV3JeKjco-969.webp 969w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/cyV3JeKjco-969.png" alt="Example architecture using Vert.x Web &amp; Vert.x Web API Contract" title="Example architecture using Vert.x Web &amp; Vert.x Web API Contract" width="969" height="302"></picture></p>
+<p><strong>Vert.x Web API Service</strong> is a code generator based on concept of <a href="https://vertx.io/docs/vertx-service-proxy/java/">Vert.x Service Proxy</a>. An <a href="https://vertx.io/docs/vertx-core/java/#event_bus">event bus</a> service is a Java interface that helps you to define in a more natural way an event bus message consumer. This approach leads to different benefits like the straightforward process to test a message consumer like any other Java class. As every EB event consumer, a service can inhabit inside the same verticle or it can be deployed in another application somewhere else in your microservices network. You can use the Vert.x Web API Service in order to mix Contract Driven capabilites provided by Vert.x WAC and these event bus service features.
+When you use EB API Services, you don't put the business logic inside the <code>Route</code> handlers, but you can distribute it inside different services. Then by using Vert.x WAC, you can manage the linking between these services and the <code>Router</code> instance</p>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/wyuYcxVI4q-1592.avif 1592w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/wyuYcxVI4q-1592.webp 1592w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/wyuYcxVI4q-1592.png" alt="Example architecture using Vert.x Web &amp; Vert.x Web API Contract &amp; Vert.x Web API Service" title="Example architecture using Vert.x Web &amp; Vert.x Web API Contract &amp; Vert.x Web API Service" width="1592" height="280"></picture></p>
+<h2 id="define-the-api-services">Define the API Services</h2>
+<p>Now I need to define how to group the API Operations defined inside the contract into different API Services. An important thing to keep in mind about API Services is that, <em>with a good design</em>, you can turn each API Service into a microservice in a few minutes. Starting from this assumption, I want to group operations by different subdomains of my API. Debts Manager API handles users, transactions and status, so I'm going to organize operations to create a <em>Users Service</em>, a <em>Transactions Service</em> and a <em>Status Service</em>. Here is the mapping between services and operations:</p>
+<table>
+<thead>
+<tr>
+<th>Transactions Service</th>
+<th>Users Service</th>
+<th>Status Service</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>getTransactions</code> <br> <code>getTransaction</code> <br> <code>createTransaction</code> <br> <code>updateTransaction</code> <br> <code>deleteTransaction</code></td>
+<td><code>login</code> <br> <code>register</code> <br> <code>getConnectedUsers</code> <br> <code>connectUser</code> <br> <code>getUsers</code></td>
+<td><code>getUserStatus</code></td>
+</tr>
+</tbody>
+</table>
+<p>I need to assign an event bus address to each service. The interesting fact is that you can deploy more than one service instance on an address and the event bus will manage the load balancing between these. The event bus address could be any string in any format, although this it makes sense to use a domain like format to identify it. My choice is:</p>
+<ul>
+<li><code>TransactionService</code> is available at <code>transactions.debts_manager</code></li>
+<li><code>UsersService</code> is available at <code>users.debts_manager</code></li>
+<li><code>StatusService</code> is available at <code>status.debts_manager</code></li>
+</ul>
+<h2 id="specify-the-services-inside-the-spec">Specify the services inside the spec</h2>
+<p>In order to make the <code>RouterFactory</code> been able to correcly link the <code>Router</code> to the services, it must know what are the services' addresses. To define these associations, you have a couple of <a href="https://vertx.io/docs/vertx-web-api-service/java/#_mount_to_router_factory">different methods</a>. I'm going to focus on the configuration based method: inside the OpenAPI document, for each operation, I define the related service event bus address; then just calling <code>mountServicesFromExtensions()</code>, the <code>RouterFactory</code> will inspect the OpenAPI document to find all those associations. E.G. the <code>getTransaction</code> definition now looks like this:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">summary</span><span class="token punctuation">:</span> <span class="token string">'Get a Transaction'</span>
+<span class="token key atrule">operationId</span><span class="token punctuation">:</span> getTransaction
+<span class="token key atrule">responses</span><span class="token punctuation">:</span> <span class="token punctuation">...</span>
+<span class="token key atrule">security</span><span class="token punctuation">:</span> <span class="token punctuation">...</span>
+<span class="token key atrule">x-vertx-event-bus</span><span class="token punctuation">:</span> transactions.debts_manager</code></pre>
+<p>Look at <a href="https://vertx.io/docs/vertx-web-api-service/java/#_using_the_extension_code_x_vertx_event_bus_code"><code>x-vertx-event-bus</code> documentation</a> for more details.</p>
+<h2 id="bootstrap-the-project">Bootstrap the project</h2>
+<p><code>vertx-starter</code> contains a collection of different project templates called presets. I'm going to focus on <em>&quot;OpenAPI Server with Event Bus&quot;</em> preset to scaffold debts manager.</p>
+<p>To help the scaffolder generates the right service interfaces, you must define <a href="https://github.com/pmlopes/vertx-starter/blob/master/dist/webdocs/OpenAPI_Server_With_Services.md">the service address - service name mapping</a>. Just a couple of entries inside Debts manager API spec and you are ready to scaffold the project:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">components</span><span class="token punctuation">:</span>
+  <span class="token key atrule">schemas</span><span class="token punctuation">:</span> <span class="token punctuation">...</span>
+  <span class="token key atrule">securitySchemes</span><span class="token punctuation">:</span> <span class="token punctuation">...</span>
+  <span class="token key atrule">x-vertx-service-gen</span><span class="token punctuation">:</span>
+    <span class="token key atrule">transactions.debts_manager</span><span class="token punctuation">:</span> TransactionsService
+    <span class="token key atrule">users.debts_manager</span><span class="token punctuation">:</span> UsersService
+    <span class="token key atrule">status.debts_manager</span><span class="token punctuation">:</span> StatusService</code></pre>
+<p>Now open the <a href="https://vertx-starter.jetdrone.xyz/#maven">vertx-starter</a> page and with just a couple of clicks you have a zip with the project scaffolded!</p>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/4Yx4umvAvy-1015.avif 1015w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/4Yx4umvAvy-1015.webp 1015w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/4Yx4umvAvy-1015.png" alt="Vert.x Starter screenshot" title="Vert.x Starter screenshot" width="1015" height="869"></picture></p>
+<p>Let's dig into the generated code:</p>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/eN7t-8nHl3-660.avif 660w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/eN7t-8nHl3-660.webp 660w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/eN7t-8nHl3-660.png" alt="Vert.x Starter generated code tree" title="Vert.x Starter generated code tree" width="660" height="936"></picture></p>
+<p>The scaffolder created for you:</p>
+<ul>
+<li>The POJOs which represents the API data models</li>
+<li>The service interfaces</li>
+<li><code>package-info.java</code> files required to trigger Vert.x annotation processing</li>
+<li>The stubs of service implementations</li>
+<li>The stubs of service tests</li>
+<li>The entrypoint of Vert.x application which is called <code>MainVerticle</code></li>
+<li>An <code>ApiClient</code> that can be used for testing purposes</li>
+<li>The build tool configuration file (<code>pom.xml</code> in my case)</li>
+</ul>
+<p>As every scaffolder, it is necessary to make some adjustments for the project needs.</p>
+<h2 id="configure-the-project">Configure the project</h2>
+<p>I made a couple of changes to adapt the project skeleton to my needs. In particular I configured in my pom:</p>
+<ul>
+<li><a href="https://logback.qos.ch/">Logback logging</a></li>
+<li>Compilation with Java 11 with <code>maven-compiler-plugin</code></li>
+<li>JUnit 5 with <code>maven-surefire-plugin</code></li>
+<li><a href="https://reactiverse.io/vertx-maven-plugin/"><code>vertx-maven-plugin</code></a> to execute and package my Vert.x application</li>
+</ul>
+<p>I also substituted the generated <code>openapi.json</code> with my original <code>debts_manager_api.yaml</code> to keep readibility of the spec document. The generated one is a bundled version with all <code>$ref</code>s solved. If you need to bundle again your spec in future, I suggest you to use <a href="http://speccy.io/">Speccy</a> which is a very good tool that can also convert Json Schema to OpenAPI Schema while bundling the spec.</p>
+<h3 id="vertx-maven-plugin-and-application-properties"><code>vertx-maven-plugin</code> and application properties</h3>
+<p>Vert.x Maven plugin provides a couple of facilities to help you execute and package the Vert.x application. The usage is very simple: you must add it to your build plugins and then you must define the FQCN of the Verticle to run:</p>
+<pre class="language-xml" tabindex="0"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>properties</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>vertx.verticle</span><span class="token punctuation">></span></span>io.slinkydeveloper.debtsmanager.MainVerticle<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>vertx.verticle</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>properties</span><span class="token punctuation">></span></span></code></pre>
+<pre class="language-xml" tabindex="0"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>plugin</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>groupId</span><span class="token punctuation">></span></span>io.reactiverse<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>groupId</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>artifactId</span><span class="token punctuation">></span></span>vertx-maven-plugin<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>artifactId</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>version</span><span class="token punctuation">></span></span>1.0.18<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>version</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>executions</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>execution</span><span class="token punctuation">></span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>id</span><span class="token punctuation">></span></span>vmp<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>id</span><span class="token punctuation">></span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>goals</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>goal</span><span class="token punctuation">></span></span>initialize<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>goal</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>goal</span><span class="token punctuation">></span></span>package<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>goal</span><span class="token punctuation">></span></span>
+      <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>goals</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>execution</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>executions</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>redeploy</span><span class="token punctuation">></span></span>true<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>redeploy</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>config</span><span class="token punctuation">></span></span>test_config.json<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>config</span><span class="token punctuation">></span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>configuration</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>plugin</span><span class="token punctuation">></span></span></code></pre>
+<p><code>test_config.json</code> is a JSON containing application properties like PostgreSQL and Redis connection parameters. Vert.x Core includes this basic support to json configuration files: you can load it into your verticle with Vert.x command line, <code>DeploymentConfig</code> or directly with <code>vertx-maven-plugin</code>. If you want to configure a more complex properties management, there is a package called <a href="https://vertx.io/docs/vertx-config/java">vertx-config</a> that enables you to load HOCON configuration files, load configuration from a remote server, etc.</p>
+<h3 id="mainverticle"><code>MainVerticle</code></h3>
+<p>The generated <code>MainVerticle</code> contains two methods:</p>
+<ul>
+<li><code>startHttpServer()</code> to create the RouterFactory, define the various handlers, generate the <code>Router</code> instance and start the HTTP server</li>
+<li><code>startServices()</code> to instantiate and mount the event bus services</li>
+</ul>
+<p>As I said before, the HTTP Server and the corresponding <code>Router</code> don't depend on the event bus services, so you can move these two methods into two separate verticles. For simplicity, I'm going to mantain everything inside one verticle. In next chapters, we will spend time into splitting the verticle.</p>
+<p>To mount a service to the event bus I use an helper object called <code>ServiceBinder</code> that lookups for the generated message handler and binds the service instance to the event bus:</p>
+<pre class="language-java" tabindex="0"><code class="language-java"><span class="token class-name">TransactionsService</span> transactionsService <span class="token operator">=</span> <span class="token class-name">TransactionsService</span><span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span>vertx<span class="token punctuation">)</span><span class="token punctuation">;</span>
+serviceBinder
+  <span class="token punctuation">.</span><span class="token function">setAddress</span><span class="token punctuation">(</span><span class="token string">"transactions.debts_manager"</span><span class="token punctuation">)</span>
+  <span class="token punctuation">.</span><span class="token function">register</span><span class="token punctuation">(</span><span class="token class-name">TransactionsService</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">,</span> transactionsService<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>As I previously said, the <code>RouterFactory</code> can lookup into the OpenAPI document for the associations between services and operations with <code>mountServicesFromExtensions()</code>. This makes the code of <code>startHttpServer()</code> quite simple for the moment:</p>
+<pre class="language-java" tabindex="0"><code class="language-java"><span class="token keyword">private</span> <span class="token class-name">Future</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Void</span><span class="token punctuation">></span></span> <span class="token function">startHttpServer</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token class-name">Future</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Void</span><span class="token punctuation">></span></span> future <span class="token operator">=</span> <span class="token class-name">Future</span><span class="token punctuation">.</span><span class="token function">future</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token class-name">OpenAPI3RouterFactory</span><span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>vertx<span class="token punctuation">,</span> <span class="token string">"openapi.yaml"</span><span class="token punctuation">,</span> openAPI3RouterFactoryAsyncResult <span class="token operator">-></span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>openAPI3RouterFactoryAsyncResult<span class="token punctuation">.</span><span class="token function">succeeded</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      <span class="token class-name">OpenAPI3RouterFactory</span> routerFactory <span class="token operator">=</span> openAPI3RouterFactoryAsyncResult<span class="token punctuation">.</span><span class="token function">result</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      <span class="token comment">// Mount services on event bus based on extensions</span>
+      routerFactory<span class="token punctuation">.</span><span class="token function">mountServicesFromExtensions</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      <span class="token comment">// Add security handlers</span>
+      routerFactory<span class="token punctuation">.</span><span class="token function">addSecurityHandler</span><span class="token punctuation">(</span><span class="token string">"loggedUserToken"</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">LoggedUserTokenHandler</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      <span class="token comment">// Generate the router</span>
+      <span class="token class-name">Router</span> router <span class="token operator">=</span> routerFactory<span class="token punctuation">.</span><span class="token function">getRouter</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      <span class="token comment">// Start the HTTP Server and bind Router</span>
+      server <span class="token operator">=</span> vertx<span class="token punctuation">.</span><span class="token function">createHttpServer</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">HttpServerOptions</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setPort</span><span class="token punctuation">(</span><span class="token number">8080</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setHost</span><span class="token punctuation">(</span><span class="token string">"localhost"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      server<span class="token punctuation">.</span><span class="token function">requestHandler</span><span class="token punctuation">(</span>router<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">listen</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      future<span class="token punctuation">.</span><span class="token function">complete</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+      <span class="token comment">// Something went wrong during router factory initialization</span>
+      future<span class="token punctuation">.</span><span class="token function">fail</span><span class="token punctuation">(</span>openAPI3RouterFactoryAsyncResult<span class="token punctuation">.</span><span class="token function">cause</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> future<span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<h3 id="configure-jwt-authn-z">Configure JWT AuthN/Z</h3>
+<p>Vert.x Web already provides a good support for JWT thanks to <a href="https://vertx.io/docs/vertx-auth-jwt/java/">Vert.x Auth JWT</a>, so I don't need to write an handler that manages the AuthN/Z.</p>
+<p>To get JWT running you need an RSA key pair to sign your tokens. I opted for the <a href="https://tools.ietf.org/html/rfc7517">JWK</a> standard to store it and I generated the key pair and the key store using <a href="https://mkjwk.org/">mkjwk.org</a>.</p>
+<p>Vert.x Auth JWT provides <code>JWTAuth</code> auth provider, which is the object that can authenticate, authorize and generate tokens. Vert.x Web has an handler called <code>JWTAuthHandler</code> that uses this auth provider to validate and extract the payload of the token of incoming requests. I modify the <code>start()</code> method of <code>MainVerticle</code> to load the jwk from filesystem and create the <code>JWTAuth</code>:</p>
+<pre class="language-java" tabindex="0"><code class="language-java"><span class="token function">loadResource</span><span class="token punctuation">(</span>jwkPath<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setHandler</span><span class="token punctuation">(</span>ar <span class="token operator">-></span> <span class="token punctuation">{</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>ar<span class="token punctuation">.</span><span class="token function">failed</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> future<span class="token punctuation">.</span><span class="token function">fail</span><span class="token punctuation">(</span>ar<span class="token punctuation">.</span><span class="token function">cause</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">else</span> <span class="token punctuation">{</span>
+    <span class="token class-name">JsonObject</span> jwkObject <span class="token operator">=</span> ar<span class="token punctuation">.</span><span class="token function">result</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toJsonObject</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token class-name">JWTAuth</span> auth <span class="token operator">=</span> <span class="token class-name">JWTAuth</span><span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span>vertx<span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">JWTAuthOptions</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">addJwk</span><span class="token punctuation">(</span>jwkObject<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">startServices</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">startHttpServer</span><span class="token punctuation">(</span>auth<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setHandler</span><span class="token punctuation">(</span>future<span class="token punctuation">.</span><span class="token function">completer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>And of course I modify the <code>startHttpServer()</code> to use <code>JWTAuthHandler</code>:</p>
+<pre class="language-java" tabindex="0"><code class="language-java">routerFactory<span class="token punctuation">.</span><span class="token function">addSecurityHandler</span><span class="token punctuation">(</span><span class="token string">"loggedUserToken"</span><span class="token punctuation">,</span> <span class="token class-name">JWTAuthHandler</span><span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span>auth<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>In next chapters you will see how to create a token during the login process.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>The application is bootstrapped, now we are ready to deep down into application logic! In next two chapters I'm going to show you how I have implemented the persistence layer and the event sourcing layer.</p>
+<p>Stay tuned for more updates!</p>
+
+<ul class="links-nextprev"><li class="links-nextprev-prev">← Previous<br> <a href="/slinkydeveloper.github.io/blog/Debts-Manager-Tutorial-Contract-Design/">Debts Manager Tutorial Part 2: Contract Design</a></li><li class="links-nextprev-next">Next →<br><a href="/slinkydeveloper.github.io/blog/Reproducibility-of-benchmarks-in-Kubernetes/">Reproducibility of benchmarks in Kubernetes</a></li>
+</ul>
+
+			</heading-anchors>
+		</main>
+
+		<footer>
+			<p>
+				<em>Built with <a href="https://www.11ty.dev/">Eleventy v3.1.2</a></em>
+			</p>
+		</footer>
+
+		<!-- This page `/blog/Debts-Manager-Tutorial-Vert-x-Web-API-Contract-Service/` was built on 2025-10-05T17:01:29.966Z -->
+		<script type="module" src="/slinkydeveloper.github.io/dist/cC8wS6ZjFU.js"></script>
+	</body>
+</html>

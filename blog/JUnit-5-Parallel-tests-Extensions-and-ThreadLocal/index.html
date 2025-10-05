@@ -1,0 +1,851 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>JUnit 5, Parallel tests, Extensions and ThreadLocal</title>
+		<meta name="description" content="In this blog post I&#39;ll talk about my story about enabling the Apache Flink project to use the new JUnit 5 features, including parallel execution, parametrized tests and extensions, and how they&#39;re going to help us improve our test codebase.">
+		<link rel="alternate" href="/slinkydeveloper.github.io/feed/feed.xml" type="application/atom+xml" title="slinkydeveloper">
+		
+		
+		
+		<style>/* This is an arbitrary CSS string added to the bundle */
+/* Defaults */
+:root {
+	--font-family: -apple-system, system-ui, sans-serif;
+	--font-family-monospace: Consolas, Menlo, Monaco, Andale Mono WT, Andale Mono, Lucida Console, Lucida Sans Typewriter, DejaVu Sans Mono, Bitstream Vera Sans Mono, Liberation Mono, Nimbus Mono L, Courier New, Courier, monospace;
+}
+
+/* Theme colors */
+:root {
+	--color-gray-20: #e0e0e0;
+	--color-gray-50: #C0C0C0;
+	--color-gray-90: #333;
+
+	--background-color: #fff;
+
+	--text-color: var(--color-gray-90);
+	--text-color-link: #082840;
+	--text-color-link-active: #5f2b48;
+	--text-color-link-visited: #17050F;
+
+	--syntax-tab-size: 2;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-gray-20: #e0e0e0;
+		--color-gray-50: #C0C0C0;
+		--color-gray-90: #dad8d8;
+
+		/* --text-color is assigned to --color-gray-_ above */
+		--text-color-link: #1493fb;
+		--text-color-link-active: #6969f7;
+		--text-color-link-visited: #a6a6f8;
+
+		--background-color: #15202b;
+	}
+}
+
+
+/* Global stylesheet */
+* {
+	box-sizing: border-box;
+}
+
+@view-transition {
+	navigation: auto;
+}
+
+html,
+body {
+	padding: 0;
+	margin: 0 auto;
+	font-family: var(--font-family);
+	color: var(--text-color);
+	background-color: var(--background-color);
+}
+html {
+	overflow-y: scroll;
+}
+body {
+	max-width: 75em;
+}
+
+/* https://www.a11yproject.com/posts/how-to-hide-content/ */
+.visually-hidden:not(:focus):not(:active) {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+/* Fluid images via https://www.zachleat.com/web/fluid-images/ */
+img{
+  max-width: 100%;
+}
+img[width][height] {
+  height: auto;
+}
+img[src$=".svg"] {
+  width: 100%;
+  height: auto;
+  max-width: none;
+}
+video,
+iframe {
+	width: 100%;
+	height: auto;
+}
+iframe {
+	aspect-ratio: 16/9;
+}
+
+p:last-child {
+	margin-bottom: 0;
+}
+p {
+	line-height: 1.5;
+}
+
+li {
+	line-height: 1.5;
+}
+
+a[href] {
+	color: var(--text-color-link);
+}
+a[href]:visited {
+	color: var(--text-color-link-visited);
+}
+a[href]:hover,
+a[href]:active {
+	color: var(--text-color-link-active);
+}
+
+main,
+footer {
+	padding: 1rem;
+}
+main :first-child {
+	margin-top: 0;
+}
+
+header {
+	border-bottom: 1px dashed var(--color-gray-20);
+}
+
+#skip-link {
+	text-decoration: none;
+	background: var(--background-color);
+	color: var(--text-color);
+	padding: 0.5rem 1rem;
+	border: 1px solid var(--color-gray-90);
+	border-radius: 2px;
+}
+
+/* Prevent visually-hidden skip link fom pushing content around when focused */
+#skip-link.visually-hidden:focus {
+	position: absolute;
+	top: 1rem;
+	left: 1rem;
+	/* Ensure it is positioned on top of everything else when it is shown */
+	z-index: 999;
+}
+
+.links-nextprev {
+	display: flex;
+	justify-content: space-between;
+	gap: .5em 1em;
+	list-style: "";
+	border-top: 1px dashed var(--color-gray-20);
+	padding: 1em 0;
+}
+.links-nextprev > * {
+	flex-grow: 1;
+}
+.links-nextprev-next {
+	text-align: right;
+}
+
+table {
+	margin: 1em 0;
+}
+table td,
+table th {
+	padding-right: 1em;
+}
+
+pre,
+code {
+	font-family: var(--font-family-monospace);
+}
+pre:not([class*="language-"]) {
+	margin: .5em 0;
+	line-height: 1.375; /* 22px /16 */
+	-moz-tab-size: var(--syntax-tab-size);
+	-o-tab-size: var(--syntax-tab-size);
+	tab-size: var(--syntax-tab-size);
+	-webkit-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+	direction: ltr;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	overflow-x: auto;
+}
+code {
+	word-break: break-all;
+}
+
+/* Header */
+header {
+	display: flex;
+	gap: 1em;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1em;
+}
+.home-link {
+	flex-grow: 1;
+	font-size: 1em; /* 16px /16 */
+	font-weight: 700;
+}
+.home-link:link:not(:hover) {
+	text-decoration: none;
+}
+
+/* Nav */
+.nav {
+	display: flex;
+	gap: .5em 1em;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+.nav-item {
+	display: inline-block;
+}
+.nav-item a[href]:not(:hover) {
+	text-decoration: none;
+}
+.nav a[href][aria-current="page"] {
+	text-decoration: underline;
+}
+
+/* Posts list */
+.postlist {
+	counter-reset: start-from var(--postlist-index);
+	list-style: none;
+	padding: 0;
+	padding-left: 1.5rem;
+}
+.postlist-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	counter-increment: start-from -1;
+	margin-bottom: 1em;
+}
+.postlist-item:before {
+	display: inline-block;
+	pointer-events: none;
+	content: "" counter(start-from, decimal-leading-zero) ". ";
+	line-height: 100%;
+	text-align: right;
+	margin-left: -1.5rem;
+}
+.postlist-date,
+.postlist-item:before {
+	font-size: 0.8125em; /* 13px /16 */
+	color: var(--color-gray-90);
+}
+.postlist-date {
+	word-spacing: -0.5px;
+}
+.postlist-link {
+	font-size: 1.1875em; /* 19px /16 */
+	font-weight: 700;
+	flex-basis: calc(100% - 1.5rem);
+	padding-left: .25em;
+	padding-right: .5em;
+	text-underline-position: from-font;
+	text-underline-offset: 0;
+	text-decoration-thickness: 1px;
+}
+.postlist-item-active .postlist-link {
+	font-weight: bold;
+}
+
+/* Tags */
+.post-tag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-transform: capitalize;
+	font-style: italic;
+}
+.postlist-item > .post-tag {
+	align-self: center;
+}
+
+/* Tags list */
+.post-metadata {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: .5em;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.post-metadata time {
+	margin-right: 1em;
+}
+
+/* Hero image */
+.hero-image-container {
+	position: relative;
+	display: inline-block;
+}
+.hero-image-container img {
+	display: block;
+	border: 12px solid white;
+	border-radius: 12px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.hero-image-caption {
+	position: absolute;
+	bottom: 24px;
+	right: 24px;
+	font-family: 'Georgia', 'Garamond', serif;
+	font-style: italic;
+	font-size: 0.95rem;
+	color: white !important;
+	text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+	padding: 0.5rem 0.75rem;
+	background: rgba(0, 0, 0, 0.3);
+	border-radius: 4px;
+	backdrop-filter: blur(4px);
+	text-decoration: none !important;
+	transition: background 0.2s ease;
+}
+.hero-image-caption:hover {
+	background: rgba(0, 0, 0, 0.5);
+	color: white !important;
+}
+.hero-image-caption:visited {
+	color: white !important;
+}
+.hero-image-caption:active {
+	color: white !important;
+}
+
+/* Timeline container */
+.timeline-container {
+  width: 100%;
+  margin: 1ch;
+}
+
+.timeline-item {
+  padding: 3em 2em 2em;
+  position: relative;
+  color: rgba(0, 0, 0, 0.7);
+  border-left: 2px solid rgba(0, 0, 0, 0.3);
+}
+.timeline-item p {
+  font-size: 1rem;
+}
+.timeline-item::before {
+  content: attr(date-is);
+  position: absolute;
+  left: 2em;
+  font-weight: bold;
+  top: 1em;
+  display: block;
+  font-size: .9rem;
+}
+.timeline-item::after {
+  width: 10px;
+  height: 10px;
+  display: block;
+  top: 1em;
+  position: absolute;
+  left: -7px;
+  border-radius: 10px;
+  content: '';
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  background: white;
+}
+.timeline-item:last-child {
+  -o-border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+  border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+}
+/**
+ * okaidia theme for JavaScript, CSS and HTML
+ * Loosely based on Monokai textmate theme by http://www.monokai.nl/
+ * @author ocodia
+ */
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: #f8f8f2;
+	background: none;
+	text-shadow: 0 1px rgba(0, 0, 0, 0.3);
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-size: 1em;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+	border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background: #272822;
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+	white-space: normal;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: #8292a2;
+}
+
+.token.punctuation {
+	color: #f8f8f2;
+}
+
+.token.namespace {
+	opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.constant,
+.token.symbol,
+.token.deleted {
+	color: #f92672;
+}
+
+.token.boolean,
+.token.number {
+	color: #ae81ff;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+	color: #a6e22e;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string,
+.token.variable {
+	color: #f8f8f2;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.function,
+.token.class-name {
+	color: #e6db74;
+}
+
+.token.keyword {
+	color: #66d9ef;
+}
+
+.token.regex,
+.token.important {
+	color: #fd971f;
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+/*
+ * New diff- syntax
+ */
+
+pre[class*="language-diff-"] {
+	--eleventy-code-padding: 1.25em;
+	padding-left: var(--eleventy-code-padding);
+	padding-right: var(--eleventy-code-padding);
+}
+.token.deleted {
+	background-color: hsl(0, 51%, 37%);
+	color: inherit;
+}
+.token.inserted {
+	background-color: hsl(126, 31%, 39%);
+	color: inherit;
+}
+
+/* Make the + and - characters unselectable for copy/paste */
+.token.prefix.unchanged,
+.token.prefix.inserted,
+.token.prefix.deleted {
+	-webkit-user-select: none;
+	user-select: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+.token.prefix.inserted,
+.token.prefix.deleted {
+	width: var(--eleventy-code-padding);
+	background-color: rgba(0,0,0,.2);
+}
+
+/* Optional: full-width background color */
+.token.inserted:not(.prefix),
+.token.deleted:not(.prefix) {
+	display: block;
+	margin-left: calc(-1 * var(--eleventy-code-padding));
+	margin-right: calc(-1 * var(--eleventy-code-padding));
+	text-decoration: none; /* override del, ins, mark defaults */
+	color: inherit; /* override del, ins, mark defaults */
+}</style>
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+	</head>
+	<body>
+		<a href="#main" id="skip-link" class="visually-hidden">Skip to main content</a>
+
+		<header>
+			<a href="/slinkydeveloper.github.io/" class="home-link">slinkydeveloper</a>
+			<nav>
+				<h2 class="visually-hidden" id="top-level-navigation-menu">Top level navigation menu</h2>
+				<ul class="nav">
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/">Home</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/blog/">Posts</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/landscapes/">Landscapes</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/about/">About</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/feed/feed.xml">Feed</a></li>
+					<li class="nav-item"><a href="https://github.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github"></i></a></li>
+					<li class="nav-item"><a href="https://bsky.app/profile/slinkydeveloper.bsky.social" target="_blank" rel="noopener noreferrer" aria-label="Bluesky"><i class="fa-brands fa-bluesky"></i></a></li>
+					<li class="nav-item"><a href="https://x.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></a></li>
+					<li class="nav-item"><a href="https://www.linkedin.com/in/francesco-guardiani/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-square-linkedin"></i></a></li>
+				</ul>
+			</nav>
+		</header>
+
+		<main id="main">
+			<heading-anchors>
+				
+
+
+<h1 id="junit-5-parallel-tests-extensions-and-threadlocal">JUnit 5, Parallel tests, Extensions and ThreadLocal</h1>
+
+<ul class="post-metadata">
+	<li><time datetime="2022-02-19">19 February 2022</time></li>
+	<li><a href="/slinkydeveloper.github.io/tags/java/" class="post-tag">java</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/testing/" class="post-tag">testing</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/junit5/" class="post-tag">junit5</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/flink/" class="post-tag">flink</a></li>
+</ul>
+
+<p>In the <a href="https://flink.apache.org/">Apache Flink</a> community we're in the process of <a href="https://lists.apache.org/thread/jsjvc2cqb91pyh47d4p6olk3c1vxqm3w">porting our huge test codebase to JUnit 5</a>. In order to leverage as much as we can the new JUnit 5 features, in the past days I've spent some time playing around with it.</p>
+<p>In this blog post I'll talk about my story about enabling the project to use the new JUnit 5 features, including parallel execution, parametrized tests and extensions, and how they're going to help us improve our test codebase.</p>
+<h2 id="our-test-codebase">Our test codebase</h2>
+<p>In Flink we've all kind of tests you can think of:</p>
+<ul>
+<li>Simple unit tests with a certain degree of mocking</li>
+<li>Integration tests</li>
+<li>End-to-end tests</li>
+<li>Various other tests for utilities, such as tests for our bash scripts</li>
+</ul>
+<p>In most of the codebase, we refer to integration tests as tests that define and run a streaming job, but use a mocked sink and source. While end-to-end tests are like integration tests, but they use real external systems, such as Kafka, deployed with <a href="https://www.testcontainers.org/test_framework_integration/junit_5/">TestContainers</a>.</p>
+<p>In particular in Flink SQL, <em>unsurprisingly</em>, we have a lot of integration tests, because each single feature requires to be &quot;understood&quot; by all the different moving parts of our stack. For example, take the built-in function <code>COALESCE</code>: it has a runtime implementation, a Table API expression <sup class="footnote-ref"><a href="#fn1" id="fnref1">[1]</a></sup>, a custom logic for arguments type inference and return type inference, an optimizer rule that removes the call when possible. Each of these single pieces need to work in harmony, and integration tests usually gives us the guarantee that everything fits together.</p>
+<p>Another aspect of JUnit 5 tests is that we have a lot of test bases and of parametrized test bases, à la Junit 4. This is due to the organic growth of the project and the effort to try to standardize certain test aspects, like starting and stopping a Flink <code>MiniCluster</code>, the embedded Flink cluster to run test jobs.</p>
+<h2 id="goals">Goals</h2>
+<p>In porting to JUnit 5, we want to:</p>
+<ul>
+<li>Have less test bases, but more extensions, hence composition over inheritance. This simplifies contributing new tests, as adding a new &quot;capability&quot; to the test suite won't require new ad-hoc test bases.</li>
+<li>Improve error reporting and test cases separation, in order to make the contributor experience nicer both when running tests from the IDE and with Maven</li>
+<li>Speedup the test suite as much as possible</li>
+</ul>
+<p>In particular the last point is a hot topic, as today a CI run usually takes between 1 and a half and 2 hours, having a significant impact on the development loop of the project.</p>
+<h2 id="parallel-tests">Parallel tests</h2>
+<p>Parallel tests are, in my opinion, the killer feature of JUnit 5 and the real incentive to port JUnit 4 tests to JUnit 5.</p>
+<p>With JUnit 4 you can parallelize test execution using the build tool, for example using <a href="https://maven.apache.org/surefire/maven-surefire-plugin/examples/fork-options-and-parallel-execution.html"><code>maven-surefire-plugin</code> fork JVM feature</a>. It runs tests in parallel by spawning several JVM processes, where each of them gets assigned a split of the overall list of tests to run. JUnit 5 on the other hand runs all the tests within the same JVM: the test runner manages a thread pool and takes care of assigning test cases to threads.</p>
+<p>I think the JUnit 5 approach fits best in our use case, as spawning several JVMs is very resource intensive on constrained machines such as CI runners, so it's a constant source of issues. This statement is also valid for contributor's machines, as these days just running the browser with 20+ tabs open, Spotify, Slack and the IDE can easily eat up to 16Gb of RAM. Plus they work in any IDE without additional configuration, they can help you find out thread safety bugs and the granularity of the execution is easy and flexible to configure.</p>
+<p>To start using JUnit 5 parallel tests, we just had to create a file called <code>junit-platform.properties</code> in our test resources and add the following:</p>
+<pre><code>junit.jupiter.execution.parallel.enabled = true
+junit.jupiter.execution.parallel.config.strategy = dynamic
+junit.jupiter.execution.parallel.mode.default = same_thread
+</code></pre>
+<p>This configuration enables to opt-in specific tests/classes to run in parallel. To flag a test class to run in parallel, we need to annotate it with <code>@Execution(CONCURRENT)</code>. Thanks to this configuration we can gradually enable parallel execution only for tests we know are safe.</p>
+<p>JUnit 5 offers the ability to configure the granularity of the parallel test execution, e.g. run all test cases from all classes in parallel, run all test cases from a class sequentially but run the test classes in parallel, etc. Check out all the available options in the <a href="https://junit.org/junit5/docs/current/user-guide/#writing-tests-parallel-execution">JUnit 5 documentation</a>.</p>
+<p>So I've decided I wanted to try this new feature with some complex parametrized test base. I ended up choosing <a href="https://github.com/apache/flink/blob/271c59332c794d86d221b4fe10c4435cc37d652f/flink-table/flink-table-planner/src/test/java/org/apache/flink/table/planner/functions/casting/CastRulesTest.java"><code>CastRulesTest</code></a>, a parametrized unit test base checking the runtime implementation of the <code>CAST</code> logic. Because there is no shared state whatsoever, this test suite is embarrassingly parallelizable. Just adding the annotation <code>@Execution(CONCURRENT)</code> gave me a 3x times faster execution time for the whole suite.</p>
+<h2 id="integration-tests-in-parallel">Integration tests in parallel</h2>
+<p>That 3x totally got my attention, so I wanted to try to apply the same annotation to integration tests as well. As my next target, I've chosen <a href="https://github.com/apache/flink/blob/3cf0393d8946df3aa7a8836f5b2291791c13f215/flink-table/flink-table-planner/src/test/java/org/apache/flink/table/planner/functions/BuiltInFunctionTestBase.java"><code>BuiltInFunctionTestBase</code></a>. As the name implies, this is a parametrized integration test base we use to test the correct behaviour of our built-in functions. We have around 10 classes where we use this test base, for a total of 1200+ integration test cases.</p>
+<h3 id="porting-the-test-suite-to-junit-5">Porting the test suite to JUnit 5</h3>
+<p>The first thing I had to do was to port to JUnit 5 the base class and its inheritors. My initial thought was to use <a href="https://junit.org/junit5/docs/current/user-guide/#writing-tests-dynamic-tests"><code>@TestFactory</code> feature</a>, a new JUnit 5 feature to spawn dynamic tests, allowing you to group test cases. Think to it as a more powerful <code>@ParametrizedTest</code>.</p>
+<p>This would have allowed me to have a nice nested view of the tests in the reports. For example, look at <a href="https://github.com/apache/flink/blob/3cf0393d8946df3aa7a8836f5b2291791c13f215/flink-table/flink-table-planner/src/test/java/org/apache/flink/table/planner/functions/MathFunctionsITCase.java"><code>MathFunctionsITCase</code></a>: by mixing <code>DynamicTest</code> and <code>DynamicContainer</code> I could have achieved a report like:</p>
+<ul>
+<li><code>MathFunctionsITCase</code>:
+<ul>
+<li><code>PLUS</code>:
+<ul>
+<li><code>f0 + 6 = 20</code>: Success</li>
+<li><code>f0 + 6 = 10</code>: Failure</li>
+</ul>
+</li>
+<li><code>MINUS</code>: [...]</li>
+</ul>
+</li>
+</ul>
+<p>Because the test base itself already had some models to define test cases, including input/output data, query expressions and configuration (see <a href="https://github.com/apache/flink/blob/3cf0393d8946df3aa7a8836f5b2291791c13f215/flink-table/flink-table-planner/src/test/java/org/apache/flink/table/planner/functions/BuiltInFunctionTestBase.java#L183"><code>TestSpec</code></a>), what I had to do was simply to convert these models to <code>DynamicTest</code>/<code>DynamicContainer</code>. A little refactor of the <a href="https://github.com/apache/flink/blob/3cf0393d8946df3aa7a8836f5b2291791c13f215/flink-table/flink-table-planner/src/test/java/org/apache/flink/table/planner/functions/BuiltInFunctionTestBase.java#L87"><code>testFunction</code> method</a> to wrap the logic into <code>DynamicTest</code> did it. Now every concrete test class just had to implement the abstract method <code>getTestSpecs</code> to return the test cases defined with my <code>TestSpec</code> class, so the final implementation of the <code>@TestFactory</code> just looked like:</p>
+<pre class="language-java" tabindex="0"><code class="language-java"><span class="token annotation punctuation">@TestFactory</span>
+<span class="token class-name">Stream</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">DynamicContainer</span><span class="token punctuation">></span></span> <span class="token function">tests</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token function">getTestSpecs</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token class-name">TestSpec</span><span class="token operator">::</span><span class="token function">toDynamicContainer</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<p>Every implementation class provided a <code>DynamicContainer</code>, containing a set of tests for a specific built-in function, like <code>PLUS</code>, and each container had a set of <code>DynamicTest</code> with the specific test cases for that built-in function, like <code>f0 + 6 = 20</code>.</p>
+<p>Last but not least, to let the query run, I needed the extension to set up <code>MiniCluster</code> once per class. This is already available in our <code>flink-test-utils</code>, so with some copy-paste I enabled it:</p>
+<pre class="language-java" tabindex="0"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token class-name">MiniClusterWithClientExtension</span> <span class="token constant">MINI_CLUSTER_RESOURCE</span> <span class="token operator">=</span>
+        <span class="token keyword">new</span> <span class="token class-name">MiniClusterWithClientExtension</span><span class="token punctuation">(</span>
+                <span class="token keyword">new</span> <span class="token class-name">MiniClusterResourceConfiguration<span class="token punctuation">.</span>Builder</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                        <span class="token punctuation">.</span><span class="token function">setNumberTaskManagers</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+                        <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token annotation punctuation">@RegisterExtension</span>
+<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token class-name">AllCallbackWrapper</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">MiniClusterWithClientExtension</span><span class="token punctuation">></span></span> <span class="token constant">ALL_WRAPPER</span> <span class="token operator">=</span>
+        <span class="token keyword">new</span> <span class="token class-name">AllCallbackWrapper</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token constant">MINI_CLUSTER_RESOURCE</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>Tried a first run without parallel tests, and everything ran fine. Tried to add <code>@Execution(CONCURRENT)</code>, and Intellij IDEA welcomed my idea with a long report full of red crosses.</p>
+<h3 id="fixing-the-minicluster-extension-first">Fixing the <code>MiniCluster</code> extension first</h3>
+<p>Looking at the logs, it became evident how the problem was <code>MiniClusterWithClientExtension</code>, given several tests were trying to push jobs to a <code>MiniCluster</code> already shut down.</p>
+<p>The <code>MiniClusterWithClientExtension</code> was developed by wrapping the JUnit 4 <code>MiniClusterWithClientResource</code> rule in a custom interface defining <code>before</code> and <code>after</code>. Then, to register it, you could either use <code>AllCallbackWrapper</code> or <code>EachCallbackWrapper</code> to define whether to have one <code>MiniCluster</code> per test class, or per single test.</p>
+<p>In JUnit 4 rules have a <code>before</code> and <code>after</code> extension point, and then when you register them, depending on whether you use <code>@Rule</code> or <code>@ClassRule</code>, the rule is executed for each test or once per class. In JUnit 5 the user cannot pick whether the extension is used globally or per method: it's the extension itself that defines where it can hook in the lifecycle.</p>
+<p>An example of this shift of concept between JUnit 4 and 5 is provided by the JUnit 5 <code>TestContainers</code> integration, which depending on whether the container field is static or not, decides to share it between test methods or not<sup class="footnote-ref"><a href="#fn2" id="fnref2">[2]</a></sup>.</p>
+<p>Our <code>AllCallbackWrapper</code> or <code>EachCallbackWrapper</code> were circumventing the new JUnit 5 Extension paradigm, bringing back the same semantics of <code>@Rule</code> or <code>@ClassRule</code>. And this worked fine, until I tried to use parallel execution.</p>
+<p>The <a href="https://github.com/apache/flink/blob/78b231f60aed59061f0f609e0cfd659d78e6fdd5/flink-test-utils-parent/flink-test-utils/src/main/java/org/apache/flink/test/util/MiniClusterWithClientExtension.java#L68"><code>MiniClusterWithClientExtension#before</code></a> method was starting <code>MiniCluster</code>, creating some <code>ClusterClient</code> and then setting up a thread local for the environment configuration lookup.</p>
+<p>The interaction between our <code>ThreadLocal</code> configuration when using <code>AllCallbackWrapper</code> didn't sound right, so I tried to do a little experiment. Take this simple extension:</p>
+<pre class="language-java" tabindex="0"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">TestExtension</span>
+        <span class="token keyword">implements</span> <span class="token class-name">BeforeEachCallback</span><span class="token punctuation">,</span> <span class="token class-name">BeforeAllCallback</span><span class="token punctuation">,</span> <span class="token class-name">AfterEachCallback</span><span class="token punctuation">,</span> <span class="token class-name">AfterAllCallback</span> <span class="token punctuation">{</span>
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">beforeAll</span><span class="token punctuation">(</span><span class="token class-name">ExtensionContext</span> context<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">Exception</span> <span class="token punctuation">{</span>
+        <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"before all: "</span> <span class="token operator">+</span> <span class="token class-name">Thread</span><span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">beforeEach</span><span class="token punctuation">(</span><span class="token class-name">ExtensionContext</span> context<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">Exception</span> <span class="token punctuation">{</span>
+        <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>
+                <span class="token string">"before "</span> <span class="token operator">+</span> context<span class="token punctuation">.</span><span class="token function">getDisplayName</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">": "</span> <span class="token operator">+</span> <span class="token class-name">Thread</span><span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">afterEach</span><span class="token punctuation">(</span><span class="token class-name">ExtensionContext</span> context<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">Exception</span> <span class="token punctuation">{</span>
+        <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>
+                <span class="token string">"after "</span> <span class="token operator">+</span> context<span class="token punctuation">.</span><span class="token function">getDisplayName</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">": "</span> <span class="token operator">+</span> <span class="token class-name">Thread</span><span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">afterAll</span><span class="token punctuation">(</span><span class="token class-name">ExtensionContext</span> context<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">Exception</span> <span class="token punctuation">{</span>
+        <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"after all: "</span> <span class="token operator">+</span> <span class="token class-name">Thread</span><span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span></code></pre>
+<p>This is simply going to print the thread where the various hooks are executed, and it also prints the name of single test in case in <code>beforeEach</code>/<code>afterEach</code>. Then I tried to run this test:</p>
+<pre class="language-java" tabindex="0"><code class="language-java"><span class="token annotation punctuation">@ExtendWith</span><span class="token punctuation">(</span><span class="token class-name">TestExtension</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
+<span class="token annotation punctuation">@Execution</span><span class="token punctuation">(</span><span class="token class-name">ExecutionMode</span><span class="token punctuation">.</span><span class="token constant">CONCURRENT</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MyTest</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@ParameterizedTest</span><span class="token punctuation">(</span>name <span class="token operator">=</span> <span class="token string">"{0}"</span><span class="token punctuation">)</span>
+    <span class="token annotation punctuation">@ValueSource</span><span class="token punctuation">(</span>ints <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">,</span> <span class="token number">6</span><span class="token punctuation">,</span> <span class="token number">7</span><span class="token punctuation">,</span> <span class="token number">8</span><span class="token punctuation">,</span> <span class="token number">9</span><span class="token punctuation">,</span> <span class="token number">10</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+    <span class="token keyword">void</span> <span class="token function">name</span><span class="token punctuation">(</span><span class="token keyword">int</span> i<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"test: "</span> <span class="token operator">+</span> i <span class="token operator">+</span> <span class="token string">", thread: "</span> <span class="token operator">+</span> <span class="token class-name">Thread</span><span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span></code></pre>
+<p>And here is the result:</p>
+<pre><code>before all: ForkJoinPool-1-worker-1
+before 2: ForkJoinPool-1-worker-3
+before 3: ForkJoinPool-1-worker-4
+before 5: ForkJoinPool-1-worker-6
+before 9: ForkJoinPool-1-worker-1
+before 4: ForkJoinPool-1-worker-5
+before 7: ForkJoinPool-1-worker-0
+before 6: ForkJoinPool-1-worker-7
+before 1: ForkJoinPool-1-worker-2
+test: 7, thread: ForkJoinPool-1-worker-0
+test: 9, thread: ForkJoinPool-1-worker-1
+test: 4, thread: ForkJoinPool-1-worker-5
+test: 1, thread: ForkJoinPool-1-worker-2
+test: 6, thread: ForkJoinPool-1-worker-7
+test: 2, thread: ForkJoinPool-1-worker-3
+test: 3, thread: ForkJoinPool-1-worker-4
+test: 5, thread: ForkJoinPool-1-worker-6
+after 4: ForkJoinPool-1-worker-5
+after 7: ForkJoinPool-1-worker-0
+after 6: ForkJoinPool-1-worker-7
+after 1: ForkJoinPool-1-worker-2
+after 5: ForkJoinPool-1-worker-6
+after 9: ForkJoinPool-1-worker-1
+after 3: ForkJoinPool-1-worker-4
+after 2: ForkJoinPool-1-worker-3
+before 8: ForkJoinPool-1-worker-3
+test: 8, thread: ForkJoinPool-1-worker-3
+before 10: ForkJoinPool-1-worker-6
+after 8: ForkJoinPool-1-worker-3
+test: 10, thread: ForkJoinPool-1-worker-6
+after 10: ForkJoinPool-1-worker-6
+after all: ForkJoinPool-1-worker-1
+</code></pre>
+<p>As I was expecting, <code>beforeEach</code> and <code>afterEach</code> runs in the same thread of the test, as effectively they just &quot;wrap&quot; the test method, as described <a href="https://junit.org/junit5/docs/current/api/org.junit.jupiter.api/org/junit/jupiter/api/extension/BeforeEachCallback.html">here</a>.</p>
+<p>In other words:</p>
+<ul>
+<li>There is no guarantee about which thread is used to execute <code>beforeAll</code> and <code>afterAll</code>, but</li>
+<li><code>beforeEach</code> and <code>afterEach</code> are guaranteed to be executed within the same thread of the test</li>
+</ul>
+<p>So here was the solution: we just had to set/unset that <code>ThreadLocal</code> <strong>everytime</strong> in <code>beforeEach</code>/<code>afterEach</code>, no matter whether the <code>MiniCluster</code> instance was meant to be per test class or per test method.</p>
+<p>I was ready to declare victory, so I did some refactoring of <code>MiniClusterWithClientExtension</code> to always create one <code>MiniCluster</code> per test class, I removed the wrapping around <code>AllCallbackWrapper</code> and then I tried to run again my tests: still everything was red.</p>
+<h3 id="back-on-parametrizedtest">Back on <code>@ParametrizedTest</code></h3>
+<p>After some investigation, I found out that <code>DynamicTest</code> lifecycle doesn't work per <code>DynamicTest</code> instance, while parallelization does. For example, for this test class:</p>
+<pre class="language-java" tabindex="0"><code class="language-java"><span class="token annotation punctuation">@ExtendWith</span><span class="token punctuation">(</span><span class="token class-name">TestExtension</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span>
+<span class="token annotation punctuation">@Execution</span><span class="token punctuation">(</span><span class="token class-name">ExecutionMode</span><span class="token punctuation">.</span><span class="token constant">CONCURRENT</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MyTest</span> <span class="token punctuation">{</span>
+
+    <span class="token annotation punctuation">@TestFactory</span>
+    <span class="token keyword">public</span> <span class="token class-name">Stream</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">DynamicTest</span><span class="token punctuation">></span></span> <span class="token function">tests</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token class-name">IntStream</span><span class="token punctuation">.</span><span class="token function">rangeClosed</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">10</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">mapToObj</span><span class="token punctuation">(</span>i <span class="token operator">-></span>
+                  <span class="token class-name">DynamicTest</span><span class="token punctuation">.</span><span class="token function">dynamicTest</span><span class="token punctuation">(</span>
+                    <span class="token class-name">String</span><span class="token punctuation">.</span><span class="token function">valueOf</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span><span class="token punctuation">,</span>
+                    <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-></span> <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"test: "</span> <span class="token operator">+</span> i <span class="token operator">+</span> <span class="token string">", thread: "</span> <span class="token operator">+</span> <span class="token class-name">Thread</span><span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                  <span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span></code></pre>
+<p>You get this output:</p>
+<pre><code>before all: ForkJoinPool-1-worker-1
+before tests(): ForkJoinPool-1-worker-1
+after tests(): ForkJoinPool-1-worker-1
+test: 2, thread: ForkJoinPool-1-worker-3
+test: 6, thread: ForkJoinPool-1-worker-7
+test: 3, thread: ForkJoinPool-1-worker-4
+test: 9, thread: ForkJoinPool-1-worker-1
+test: 7, thread: ForkJoinPool-1-worker-0
+test: 1, thread: ForkJoinPool-1-worker-2
+test: 4, thread: ForkJoinPool-1-worker-5
+test: 5, thread: ForkJoinPool-1-worker-6
+test: 8, thread: ForkJoinPool-1-worker-3
+test: 10, thread: ForkJoinPool-1-worker-2
+after all: ForkJoinPool-1-worker-1
+</code></pre>
+<p>As you see, each <code>DynamicTest</code> is executed in parallel, as you would expect, but the <code>beforeEach</code> and <code>afterEach</code> is executed only once per <code>@TestFactory</code>. Because of this behaviour, the tests were not picking the correct <code>ThreadLocal</code>, hence failing the test because they could not find the <code>MiniCluster</code>.</p>
+<p>It seems like there is no solution to this problem, and there is an issue open in the <a href="https://github.com/junit-team/junit5/issues/378">JUnit 5 issue tracker</a> about whether this should be supported or not.</p>
+<p>So I had to fall back to the good old <code>@ParametrizedTest</code>: I just removed the nested <code>DynamicContainer</code>, and I created my own <code>DynamicTest</code> like data structure to wrap a test <code>Executable</code> and its display name:</p>
+<pre class="language-java" tabindex="0"><code class="language-java"><span class="token comment">/** Single test case. */</span>
+<span class="token keyword">static</span> <span class="token keyword">class</span> <span class="token class-name">TestCase</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">String</span> name<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">Executable</span> executable<span class="token punctuation">;</span>
+
+    <span class="token class-name">TestCase</span><span class="token punctuation">(</span><span class="token class-name">String</span> name<span class="token punctuation">,</span> <span class="token class-name">Executable</span> executable<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>name <span class="token operator">=</span> name<span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>executable <span class="token operator">=</span> executable<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token class-name">String</span> <span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> name<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span></code></pre>
+<p>And then I kept the same code as before in the test base, but I had to add a method to flatten the previously used <code>DynamicContainer</code>s:</p>
+<pre class="language-java" tabindex="0"><code class="language-java"><span class="token keyword">abstract</span> <span class="token class-name">Stream</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">TestSpec</span><span class="token punctuation">></span></span> <span class="token function">getTestSpecs</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">final</span> <span class="token class-name">Stream</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">TestCase</span><span class="token punctuation">></span></span> <span class="token function">getTestCases</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">getTestSpecs</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+            <span class="token punctuation">.</span><span class="token function">flatMap</span><span class="token punctuation">(</span>testSpec <span class="token operator">-></span> testSpec<span class="token punctuation">.</span><span class="token function">getTestCases</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">getConfiguration</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token annotation punctuation">@ParameterizedTest</span>
+<span class="token annotation punctuation">@MethodSource</span><span class="token punctuation">(</span><span class="token string">"getTestCases"</span><span class="token punctuation">)</span>
+<span class="token keyword">final</span> <span class="token keyword">void</span> <span class="token function">test</span><span class="token punctuation">(</span><span class="token class-name">TestCase</span> testCase<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">Throwable</span> <span class="token punctuation">{</span>
+    testCase<span class="token punctuation">.</span>executable<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<p>The report doesn't look as nice as with <code>@TestFactory</code>, but it finally works fine with parallel execution.</p>
+<h2 id="results-and-conclusion">Results and conclusion</h2>
+<p>Before the parallelization, this test suite ran in around 50 seconds from Intellij IDEA on my i7 11th Gen packed with 16Gb of RAM. After the parallelization the suite runs in around 20 seconds<sup class="footnote-ref"><a href="#fn3" id="fnref3">[3]</a></sup>. Not bad.</p>
+<p>I think JUnit 5 is a very powerful tool, but you need to be careful when developing extensions that are supposed to work with parallel tests. These are my gotchas from this experience:</p>
+<ul>
+<li>Make sure thread locals are set in <code>beforeEach</code>, so they're set in the right thread, and <strong>cleaned up</strong> in <code>afterEach</code>, to avoid next tests reusing that thread to pick up the old <code>ThreadLocal</code> values</li>
+<li>Be aware that the method <code>beforeEach</code> could be invoked in parallel on the same instance of the extension, so you need to make sure the access to extension fields is thread safe, or...</li>
+<li>Use the <code>ExtensionContext.Store</code>, as it's thread safe, it's hierarchically organized per hook context, and it's particularly useful to auto cleanup objects built in the <code>before[..]</code> methods</li>
+<li>Rather than providing accessors in the extension class, use parameter injection implementing <code>ParameterResolver</code> together with the <code>ExtensionContext.Store</code>. This simplifies the implementation when storing your extension state in <code>ExtensionContext.Store</code>.</li>
+</ul>
+<p>And last but not least, don't use <code>@TestFactory</code> in conjunction with parallel execution if your test requires <code>ThreadLocal</code> or other thread dependant thing correctly configured.</p>
+<hr class="footnotes-sep">
+<section class="footnotes">
+<ol class="footnotes-list">
+<li id="fn1" class="footnote-item"><p>The DSL provided by Flink SQL to define relational queries without SQL <a href="#fnref1" class="footnote-backref">↩︎</a></p>
+</li>
+<li id="fn2" class="footnote-item"><p><a href="https://www.testcontainers.org/test_framework_integration/junit_5/">TestContainers - JUnit 5 integration</a> <a href="#fnref2" class="footnote-backref">↩︎</a></p>
+</li>
+<li id="fn3" class="footnote-item"><p>Please take these numbers with a grain of salt, my measurements were very empirical, and not proper benchmarks <a href="#fnref3" class="footnote-backref">↩︎</a></p>
+</li>
+</ol>
+</section>
+
+<ul class="links-nextprev"><li class="links-nextprev-prev">← Previous<br> <a href="/slinkydeveloper.github.io/blog/Vert-x-Container-images-with-jlink/">Vert.x container images with jlink</a></li><li class="links-nextprev-next">Next →<br><a href="/slinkydeveloper.github.io/blog/rust-macros-are-not-just-about-dry/">Rust macros are not just about DRY</a></li>
+</ul>
+
+			</heading-anchors>
+		</main>
+
+		<footer>
+			<p>
+				<em>Built with <a href="https://www.11ty.dev/">Eleventy v3.1.2</a></em>
+			</p>
+		</footer>
+
+		<!-- This page `/blog/JUnit-5-Parallel-tests-Extensions-and-ThreadLocal/` was built on 2025-10-05T17:01:29.966Z -->
+		<script type="module" src="/slinkydeveloper.github.io/dist/cC8wS6ZjFU.js"></script>
+	</body>
+</html>

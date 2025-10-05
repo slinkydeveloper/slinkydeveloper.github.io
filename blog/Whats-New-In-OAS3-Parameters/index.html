@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>What&#39;s new in OpenAPI Specification 3 - Parameters</title>
+		<meta name="description" content="A guide to new Parameter Object inside OpenAPI Specification 3">
+		<link rel="alternate" href="/slinkydeveloper.github.io/feed/feed.xml" type="application/atom+xml" title="slinkydeveloper">
+		
+		
+		
+		<style>/* This is an arbitrary CSS string added to the bundle */
+/* Defaults */
+:root {
+	--font-family: -apple-system, system-ui, sans-serif;
+	--font-family-monospace: Consolas, Menlo, Monaco, Andale Mono WT, Andale Mono, Lucida Console, Lucida Sans Typewriter, DejaVu Sans Mono, Bitstream Vera Sans Mono, Liberation Mono, Nimbus Mono L, Courier New, Courier, monospace;
+}
+
+/* Theme colors */
+:root {
+	--color-gray-20: #e0e0e0;
+	--color-gray-50: #C0C0C0;
+	--color-gray-90: #333;
+
+	--background-color: #fff;
+
+	--text-color: var(--color-gray-90);
+	--text-color-link: #082840;
+	--text-color-link-active: #5f2b48;
+	--text-color-link-visited: #17050F;
+
+	--syntax-tab-size: 2;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-gray-20: #e0e0e0;
+		--color-gray-50: #C0C0C0;
+		--color-gray-90: #dad8d8;
+
+		/* --text-color is assigned to --color-gray-_ above */
+		--text-color-link: #1493fb;
+		--text-color-link-active: #6969f7;
+		--text-color-link-visited: #a6a6f8;
+
+		--background-color: #15202b;
+	}
+}
+
+
+/* Global stylesheet */
+* {
+	box-sizing: border-box;
+}
+
+@view-transition {
+	navigation: auto;
+}
+
+html,
+body {
+	padding: 0;
+	margin: 0 auto;
+	font-family: var(--font-family);
+	color: var(--text-color);
+	background-color: var(--background-color);
+}
+html {
+	overflow-y: scroll;
+}
+body {
+	max-width: 75em;
+}
+
+/* https://www.a11yproject.com/posts/how-to-hide-content/ */
+.visually-hidden:not(:focus):not(:active) {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+/* Fluid images via https://www.zachleat.com/web/fluid-images/ */
+img{
+  max-width: 100%;
+}
+img[width][height] {
+  height: auto;
+}
+img[src$=".svg"] {
+  width: 100%;
+  height: auto;
+  max-width: none;
+}
+video,
+iframe {
+	width: 100%;
+	height: auto;
+}
+iframe {
+	aspect-ratio: 16/9;
+}
+
+p:last-child {
+	margin-bottom: 0;
+}
+p {
+	line-height: 1.5;
+}
+
+li {
+	line-height: 1.5;
+}
+
+a[href] {
+	color: var(--text-color-link);
+}
+a[href]:visited {
+	color: var(--text-color-link-visited);
+}
+a[href]:hover,
+a[href]:active {
+	color: var(--text-color-link-active);
+}
+
+main,
+footer {
+	padding: 1rem;
+}
+main :first-child {
+	margin-top: 0;
+}
+
+header {
+	border-bottom: 1px dashed var(--color-gray-20);
+}
+
+#skip-link {
+	text-decoration: none;
+	background: var(--background-color);
+	color: var(--text-color);
+	padding: 0.5rem 1rem;
+	border: 1px solid var(--color-gray-90);
+	border-radius: 2px;
+}
+
+/* Prevent visually-hidden skip link fom pushing content around when focused */
+#skip-link.visually-hidden:focus {
+	position: absolute;
+	top: 1rem;
+	left: 1rem;
+	/* Ensure it is positioned on top of everything else when it is shown */
+	z-index: 999;
+}
+
+.links-nextprev {
+	display: flex;
+	justify-content: space-between;
+	gap: .5em 1em;
+	list-style: "";
+	border-top: 1px dashed var(--color-gray-20);
+	padding: 1em 0;
+}
+.links-nextprev > * {
+	flex-grow: 1;
+}
+.links-nextprev-next {
+	text-align: right;
+}
+
+table {
+	margin: 1em 0;
+}
+table td,
+table th {
+	padding-right: 1em;
+}
+
+pre,
+code {
+	font-family: var(--font-family-monospace);
+}
+pre:not([class*="language-"]) {
+	margin: .5em 0;
+	line-height: 1.375; /* 22px /16 */
+	-moz-tab-size: var(--syntax-tab-size);
+	-o-tab-size: var(--syntax-tab-size);
+	tab-size: var(--syntax-tab-size);
+	-webkit-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+	direction: ltr;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	overflow-x: auto;
+}
+code {
+	word-break: break-all;
+}
+
+/* Header */
+header {
+	display: flex;
+	gap: 1em;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1em;
+}
+.home-link {
+	flex-grow: 1;
+	font-size: 1em; /* 16px /16 */
+	font-weight: 700;
+}
+.home-link:link:not(:hover) {
+	text-decoration: none;
+}
+
+/* Nav */
+.nav {
+	display: flex;
+	gap: .5em 1em;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+.nav-item {
+	display: inline-block;
+}
+.nav-item a[href]:not(:hover) {
+	text-decoration: none;
+}
+.nav a[href][aria-current="page"] {
+	text-decoration: underline;
+}
+
+/* Posts list */
+.postlist {
+	counter-reset: start-from var(--postlist-index);
+	list-style: none;
+	padding: 0;
+	padding-left: 1.5rem;
+}
+.postlist-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	counter-increment: start-from -1;
+	margin-bottom: 1em;
+}
+.postlist-item:before {
+	display: inline-block;
+	pointer-events: none;
+	content: "" counter(start-from, decimal-leading-zero) ". ";
+	line-height: 100%;
+	text-align: right;
+	margin-left: -1.5rem;
+}
+.postlist-date,
+.postlist-item:before {
+	font-size: 0.8125em; /* 13px /16 */
+	color: var(--color-gray-90);
+}
+.postlist-date {
+	word-spacing: -0.5px;
+}
+.postlist-link {
+	font-size: 1.1875em; /* 19px /16 */
+	font-weight: 700;
+	flex-basis: calc(100% - 1.5rem);
+	padding-left: .25em;
+	padding-right: .5em;
+	text-underline-position: from-font;
+	text-underline-offset: 0;
+	text-decoration-thickness: 1px;
+}
+.postlist-item-active .postlist-link {
+	font-weight: bold;
+}
+
+/* Tags */
+.post-tag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-transform: capitalize;
+	font-style: italic;
+}
+.postlist-item > .post-tag {
+	align-self: center;
+}
+
+/* Tags list */
+.post-metadata {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: .5em;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.post-metadata time {
+	margin-right: 1em;
+}
+
+/* Hero image */
+.hero-image-container {
+	position: relative;
+	display: inline-block;
+}
+.hero-image-container img {
+	display: block;
+	border: 12px solid white;
+	border-radius: 12px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.hero-image-caption {
+	position: absolute;
+	bottom: 24px;
+	right: 24px;
+	font-family: 'Georgia', 'Garamond', serif;
+	font-style: italic;
+	font-size: 0.95rem;
+	color: white !important;
+	text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+	padding: 0.5rem 0.75rem;
+	background: rgba(0, 0, 0, 0.3);
+	border-radius: 4px;
+	backdrop-filter: blur(4px);
+	text-decoration: none !important;
+	transition: background 0.2s ease;
+}
+.hero-image-caption:hover {
+	background: rgba(0, 0, 0, 0.5);
+	color: white !important;
+}
+.hero-image-caption:visited {
+	color: white !important;
+}
+.hero-image-caption:active {
+	color: white !important;
+}
+
+/* Timeline container */
+.timeline-container {
+  width: 100%;
+  margin: 1ch;
+}
+
+.timeline-item {
+  padding: 3em 2em 2em;
+  position: relative;
+  color: rgba(0, 0, 0, 0.7);
+  border-left: 2px solid rgba(0, 0, 0, 0.3);
+}
+.timeline-item p {
+  font-size: 1rem;
+}
+.timeline-item::before {
+  content: attr(date-is);
+  position: absolute;
+  left: 2em;
+  font-weight: bold;
+  top: 1em;
+  display: block;
+  font-size: .9rem;
+}
+.timeline-item::after {
+  width: 10px;
+  height: 10px;
+  display: block;
+  top: 1em;
+  position: absolute;
+  left: -7px;
+  border-radius: 10px;
+  content: '';
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  background: white;
+}
+.timeline-item:last-child {
+  -o-border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+  border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+}
+/**
+ * okaidia theme for JavaScript, CSS and HTML
+ * Loosely based on Monokai textmate theme by http://www.monokai.nl/
+ * @author ocodia
+ */
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: #f8f8f2;
+	background: none;
+	text-shadow: 0 1px rgba(0, 0, 0, 0.3);
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-size: 1em;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+	border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background: #272822;
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+	white-space: normal;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: #8292a2;
+}
+
+.token.punctuation {
+	color: #f8f8f2;
+}
+
+.token.namespace {
+	opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.constant,
+.token.symbol,
+.token.deleted {
+	color: #f92672;
+}
+
+.token.boolean,
+.token.number {
+	color: #ae81ff;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+	color: #a6e22e;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string,
+.token.variable {
+	color: #f8f8f2;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.function,
+.token.class-name {
+	color: #e6db74;
+}
+
+.token.keyword {
+	color: #66d9ef;
+}
+
+.token.regex,
+.token.important {
+	color: #fd971f;
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+/*
+ * New diff- syntax
+ */
+
+pre[class*="language-diff-"] {
+	--eleventy-code-padding: 1.25em;
+	padding-left: var(--eleventy-code-padding);
+	padding-right: var(--eleventy-code-padding);
+}
+.token.deleted {
+	background-color: hsl(0, 51%, 37%);
+	color: inherit;
+}
+.token.inserted {
+	background-color: hsl(126, 31%, 39%);
+	color: inherit;
+}
+
+/* Make the + and - characters unselectable for copy/paste */
+.token.prefix.unchanged,
+.token.prefix.inserted,
+.token.prefix.deleted {
+	-webkit-user-select: none;
+	user-select: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+.token.prefix.inserted,
+.token.prefix.deleted {
+	width: var(--eleventy-code-padding);
+	background-color: rgba(0,0,0,.2);
+}
+
+/* Optional: full-width background color */
+.token.inserted:not(.prefix),
+.token.deleted:not(.prefix) {
+	display: block;
+	margin-left: calc(-1 * var(--eleventy-code-padding));
+	margin-right: calc(-1 * var(--eleventy-code-padding));
+	text-decoration: none; /* override del, ins, mark defaults */
+	color: inherit; /* override del, ins, mark defaults */
+}</style>
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+	</head>
+	<body>
+		<a href="#main" id="skip-link" class="visually-hidden">Skip to main content</a>
+
+		<header>
+			<a href="/slinkydeveloper.github.io/" class="home-link">slinkydeveloper</a>
+			<nav>
+				<h2 class="visually-hidden" id="top-level-navigation-menu">Top level navigation menu</h2>
+				<ul class="nav">
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/">Home</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/blog/">Posts</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/landscapes/">Landscapes</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/about/">About</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/feed/feed.xml">Feed</a></li>
+					<li class="nav-item"><a href="https://github.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github"></i></a></li>
+					<li class="nav-item"><a href="https://bsky.app/profile/slinkydeveloper.bsky.social" target="_blank" rel="noopener noreferrer" aria-label="Bluesky"><i class="fa-brands fa-bluesky"></i></a></li>
+					<li class="nav-item"><a href="https://x.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></a></li>
+					<li class="nav-item"><a href="https://www.linkedin.com/in/francesco-guardiani/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-square-linkedin"></i></a></li>
+				</ul>
+			</nav>
+		</header>
+
+		<main id="main">
+			<heading-anchors>
+				
+
+
+<h1 id="whats-new-in-openapi-specification-3-parameters">What&#39;s new in OpenAPI Specification 3 - Parameters</h1>
+
+<ul class="post-metadata">
+	<li><time datetime="2017-06-23">23 June 2017</time></li>
+	<li><a href="/slinkydeveloper.github.io/tags/swagger/" class="post-tag">swagger</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/openapi/" class="post-tag">openapi</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/openapi3/" class="post-tag">openapi3</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/web-development/" class="post-tag">web development</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/web-api/" class="post-tag">web api</a></li>
+</ul>
+
+<p>OpenAPI 3 Parameter Object it's totally different from old OpenAPI 2. It gives the power to describe complex parameters, using the power of Schema object. I will introduce to you this breaking changes</p>
+<h2 id="no-more-form-and-body-parameters">No more form and body parameters</h2>
+<p>One of the major changes is that body parameters (forms, json, ...) are moved to a new object called <code>RequestBody</code>. So now <code>Parameter</code> supports only request parameters <code>in</code>:</p>
+<ul>
+<li><code>header</code></li>
+<li><code>query</code></li>
+<li><code>path</code></li>
+<li>and the new one <code>cookie</code></li>
+</ul>
+<h2 id="schema-is-better-than-type"><code>schema</code> is better than <code>type</code></h2>
+<p>In OpenAPI 2 a parameter is defined as:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> smile
+    <span class="token key atrule">in</span><span class="token punctuation">:</span> query
+    <span class="token key atrule">type</span><span class="token punctuation">:</span> string
+    <span class="token key atrule">format</span><span class="token punctuation">:</span> (<span class="token punctuation">[</span>;<span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">-</span><span class="token important">*(</span><span class="token punctuation">[</span>()\<span class="token punctuation">[</span>\<span class="token punctuation">]</span><span class="token punctuation">]</span>)\2<span class="token important">*)</span> <span class="token comment"># Smile regex</span></code></pre>
+<p>In OpenAPI 3 you can find the same parameter as:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> smile
+    <span class="token key atrule">in</span><span class="token punctuation">:</span> query
+    <span class="token key atrule">schema</span><span class="token punctuation">:</span>
+      <span class="token key atrule">type</span><span class="token punctuation">:</span> string
+      <span class="token key atrule">format</span><span class="token punctuation">:</span> (<span class="token punctuation">[</span>;<span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">-</span><span class="token important">*(</span><span class="token punctuation">[</span>()\<span class="token punctuation">[</span>\<span class="token punctuation">]</span><span class="token punctuation">]</span>)\2<span class="token important">*)</span> <span class="token comment"># Smile regex</span></code></pre>
+<p>The major difference is that now you <strong>have to</strong> define a <code>schema</code> for every single parameter, even the most simple.</p>
+<p>It seems annoying, but It gives some interesting opportunities. For example: A model identifier has a particular regular expression (<code>format</code>) that describes it and you want to write CRUD methods for this model. This is what you have to do in OpenAPI 2:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token comment"># get path</span>
+<span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> id
+    <span class="token key atrule">in</span><span class="token punctuation">:</span> query
+    <span class="token key atrule">schema</span><span class="token punctuation">:</span>
+      <span class="token key atrule">type</span><span class="token punctuation">:</span> string
+      <span class="token key atrule">format</span><span class="token punctuation">:</span> ^<span class="token punctuation">[</span>a<span class="token punctuation">-</span>z<span class="token punctuation">]</span><span class="token punctuation">{</span><span class="token number">3</span><span class="token punctuation">}</span><span class="token punctuation">[</span>0<span class="token punctuation">-</span><span class="token number">9</span><span class="token punctuation">]</span><span class="token punctuation">{</span><span class="token number">10</span><span class="token punctuation">}</span>$
+<span class="token comment"># delete path</span>
+<span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> id
+    <span class="token key atrule">in</span><span class="token punctuation">:</span> query
+    <span class="token key atrule">schema</span><span class="token punctuation">:</span>
+      <span class="token key atrule">type</span><span class="token punctuation">:</span> string
+      <span class="token key atrule">format</span><span class="token punctuation">:</span> ^<span class="token punctuation">[</span>a<span class="token punctuation">-</span>z<span class="token punctuation">]</span><span class="token punctuation">{</span><span class="token number">3</span><span class="token punctuation">}</span><span class="token punctuation">[</span>0<span class="token punctuation">-</span><span class="token number">9</span><span class="token punctuation">]</span><span class="token punctuation">{</span><span class="token number">10</span><span class="token punctuation">}</span>$
+<span class="token comment"># And so on</span></code></pre>
+<p>Now with OpenAPI 3 you can define this single string as a schema and reference to it where you want:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token comment"># define your identifier schema in components/schema</span>
+<span class="token key atrule">components</span><span class="token punctuation">:</span>
+  <span class="token key atrule">schemas</span><span class="token punctuation">:</span>
+    <span class="token key atrule">my_model_identifier</span><span class="token punctuation">:</span>
+      <span class="token key atrule">type</span><span class="token punctuation">:</span> string
+      <span class="token key atrule">format</span><span class="token punctuation">:</span> ^<span class="token punctuation">[</span>a<span class="token punctuation">-</span>z<span class="token punctuation">]</span><span class="token punctuation">{</span><span class="token number">3</span><span class="token punctuation">}</span><span class="token punctuation">[</span>0<span class="token punctuation">-</span><span class="token number">9</span><span class="token punctuation">]</span><span class="token punctuation">{</span><span class="token number">10</span><span class="token punctuation">}</span>$
+
+<span class="token comment"># get path</span>
+<span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> id
+    <span class="token key atrule">in</span><span class="token punctuation">:</span> query
+    <span class="token key atrule">schema</span><span class="token punctuation">:</span>
+      <span class="token key atrule">$ref</span><span class="token punctuation">:</span> <span class="token string">'#/components/schemas/my_model_identifier'</span>
+<span class="token comment"># delete path</span>
+<span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> id
+    <span class="token key atrule">in</span><span class="token punctuation">:</span> query
+    <span class="token key atrule">schema</span><span class="token punctuation">:</span>
+      <span class="token key atrule">$ref</span><span class="token punctuation">:</span> <span class="token string">'#/components/schemas/my_model_identifier'</span>
+<span class="token comment"># And so on</span></code></pre>
+<p>You can also reuse it to define complete model:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">components</span><span class="token punctuation">:</span>
+  <span class="token key atrule">schemas</span><span class="token punctuation">:</span>
+    <span class="token key atrule">my_model_identifier</span><span class="token punctuation">:</span>
+      <span class="token key atrule">type</span><span class="token punctuation">:</span> string
+      <span class="token key atrule">format</span><span class="token punctuation">:</span> ^<span class="token punctuation">[</span>a<span class="token punctuation">-</span>z<span class="token punctuation">]</span><span class="token punctuation">{</span><span class="token number">3</span><span class="token punctuation">}</span><span class="token punctuation">[</span>0<span class="token punctuation">-</span><span class="token number">9</span><span class="token punctuation">]</span><span class="token punctuation">{</span><span class="token number">10</span><span class="token punctuation">}</span>$
+    <span class="token key atrule">my_model</span><span class="token punctuation">:</span>
+      <span class="token key atrule">type</span><span class="token punctuation">:</span> object
+      <span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+        <span class="token key atrule">id</span><span class="token punctuation">:</span>
+          <span class="token key atrule">$ref</span><span class="token punctuation">:</span> <span class="token string">'#/components/schemas/my_model_identifier'</span>
+        <span class="token key atrule">other_field</span><span class="token punctuation">:</span>
+          <span class="token key atrule">type</span><span class="token punctuation">:</span> string</code></pre>
+<h2 id="objects-inside-path-query-header-parameters">Objects inside path/query/header parameters</h2>
+<p>This is tricky, but actually it's possible. With Schema object support you can define object as query, header, cookie, path parameter. This is an example:</p>
+<pre class="language-yaml" tabindex="0"><code class="language-yaml"><span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> parameter
+    <span class="token key atrule">in</span><span class="token punctuation">:</span> query
+    <span class="token key atrule">schema</span><span class="token punctuation">:</span>
+      <span class="token key atrule">type</span><span class="token punctuation">:</span> object
+      <span class="token key atrule">properties</span><span class="token punctuation">:</span>
+        <span class="token key atrule">a</span><span class="token punctuation">:</span>
+          <span class="token key atrule">type</span><span class="token punctuation">:</span> integer
+        <span class="token key atrule">b</span><span class="token punctuation">:</span>
+          <span class="token key atrule">type</span><span class="token punctuation">:</span> string
+      <span class="token key atrule">required</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> a
+        <span class="token punctuation">-</span> b</code></pre>
+<p>I will explain later how to submit this type of requests</p>
+<p>One interesting usage is when you have multi-dimensional key for a model, for example a geolocation model.</p>
+<h2 id="serialization-style-changes">Serialization style changes</h2>
+<p><code>style</code> is the new name of <code>collectionFormat</code> field. But It isn't only a name change. Also <code>style</code> is supported by another field: <code>exploded</code>. This is the comparison table with OpenAPI 2</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left"><code>style</code></th>
+<th style="text-align:center"><code>explode</code></th>
+<th style="text-align:right">OpenAPI 2 <code>collectionFormat</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">matrix</td>
+<td style="text-align:center">false</td>
+<td style="text-align:right">not supported</td>
+</tr>
+<tr>
+<td style="text-align:left">matrix</td>
+<td style="text-align:center">true</td>
+<td style="text-align:right">not supported</td>
+</tr>
+<tr>
+<td style="text-align:left">label</td>
+<td style="text-align:center">false</td>
+<td style="text-align:right">not supported</td>
+</tr>
+<tr>
+<td style="text-align:left">label</td>
+<td style="text-align:center">true</td>
+<td style="text-align:right">not supported</td>
+</tr>
+<tr>
+<td style="text-align:left">form</td>
+<td style="text-align:center">false</td>
+<td style="text-align:right"><code>csv</code></td>
+</tr>
+<tr>
+<td style="text-align:left">form</td>
+<td style="text-align:center">true</td>
+<td style="text-align:right"><code>multi</code></td>
+</tr>
+<tr>
+<td style="text-align:left">simple</td>
+<td style="text-align:center">false</td>
+<td style="text-align:right"><code>csv</code></td>
+</tr>
+<tr>
+<td style="text-align:left">simple</td>
+<td style="text-align:center">true</td>
+<td style="text-align:right"><code>csv</code> (not for object)</td>
+</tr>
+<tr>
+<td style="text-align:left">spaceDelimited</td>
+<td style="text-align:center">false</td>
+<td style="text-align:right"><code>ssv</code></td>
+</tr>
+<tr>
+<td style="text-align:left">pipeDelimited</td>
+<td style="text-align:center">false</td>
+<td style="text-align:right"><code>pipes</code></td>
+</tr>
+<tr>
+<td style="text-align:left">deepObject</td>
+<td style="text-align:center">true</td>
+<td style="text-align:right">not supported</td>
+</tr>
+<tr>
+<td style="text-align:left">{: .table}</td>
+<td style="text-align:center"></td>
+<td style="text-align:right"></td>
+</tr>
+</tbody>
+</table>
+<p>For more informations about how to use this two new fields, check out this <a href="https://github.com/OAI/OpenAPI-Specification/blob/OpenAPI.next/versions/3.0.md#style-examples">table</a>.</p>
+<h2 id="complex-parameters-with-content">Complex parameters with <code>content</code></h2>
+<p>If you think <code>schema</code> isn't enough, check out <code>content</code> field. I will explain this further when I will cover <code>RequestBody</code></p>
+<h2 id="tips-to-create-a-good-parameter-object-in-openapi-3">Tips to create a good parameter object in OpenAPI 3</h2>
+<ul>
+<li>Try to keep parameters as simple as possible. Avoid as much as possible objects and arrays, They create only a lot of headaches</li>
+<li>Use <code>query</code> parameters if you need to pass arrays to operation and use <code>form</code> style</li>
+<li>Pass objects to an operation with <code>RequestBody</code>, or split it in different primitive parameters.</li>
+<li>Take as much as possible advantage of <code>schema</code> inside <code>Parameter</code> object. In particular use it to define object identifiers</li>
+</ul>
+
+<ul class="links-nextprev"><li class="links-nextprev-prev">← Previous<br> <a href="/slinkydeveloper.github.io/blog/Why-Use-API-Specification/">Why use Web API specifications?</a></li><li class="links-nextprev-next">Next →<br><a href="/slinkydeveloper.github.io/blog/My-GSoC-2017-Recap/">My GSoC 2017 - Small recap of my summer</a></li>
+</ul>
+
+			</heading-anchors>
+		</main>
+
+		<footer>
+			<p>
+				<em>Built with <a href="https://www.11ty.dev/">Eleventy v3.1.2</a></em>
+			</p>
+		</footer>
+
+		<!-- This page `/blog/Whats-New-In-OAS3-Parameters/` was built on 2025-10-05T17:01:29.967Z -->
+		<script type="module" src="/slinkydeveloper.github.io/dist/cC8wS6ZjFU.js"></script>
+	</body>
+</html>

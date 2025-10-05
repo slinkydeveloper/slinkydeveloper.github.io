@@ -1,0 +1,869 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Kubernetes controllers - The Empire Strikes Back</title>
+		<meta name="description" content="In this blog post I want to introduce you to some important steps forward we made in our Extending Kubernetes API In-Process project. We implemented an high level watch ABI, we made the host asynchronous, we invoke the controllers only on-demand without wasting resources and we finally use the full-fledged kube-runtime to create the controllers.">
+		<link rel="alternate" href="/slinkydeveloper.github.io/feed/feed.xml" type="application/atom+xml" title="slinkydeveloper">
+		
+		
+		
+		<style>/* This is an arbitrary CSS string added to the bundle */
+/* Defaults */
+:root {
+	--font-family: -apple-system, system-ui, sans-serif;
+	--font-family-monospace: Consolas, Menlo, Monaco, Andale Mono WT, Andale Mono, Lucida Console, Lucida Sans Typewriter, DejaVu Sans Mono, Bitstream Vera Sans Mono, Liberation Mono, Nimbus Mono L, Courier New, Courier, monospace;
+}
+
+/* Theme colors */
+:root {
+	--color-gray-20: #e0e0e0;
+	--color-gray-50: #C0C0C0;
+	--color-gray-90: #333;
+
+	--background-color: #fff;
+
+	--text-color: var(--color-gray-90);
+	--text-color-link: #082840;
+	--text-color-link-active: #5f2b48;
+	--text-color-link-visited: #17050F;
+
+	--syntax-tab-size: 2;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-gray-20: #e0e0e0;
+		--color-gray-50: #C0C0C0;
+		--color-gray-90: #dad8d8;
+
+		/* --text-color is assigned to --color-gray-_ above */
+		--text-color-link: #1493fb;
+		--text-color-link-active: #6969f7;
+		--text-color-link-visited: #a6a6f8;
+
+		--background-color: #15202b;
+	}
+}
+
+
+/* Global stylesheet */
+* {
+	box-sizing: border-box;
+}
+
+@view-transition {
+	navigation: auto;
+}
+
+html,
+body {
+	padding: 0;
+	margin: 0 auto;
+	font-family: var(--font-family);
+	color: var(--text-color);
+	background-color: var(--background-color);
+}
+html {
+	overflow-y: scroll;
+}
+body {
+	max-width: 75em;
+}
+
+/* https://www.a11yproject.com/posts/how-to-hide-content/ */
+.visually-hidden:not(:focus):not(:active) {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+/* Fluid images via https://www.zachleat.com/web/fluid-images/ */
+img{
+  max-width: 100%;
+}
+img[width][height] {
+  height: auto;
+}
+img[src$=".svg"] {
+  width: 100%;
+  height: auto;
+  max-width: none;
+}
+video,
+iframe {
+	width: 100%;
+	height: auto;
+}
+iframe {
+	aspect-ratio: 16/9;
+}
+
+p:last-child {
+	margin-bottom: 0;
+}
+p {
+	line-height: 1.5;
+}
+
+li {
+	line-height: 1.5;
+}
+
+a[href] {
+	color: var(--text-color-link);
+}
+a[href]:visited {
+	color: var(--text-color-link-visited);
+}
+a[href]:hover,
+a[href]:active {
+	color: var(--text-color-link-active);
+}
+
+main,
+footer {
+	padding: 1rem;
+}
+main :first-child {
+	margin-top: 0;
+}
+
+header {
+	border-bottom: 1px dashed var(--color-gray-20);
+}
+
+#skip-link {
+	text-decoration: none;
+	background: var(--background-color);
+	color: var(--text-color);
+	padding: 0.5rem 1rem;
+	border: 1px solid var(--color-gray-90);
+	border-radius: 2px;
+}
+
+/* Prevent visually-hidden skip link fom pushing content around when focused */
+#skip-link.visually-hidden:focus {
+	position: absolute;
+	top: 1rem;
+	left: 1rem;
+	/* Ensure it is positioned on top of everything else when it is shown */
+	z-index: 999;
+}
+
+.links-nextprev {
+	display: flex;
+	justify-content: space-between;
+	gap: .5em 1em;
+	list-style: "";
+	border-top: 1px dashed var(--color-gray-20);
+	padding: 1em 0;
+}
+.links-nextprev > * {
+	flex-grow: 1;
+}
+.links-nextprev-next {
+	text-align: right;
+}
+
+table {
+	margin: 1em 0;
+}
+table td,
+table th {
+	padding-right: 1em;
+}
+
+pre,
+code {
+	font-family: var(--font-family-monospace);
+}
+pre:not([class*="language-"]) {
+	margin: .5em 0;
+	line-height: 1.375; /* 22px /16 */
+	-moz-tab-size: var(--syntax-tab-size);
+	-o-tab-size: var(--syntax-tab-size);
+	tab-size: var(--syntax-tab-size);
+	-webkit-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+	direction: ltr;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	overflow-x: auto;
+}
+code {
+	word-break: break-all;
+}
+
+/* Header */
+header {
+	display: flex;
+	gap: 1em;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1em;
+}
+.home-link {
+	flex-grow: 1;
+	font-size: 1em; /* 16px /16 */
+	font-weight: 700;
+}
+.home-link:link:not(:hover) {
+	text-decoration: none;
+}
+
+/* Nav */
+.nav {
+	display: flex;
+	gap: .5em 1em;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+.nav-item {
+	display: inline-block;
+}
+.nav-item a[href]:not(:hover) {
+	text-decoration: none;
+}
+.nav a[href][aria-current="page"] {
+	text-decoration: underline;
+}
+
+/* Posts list */
+.postlist {
+	counter-reset: start-from var(--postlist-index);
+	list-style: none;
+	padding: 0;
+	padding-left: 1.5rem;
+}
+.postlist-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	counter-increment: start-from -1;
+	margin-bottom: 1em;
+}
+.postlist-item:before {
+	display: inline-block;
+	pointer-events: none;
+	content: "" counter(start-from, decimal-leading-zero) ". ";
+	line-height: 100%;
+	text-align: right;
+	margin-left: -1.5rem;
+}
+.postlist-date,
+.postlist-item:before {
+	font-size: 0.8125em; /* 13px /16 */
+	color: var(--color-gray-90);
+}
+.postlist-date {
+	word-spacing: -0.5px;
+}
+.postlist-link {
+	font-size: 1.1875em; /* 19px /16 */
+	font-weight: 700;
+	flex-basis: calc(100% - 1.5rem);
+	padding-left: .25em;
+	padding-right: .5em;
+	text-underline-position: from-font;
+	text-underline-offset: 0;
+	text-decoration-thickness: 1px;
+}
+.postlist-item-active .postlist-link {
+	font-weight: bold;
+}
+
+/* Tags */
+.post-tag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-transform: capitalize;
+	font-style: italic;
+}
+.postlist-item > .post-tag {
+	align-self: center;
+}
+
+/* Tags list */
+.post-metadata {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: .5em;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.post-metadata time {
+	margin-right: 1em;
+}
+
+/* Hero image */
+.hero-image-container {
+	position: relative;
+	display: inline-block;
+}
+.hero-image-container img {
+	display: block;
+	border: 12px solid white;
+	border-radius: 12px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.hero-image-caption {
+	position: absolute;
+	bottom: 24px;
+	right: 24px;
+	font-family: 'Georgia', 'Garamond', serif;
+	font-style: italic;
+	font-size: 0.95rem;
+	color: white !important;
+	text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+	padding: 0.5rem 0.75rem;
+	background: rgba(0, 0, 0, 0.3);
+	border-radius: 4px;
+	backdrop-filter: blur(4px);
+	text-decoration: none !important;
+	transition: background 0.2s ease;
+}
+.hero-image-caption:hover {
+	background: rgba(0, 0, 0, 0.5);
+	color: white !important;
+}
+.hero-image-caption:visited {
+	color: white !important;
+}
+.hero-image-caption:active {
+	color: white !important;
+}
+
+/* Timeline container */
+.timeline-container {
+  width: 100%;
+  margin: 1ch;
+}
+
+.timeline-item {
+  padding: 3em 2em 2em;
+  position: relative;
+  color: rgba(0, 0, 0, 0.7);
+  border-left: 2px solid rgba(0, 0, 0, 0.3);
+}
+.timeline-item p {
+  font-size: 1rem;
+}
+.timeline-item::before {
+  content: attr(date-is);
+  position: absolute;
+  left: 2em;
+  font-weight: bold;
+  top: 1em;
+  display: block;
+  font-size: .9rem;
+}
+.timeline-item::after {
+  width: 10px;
+  height: 10px;
+  display: block;
+  top: 1em;
+  position: absolute;
+  left: -7px;
+  border-radius: 10px;
+  content: '';
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  background: white;
+}
+.timeline-item:last-child {
+  -o-border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+  border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+}
+/**
+ * okaidia theme for JavaScript, CSS and HTML
+ * Loosely based on Monokai textmate theme by http://www.monokai.nl/
+ * @author ocodia
+ */
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: #f8f8f2;
+	background: none;
+	text-shadow: 0 1px rgba(0, 0, 0, 0.3);
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-size: 1em;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+	border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background: #272822;
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+	white-space: normal;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: #8292a2;
+}
+
+.token.punctuation {
+	color: #f8f8f2;
+}
+
+.token.namespace {
+	opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.constant,
+.token.symbol,
+.token.deleted {
+	color: #f92672;
+}
+
+.token.boolean,
+.token.number {
+	color: #ae81ff;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+	color: #a6e22e;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string,
+.token.variable {
+	color: #f8f8f2;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.function,
+.token.class-name {
+	color: #e6db74;
+}
+
+.token.keyword {
+	color: #66d9ef;
+}
+
+.token.regex,
+.token.important {
+	color: #fd971f;
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+/*
+ * New diff- syntax
+ */
+
+pre[class*="language-diff-"] {
+	--eleventy-code-padding: 1.25em;
+	padding-left: var(--eleventy-code-padding);
+	padding-right: var(--eleventy-code-padding);
+}
+.token.deleted {
+	background-color: hsl(0, 51%, 37%);
+	color: inherit;
+}
+.token.inserted {
+	background-color: hsl(126, 31%, 39%);
+	color: inherit;
+}
+
+/* Make the + and - characters unselectable for copy/paste */
+.token.prefix.unchanged,
+.token.prefix.inserted,
+.token.prefix.deleted {
+	-webkit-user-select: none;
+	user-select: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+.token.prefix.inserted,
+.token.prefix.deleted {
+	width: var(--eleventy-code-padding);
+	background-color: rgba(0,0,0,.2);
+}
+
+/* Optional: full-width background color */
+.token.inserted:not(.prefix),
+.token.deleted:not(.prefix) {
+	display: block;
+	margin-left: calc(-1 * var(--eleventy-code-padding));
+	margin-right: calc(-1 * var(--eleventy-code-padding));
+	text-decoration: none; /* override del, ins, mark defaults */
+	color: inherit; /* override del, ins, mark defaults */
+}</style>
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+	</head>
+	<body>
+		<a href="#main" id="skip-link" class="visually-hidden">Skip to main content</a>
+
+		<header>
+			<a href="/slinkydeveloper.github.io/" class="home-link">slinkydeveloper</a>
+			<nav>
+				<h2 class="visually-hidden" id="top-level-navigation-menu">Top level navigation menu</h2>
+				<ul class="nav">
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/">Home</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/blog/">Posts</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/landscapes/">Landscapes</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/about/">About</a></li>
+					<li class="nav-item"><a href="/slinkydeveloper.github.io/feed/feed.xml">Feed</a></li>
+					<li class="nav-item"><a href="https://github.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github"></i></a></li>
+					<li class="nav-item"><a href="https://bsky.app/profile/slinkydeveloper.bsky.social" target="_blank" rel="noopener noreferrer" aria-label="Bluesky"><i class="fa-brands fa-bluesky"></i></a></li>
+					<li class="nav-item"><a href="https://x.com/slinkydeveloper" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></a></li>
+					<li class="nav-item"><a href="https://www.linkedin.com/in/francesco-guardiani/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-square-linkedin"></i></a></li>
+				</ul>
+			</nav>
+		</header>
+
+		<main id="main">
+			<heading-anchors>
+				
+
+
+<h1 id="kubernetes-controllers-the-empire-strikes-back">Kubernetes controllers - The Empire Strikes Back</h1>
+
+<ul class="post-metadata">
+	<li><time datetime="2020-10-08">08 October 2020</time></li>
+	<li><a href="/slinkydeveloper.github.io/tags/cloud/" class="post-tag">cloud</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/kubernetes/" class="post-tag">kubernetes</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/rust/" class="post-tag">rust</a>, </li>
+	<li><a href="/slinkydeveloper.github.io/tags/webassembly/" class="post-tag">webassembly</a></li>
+</ul>
+
+<p>In this blog post I want to introduce you to some important steps forward we made in our <a href="https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc">Extending Kubernetes API In-Process project</a>. If you don't know what I'm talking about, check out the previous post: <a href="../Kubernetes-controllers-A-New-Hope">Kubernetes Controllers - A new hope</a>.</p>
+<p>We implemented the high-level ABI to start watchers on Kubernetes resources, as argued in <a href="../Kubernetes-controllers-A-New-Hope#Next-Steps">Next steps</a> paragraph. This allows us to identify watch requests sent by controllers and to deduplicate them.</p>
+<p>Then we worked on modifying our ABI to make it <strong>asynchronous</strong>, in order to invoke the controllers only <strong>on-demand</strong>. Now, we don't spin up a thread for each module, but we wake controllers up asynchronously when there is a new task to process.</p>
+<p>Thanks to these changes, we're now able to use Rust's <code>async</code>/<code>await</code> inside the module. This allowed us to realign our fork of <code>kube-rs</code>, bringing back all the original interfaces, and run <code>kube-runtime</code> inside the modules.</p>
+<h2 id="the-kube-watch-abi-abi">The <code>kube-watch-abi</code> ABI</h2>
+<p>The <code>kube-watch-abi</code> ABI was originally composed by an import and an export:</p>
+<pre class="language-rust" tabindex="0"><code class="language-rust"><span class="token attribute attr-name">#[link(wasm_import_module = <span class="token string">"kube-watch-abi"</span>)]</span>
+<span class="token keyword">extern</span> <span class="token string">"C"</span> <span class="token punctuation">{</span>
+    <span class="token comment">// Returns the watch identifier</span>
+    <span class="token keyword">fn</span> <span class="token function-definition function">watch</span><span class="token punctuation">(</span>watch_req_ptr<span class="token punctuation">:</span> <span class="token operator">*</span><span class="token keyword">const</span> <span class="token keyword">u8</span><span class="token punctuation">,</span> watch_req_len<span class="token punctuation">:</span> <span class="token keyword">usize</span><span class="token punctuation">)</span> <span class="token punctuation">-></span> <span class="token keyword">u64</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token attribute attr-name">#[no_mangle]</span>
+<span class="token keyword">pub</span> <span class="token keyword">extern</span> <span class="token string">"C"</span> <span class="token keyword">fn</span> <span class="token function-definition function">on_event</span><span class="token punctuation">(</span>watch_id<span class="token punctuation">:</span> <span class="token keyword">u64</span><span class="token punctuation">,</span> ev_ptr<span class="token punctuation">:</span> <span class="token operator">*</span><span class="token keyword">const</span> <span class="token keyword">u8</span><span class="token punctuation">,</span> ev_len<span class="token punctuation">:</span> <span class="token keyword">usize</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// handle event</span>
+<span class="token punctuation">}</span></code></pre>
+<p>The <code>watch_req</code> is a description of the watch to register:</p>
+<pre class="language-rust" tabindex="0"><code class="language-rust"><span class="token keyword">pub</span><span class="token punctuation">(</span><span class="token keyword">crate</span><span class="token punctuation">)</span> <span class="token keyword">struct</span> <span class="token type-definition class-name">WatchRequest</span> <span class="token punctuation">{</span>
+    <span class="token keyword">pub</span><span class="token punctuation">(</span><span class="token keyword">crate</span><span class="token punctuation">)</span> resource<span class="token punctuation">:</span> <span class="token class-name">Resource</span><span class="token punctuation">,</span>
+    <span class="token keyword">pub</span><span class="token punctuation">(</span><span class="token keyword">crate</span><span class="token punctuation">)</span> watch_params<span class="token punctuation">:</span> <span class="token class-name">WatchParams</span>
+<span class="token punctuation">}</span></code></pre>
+<h3 id="controller">Controller</h3>
+<p>When the module invokes the <code>watch</code> import, it registers a new watch and returns a watch identifier. This identifier is stored together with a reference to the <code>Stream&lt;WatchEvent&gt;</code> in a global map.
+In similar fashion to the <code>request</code> ABI discussed in the <a href="../Kubernetes-controllers-A-New-Hope#The-ABI">previous post</a>, we serialize the <code>WatchRequest</code> data structure in order to pass it to the host.</p>
+<p>Then, every time the host has a new <code>WatchEvent</code> that the controller needs to handle, it will invoke <code>on_event</code> with the serialized <code>WatchEvent</code>. Using the watch identifier, the controller will get the associated <code>Stream</code> from the global map and append the deserialized <code>WatchEvent</code> to it.</p>
+<h3 id="the-host">The host</h3>
+<p>When the controller invokes <code>watch</code>, the host checks if there is a registered watch for that resource. If there is, then it just registers the invoker as interested to that watch, otherwise it starts a new watch.
+Every time a watch receives a new event from Kubernetes, the host resolves all the modules interested to that particular event. For each module, it allocates some module memory to pass the event and it finally wakes the controller up by invoking <code>on_event</code>.</p>
+<h2 id="rust-module-with-async-await">Rust module with async-await</h2>
+<h3 id="callbacks-are-bad">Callbacks are bad!</h3>
+<p>The <code>kube-watch-abi</code> is the de-facto an asynchronous API: <code>watch</code> starts the asynchronous operation, <code>on_event</code> notifies on the completion of the operation.</p>
+<p>In the initial implementation of the <code>watch</code>, on module side, I just modified the kube client <code>watch</code> to provide a callback:</p>
+<pre class="language-rust" tabindex="0"><code class="language-rust"><span class="token keyword">pub</span> <span class="token keyword">fn</span> <span class="token function-definition function">watch</span><span class="token operator">&lt;</span><span class="token class-name">F</span><span class="token punctuation">:</span> <span class="token lifetime-annotation symbol">'static</span> <span class="token operator">+</span> <span class="token class-name">Fn</span><span class="token punctuation">(</span><span class="token class-name">WatchEvent</span><span class="token operator">&lt;</span><span class="token class-name">K</span><span class="token operator">></span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token class-name">Send</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token operator">&amp;</span><span class="token keyword">self</span><span class="token punctuation">,</span> lp<span class="token punctuation">:</span> <span class="token operator">&amp;</span><span class="token class-name">ListParams</span><span class="token punctuation">,</span> version<span class="token punctuation">:</span> <span class="token operator">&amp;</span><span class="token keyword">str</span><span class="token punctuation">,</span> callback<span class="token punctuation">:</span> <span class="token class-name">F</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// Invoke watch</span>
+<span class="token punctuation">}</span></code></pre>
+<p>Every time <code>on_event</code> was invoked, the module resolved the callback from the watch identifier and invoked it.
+This was fine as an initial approach, but we soon hit a problem: Porting all of the existing Kubernetes client and runtime code from <code>async</code>/<code>await</code> to the more <em>primitive</em> callbacks could have caused a lot of issues, making the fork diverge too much from the upstream code.</p>
+<h3 id="how-async-await-works">How <code>async</code>/<code>await</code> works</h3>
+<p>Here's a little refresh on <code>async</code>/<code>await</code> from <a href="https://rust-lang.github.io/async-book/01_getting_started/04_async_await_primer.html">Asynchronous Programming in Rust book</a>:</p>
+<p>async/.await is Rust's built-in tool for writing asynchronous functions that look like synchronous code. async transforms a block of code into a state machine that implements a trait called Future. Whereas calling a blocking function in a synchronous method would block the whole thread, blocked Futures will yield control of the thread, allowing other Futures to run._</p>
+<p>Although there are a lot of details about how Rust implements the <code>async</code>/<code>await</code> feature, these are the relevant concepts for this post:</p>
+<ul>
+<li><code>Future</code> is the type that represents an asynchronous result, e.g. <code>async fn</code> returns a <code>Future</code>. You can wait for the result of a <code>Future</code> using <code>.await</code>.</li>
+<li><code>Stream</code> is the same as <code>Future</code>, but it returns several elements before <code>None</code>, which notifies the end of the stream.</li>
+<li>In order to use <code>.await</code>, you <strong>must</strong> be in an <code>async</code> code block.</li>
+<li>In order to run an <code>async</code> code block, you need to use a task executor.</li>
+</ul>
+<p>For example:</p>
+<pre class="language-rust" tabindex="0"><code class="language-rust"><span class="token keyword">use</span> <span class="token namespace">futures<span class="token punctuation">::</span>executor<span class="token punctuation">::</span></span><span class="token class-name">LocalPool</span><span class="token punctuation">;</span>
+
+<span class="token keyword">fn</span> <span class="token function-definition function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// Create the executor</span>
+    <span class="token keyword">let</span> <span class="token keyword">mut</span> pool <span class="token operator">=</span> <span class="token class-name">LocalPool</span><span class="token punctuation">::</span><span class="token function">new</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// Spawn an async task</span>
+    poll<span class="token punctuation">.</span><span class="token function">spawner</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">spawn</span><span class="token punctuation">(</span><span class="token keyword">async</span> <span class="token punctuation">{</span>
+        <span class="token comment">// execute `my_async_fn()` and await for the result</span>
+        <span class="token function">my_async_fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token keyword">await</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// Block the main thread until all the tasks are done</span>
+    pool<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<p>In our <code>async</code>/<code>await</code> implementation we implemented the <code>Future</code> and <code>Stream</code> traits, we reused <a href="https://docs.rs/futures/0.3.6/futures/executor/struct.LocalPool.html">LocalPool</a> from the <code>futures</code> crate as a task executor, and we generalized <code>on_event</code> to notify the asynchronous operation completion.</p>
+<h3 id="the-controller-lifecycle">The controller lifecycle</h3>
+<p>We first analyzed the controller lifecycle:</p>
+<ol>
+<li>When host invokes <code>run</code>, the controller starts a bunch of watchers and then it waits for new events</li>
+<li>Every time a new event comes in, the host wakes the controller up by calling <code>on_event</code></li>
+</ol>
+<p>This means that during the <code>run</code> phase, the controller starts a bunch of asynchronous tasks, one or more of them waiting for asynchronous events. After the <code>run</code> phase completes, <strong>there is no need to keep the module running</strong>. When we wake the controller up again, we need to check for any tasks that can continue and run them up to the point where we have all the tasks waiting for an external event.</p>
+<p>To implement this lifecycle, we need to execute both on <code>run</code> and on <code>on_event</code> the executor method <a href="https://docs.rs/futures/0.3.6/futures/executor/struct.LocalPool.html#method.run_until_stalled"><code>run_until_stalled()</code></a>, which will run all tasks in the executor pool and returns if no more progress can be made on any task. This allows us to implement <code>run</code> as follows:</p>
+<pre class="language-rust" tabindex="0"><code class="language-rust"><span class="token attribute attr-name">#[no_mangle]</span>
+<span class="token keyword">pub</span> <span class="token keyword">extern</span> <span class="token string">"C"</span> <span class="token keyword">fn</span> <span class="token function-definition function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// Get the global executor</span>
+    <span class="token keyword">let</span> exec <span class="token operator">=</span> <span class="token namespace">kube<span class="token punctuation">::</span>abi<span class="token punctuation">::</span></span><span class="token function">get_mut_executor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// Start the main task</span>
+    exec<span class="token punctuation">.</span><span class="token function">deref</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">borrow_mut</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">spawner</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">spawn</span><span class="token punctuation">(</span><span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// Give a little push to the executor.</span>
+    <span class="token comment">// This runs until all tasks up to when they're all waiting for async results completion.</span>
+    exec<span class="token punctuation">.</span><span class="token function">deref</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">borrow_mut</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">run_until_stalled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<h3 id="our-custom-future-stream">Our custom <code>Future</code>/<code>Stream</code></h3>
+<p>In order to encapsulate the pending asynchronous operation, we implemented our <code>Future</code>. The implementations are straightforward and pretty much the same <a href="https://rust-lang.github.io/async-book/02_execution/03_wakeups.html">as explained in the Rust async book</a>:</p>
+<pre class="language-rust" tabindex="0"><code class="language-rust"><span class="token comment">/// Shared state between the future and the waiting thread</span>
+<span class="token keyword">struct</span> <span class="token type-definition class-name">AbiFutureState</span> <span class="token punctuation">{</span>
+    <span class="token comment">// The result value</span>
+    value<span class="token punctuation">:</span> <span class="token class-name">Option</span><span class="token operator">&lt;</span><span class="token class-name">Vec</span><span class="token operator">&lt;</span><span class="token keyword">u8</span><span class="token operator">>></span><span class="token punctuation">,</span>
+    <span class="token comment">// Was the future completed?</span>
+    completed<span class="token punctuation">:</span> <span class="token keyword">bool</span><span class="token punctuation">,</span>
+    <span class="token comment">// Object that notifies the completion to the executor</span>
+    waker<span class="token punctuation">:</span> <span class="token class-name">Option</span><span class="token operator">&lt;</span><span class="token class-name">Waker</span><span class="token operator">></span><span class="token punctuation">,</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">impl</span> <span class="token class-name">Future</span> <span class="token keyword">for</span> <span class="token class-name">AbiFuture</span> <span class="token punctuation">{</span>
+    <span class="token keyword">type</span> <span class="token type-definition class-name">Output</span> <span class="token operator">=</span> <span class="token class-name">Option</span><span class="token operator">&lt;</span><span class="token class-name">Vec</span><span class="token operator">&lt;</span><span class="token keyword">u8</span><span class="token operator">>></span><span class="token punctuation">;</span>
+
+    <span class="token keyword">fn</span> <span class="token function-definition function">poll</span><span class="token punctuation">(</span><span class="token keyword">self</span><span class="token punctuation">:</span> <span class="token class-name">Pin</span><span class="token operator">&lt;</span><span class="token operator">&amp;</span><span class="token keyword">mut</span> <span class="token keyword">Self</span><span class="token operator">></span><span class="token punctuation">,</span> cx<span class="token punctuation">:</span> <span class="token operator">&amp;</span><span class="token keyword">mut</span> <span class="token class-name">Context</span><span class="token operator">&lt;</span><span class="token lifetime-annotation symbol">'_</span><span class="token operator">></span><span class="token punctuation">)</span> <span class="token punctuation">-></span> <span class="token class-name">Poll</span><span class="token operator">&lt;</span><span class="token keyword">Self</span><span class="token punctuation">::</span><span class="token class-name">Output</span><span class="token operator">></span> <span class="token punctuation">{</span>
+        <span class="token comment">// Look at the shared state to see if the timer has already completed.</span>
+        <span class="token keyword">let</span> <span class="token keyword">mut</span> shared_state <span class="token operator">=</span> <span class="token keyword">self</span><span class="token punctuation">.</span>shared_state<span class="token punctuation">.</span><span class="token function">lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> shared_state<span class="token punctuation">.</span>completed <span class="token punctuation">{</span>
+            <span class="token class-name">Poll</span><span class="token punctuation">::</span><span class="token class-name">Ready</span><span class="token punctuation">(</span>shared_state<span class="token punctuation">.</span>value<span class="token punctuation">.</span><span class="token function">take</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+            shared_state<span class="token punctuation">.</span>waker <span class="token operator">=</span> <span class="token class-name">Some</span><span class="token punctuation">(</span>cx<span class="token punctuation">.</span><span class="token function">waker</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">clone</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">Poll</span><span class="token punctuation">::</span><span class="token class-name">Pending</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span></code></pre>
+<p>A similar implementation exists for the <code>Stream</code> trait. To create a <code>Future</code>, we use this method:</p>
+<pre class="language-rust" tabindex="0"><code class="language-rust"><span class="token keyword">pub</span> <span class="token keyword">fn</span> <span class="token function-definition function">start_future</span><span class="token punctuation">(</span>async_operation_id<span class="token punctuation">:</span> <span class="token keyword">u64</span><span class="token punctuation">)</span> <span class="token punctuation">-></span> <span class="token class-name">AbiFuture</span> <span class="token punctuation">{</span>
+    <span class="token comment">// Create the future state</span>
+    <span class="token keyword">let</span> state <span class="token operator">=</span> <span class="token class-name">Arc</span><span class="token punctuation">::</span><span class="token function">new</span><span class="token punctuation">(</span><span class="token class-name">Mutex</span><span class="token punctuation">::</span><span class="token function">new</span><span class="token punctuation">(</span>
+        <span class="token class-name">AbiFutureState</span> <span class="token punctuation">{</span>
+            value<span class="token punctuation">:</span> <span class="token class-name">None</span><span class="token punctuation">,</span>
+            completed<span class="token punctuation">:</span> <span class="token boolean">false</span><span class="token punctuation">,</span>
+            waker<span class="token punctuation">:</span> <span class="token class-name">None</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// Insert in the global map of pending future states this future state</span>
+    <span class="token function">get_pending_futures</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">deref</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">borrow_mut</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">insert</span><span class="token punctuation">(</span>async_operation_id<span class="token punctuation">,</span> state<span class="token punctuation">.</span><span class="token function">clone</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// Return the new future</span>
+    <span class="token class-name">AbiFuture</span> <span class="token punctuation">{</span>
+        shared_state<span class="token punctuation">:</span> state
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span></code></pre>
+<h3 id="generalizing-on-event-to-wakeup-future-wakeup-stream">Generalizing <code>on_event</code> to <code>wakeup_future</code>/<code>wakeup_stream</code></h3>
+<p>At this point, we took the concept of <code>on_event</code> and generalized to <code>async</code>/<code>await</code>, introducing <code>wakeup_future</code>/<code>wakeup_stream</code> ABI exports.
+Every time the controller invokes an asynchronous ABI import (like <code>watch</code>), it gets the identifier that we use to instantiate our <code>Future</code>/<code>Stream</code> implementation.
+When the host completed the asynchronous operation, it invokes <code>wakeup_future</code>/<code>wakeup_stream</code>. The controller marks the <code>Future</code>/<code>Stream</code> as completed, including the result value, and invokes <code>LocalPool::run_until_stalled()</code> to wake up tasks waiting for that future/stream to complete.</p>
+<pre class="language-rust" tabindex="0"><code class="language-rust"><span class="token attribute attr-name">#[no_mangle]</span>
+<span class="token keyword">pub</span> <span class="token keyword">extern</span> <span class="token string">"C"</span> <span class="token keyword">fn</span> <span class="token function-definition function">wakeup_future</span><span class="token punctuation">(</span>future_id<span class="token punctuation">:</span> <span class="token keyword">u64</span><span class="token punctuation">,</span> ptr<span class="token punctuation">:</span> <span class="token operator">*</span><span class="token keyword">const</span> <span class="token keyword">u8</span><span class="token punctuation">,</span> len<span class="token punctuation">:</span> <span class="token keyword">usize</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// Retrieve the global pending future states map</span>
+    <span class="token keyword">let</span> fut_state <span class="token operator">=</span> <span class="token function">get_pending_futures</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">let</span> waker <span class="token operator">=</span> <span class="token punctuation">{</span>
+        <span class="token keyword">let</span> state_arc <span class="token operator">=</span> fut_state<span class="token punctuation">.</span><span class="token function">deref</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">borrow_mut</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>future_id<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">let</span> <span class="token keyword">mut</span> state <span class="token operator">=</span> state_arc<span class="token punctuation">.</span><span class="token function">lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// If the pointer is not null, fill the Future result value</span>
+        <span class="token keyword">if</span> <span class="token operator">!</span>ptr<span class="token punctuation">.</span><span class="token function">is_null</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            state<span class="token punctuation">.</span>value <span class="token operator">=</span> <span class="token class-name">Some</span><span class="token punctuation">(</span><span class="token keyword">unsafe</span> <span class="token punctuation">{</span>
+                <span class="token class-name">Vec</span><span class="token punctuation">::</span><span class="token function">from_raw_parts</span><span class="token punctuation">(</span>
+                    ptr <span class="token keyword">as</span> <span class="token operator">*</span><span class="token keyword">mut</span> <span class="token keyword">u8</span><span class="token punctuation">,</span>
+                    len <span class="token keyword">as</span> <span class="token keyword">usize</span><span class="token punctuation">,</span>
+                    len <span class="token keyword">as</span> <span class="token keyword">usize</span><span class="token punctuation">,</span>
+                <span class="token punctuation">)</span>
+            <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+
+        state<span class="token punctuation">.</span>completed <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+        state<span class="token punctuation">.</span>waker<span class="token punctuation">.</span><span class="token function">take</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span><span class="token punctuation">;</span>
+    <span class="token comment">// Use the waker to notify the executor this future is completed</span>
+    <span class="token keyword">if</span> <span class="token keyword">let</span> <span class="token class-name">Some</span><span class="token punctuation">(</span>waker<span class="token punctuation">)</span> <span class="token operator">=</span> waker <span class="token punctuation">{</span>
+        waker<span class="token punctuation">.</span><span class="token function">wake</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// Let's try to execute stuff up to the point where there isn't anything else to execute</span>
+    <span class="token function">get_mut_executor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">deref</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">borrow_mut</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">run_until_stalled</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<h3 id="the-complete-flow">The complete flow</h3>
+<p>You can find the complete code regarding <code>async</code>/<code>await</code> support here: <a href="https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/blob/master/kube-rs/src/abi/executor.rs"><code>executor.rs</code></a></p>
+<h3 id="more-async-abi-methods">More async ABI methods!</h3>
+<p>After we implemented <code>async</code>/<code>await</code> in our WASM modules, we refactored the <code>request</code> ABI discussed in <a href="../Kubernetes-controllers-A-New-Hope/#The-ABI">our previous post</a> as an asynchronous ABI method:</p>
+<pre class="language-rust" tabindex="0"><code class="language-rust"><span class="token attribute attr-name">#[link(wasm_import_module = <span class="token string">"http-proxy-abi"</span>)]</span>
+<span class="token keyword">extern</span> <span class="token string">"C"</span> <span class="token punctuation">{</span>
+    <span class="token keyword">fn</span> <span class="token function-definition function">request</span><span class="token punctuation">(</span>ptr<span class="token punctuation">:</span> <span class="token operator">*</span><span class="token keyword">const</span> <span class="token keyword">u8</span><span class="token punctuation">,</span> len<span class="token punctuation">:</span> <span class="token keyword">usize</span><span class="token punctuation">)</span> <span class="token punctuation">-></span> <span class="token keyword">u64</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<p>Now the returned value is the asynchronous operation identifier and, to signal the completion of the request, the host invokes <code>wakeup_future</code>.</p>
+<p>We also included a new ABI method to sleep the execution of the module:</p>
+<pre class="language-rust" tabindex="0"><code class="language-rust"><span class="token attribute attr-name">#[link(wasm_import_module = <span class="token string">"delay-abi"</span>)]</span>
+<span class="token keyword">extern</span> <span class="token string">"C"</span> <span class="token punctuation">{</span>
+    <span class="token keyword">fn</span> <span class="token function-definition function">delay</span><span class="token punctuation">(</span>millis<span class="token punctuation">:</span> <span class="token keyword">u64</span><span class="token punctuation">)</span> <span class="token punctuation">-></span> <span class="token keyword">u64</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<p>This is necessary to run the kube-runtime, which performs some sleeps before synchronizing the internal cache again.</p>
+<h2 id="redesigning-the-host-as-an-event-driven-application">Redesigning the host as an event-driven application</h2>
+<p>The first implementation of the new <code>kube-watch-abi</code> ABI was a little rough: a lot of blocking threads, shared memory across threads, some unsafe sprinkled here and there to make the code compiling.
+Because of that, we redesigned the host to transform it in a full asynchronous application made of channels and message handlers. For every asynchronous ABI method there is a channel that delivers the <em>request</em> to a message handler, which processes the request, computes one or more responses and sends them back to another channel. This last channel delivers messages to the <code>AsyncResultDispatcher</code>, owner of the module instances, that invokes the <code>wakeup_future</code>/<code>wakeup_stream</code> of the interested controller.</p>
+<p>Today we have 3 different message handlers, one for each async ABI method:</p>
+<ul>
+<li><code>kube_watch::Watchers</code> that controls the watch operation. This message handler is also able to deduplicate the watch operations</li>
+<li><code>http::start_request_executor</code> to execute HTTP requests</li>
+<li><code>delay::start_delay_executor</code> to execute delay requests</li>
+</ul>
+<p>When the host loads all the modules, it executes the ABI method <code>run</code> for each module, then it transfers the ownership of module instances to <code>AsyncResultDispatcher</code> that will start listening for new <code>AsyncResult</code> messages on its ingress channel.</p>
+<p>Because all the message handlers and channels are <code>async</code>/<code>await</code> based, if all the handlers are in idle, virtually no resource is wasted with threads waiting.</p>
+<p>Since <code>AsyncResultDispatcher</code> controls all the different module instances, it avoids invoking the same controller in parallel: <code>LocalLoop</code> is a single threaded async task executor, hence a module cannot process multiple async results in parallel.</p>
+<h2 id="compiling-kube-runtime-to-wasm">Compiling kube-runtime to WASM</h2>
+<p>Thanks to all the async changes, we managed to realign most of the APIs of <code>kube-rs</code> to the original ones. This allowed us to port <code>kube-runtime</code> to our WASM controllers.</p>
+<p>The kube_runtime crate contains sets of higher level abstractions on top of the Api and Resource types so that you don't have to do all the watch/resourceVersion/storage book-keeping yourself.</p>
+<p>The problem we experienced with compiling <code>kube-runtime</code> to WASM is that it depends on <code>tokio::time::DelayQueue</code>, a queue that yields components up to a specified deadline. <code>DelayQueue</code> uses the <code>Future</code> type called <code>Delay</code> to effectively implement delays. The problem with this <code>Delay</code> is that it's implemented using the internal ticker of the Tokio async task executor <code>Runtime</code>, which we don't use inside WASM modules.</p>
+<p>In order to fix this issue, we had to fork the implementation of <code>tokio::time::DelayQueue</code> and reimplement the <code>Delay</code> type using the <code>delay</code> ABI shown previously:</p>
+<pre class="language-rust" tabindex="0"><code class="language-rust"><span class="token keyword">pub</span> <span class="token keyword">struct</span> <span class="token type-definition class-name">Delay</span> <span class="token punctuation">{</span>
+    fut<span class="token punctuation">:</span> <span class="token class-name">Pin</span><span class="token operator">&lt;</span><span class="token class-name">Box</span><span class="token operator">&lt;</span><span class="token keyword">dyn</span> <span class="token class-name">Future</span><span class="token operator">&lt;</span><span class="token class-name">Output</span><span class="token operator">=</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">></span> <span class="token operator">+</span> <span class="token class-name">Send</span><span class="token operator">>></span><span class="token punctuation">,</span>
+    deadline<span class="token punctuation">:</span> <span class="token class-name">Instant</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">impl</span> <span class="token class-name">Delay</span> <span class="token punctuation">{</span>
+    <span class="token keyword">pub</span><span class="token punctuation">(</span><span class="token keyword">crate</span><span class="token punctuation">)</span> <span class="token keyword">fn</span> <span class="token function-definition function">new_timeout</span><span class="token punctuation">(</span>deadline<span class="token punctuation">:</span> <span class="token class-name">Instant</span><span class="token punctuation">)</span> <span class="token punctuation">-></span> <span class="token class-name">Delay</span> <span class="token punctuation">{</span>
+        <span class="token keyword">let</span> now <span class="token operator">=</span> <span class="token class-name">Instant</span><span class="token punctuation">::</span><span class="token function">now</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">match</span> deadline<span class="token punctuation">.</span><span class="token function">checked_duration_since</span><span class="token punctuation">(</span>now<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token class-name">Some</span><span class="token punctuation">(</span>dur<span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token class-name">Delay</span> <span class="token punctuation">{</span>
+                fut<span class="token punctuation">:</span> <span class="token class-name">Box</span><span class="token punctuation">::</span><span class="token function">pin</span><span class="token punctuation">(</span><span class="token namespace">kube<span class="token punctuation">::</span>abi<span class="token punctuation">::</span></span><span class="token function">register_delay</span><span class="token punctuation">(</span>dur<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                deadline
+            <span class="token punctuation">}</span><span class="token punctuation">,</span>
+            <span class="token class-name">None</span> <span class="token operator">=></span> <span class="token class-name">Delay</span> <span class="token punctuation">{</span>
+                fut<span class="token punctuation">:</span> <span class="token class-name">Box</span><span class="token punctuation">::</span><span class="token function">pin</span><span class="token punctuation">(</span><span class="token namespace">futures<span class="token punctuation">::</span>future<span class="token punctuation">::</span></span><span class="token function">ready</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                deadline<span class="token punctuation">:</span> now
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// [...]</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">impl</span> <span class="token class-name">Future</span> <span class="token keyword">for</span> <span class="token class-name">Delay</span> <span class="token punctuation">{</span>
+    <span class="token keyword">type</span> <span class="token type-definition class-name">Output</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">fn</span> <span class="token function-definition function">poll</span><span class="token punctuation">(</span><span class="token keyword">mut</span> <span class="token keyword">self</span><span class="token punctuation">:</span> <span class="token class-name">Pin</span><span class="token operator">&lt;</span><span class="token operator">&amp;</span><span class="token keyword">mut</span> <span class="token keyword">Self</span><span class="token operator">></span><span class="token punctuation">,</span> cx<span class="token punctuation">:</span> <span class="token operator">&amp;</span><span class="token keyword">mut</span> <span class="token namespace">task<span class="token punctuation">::</span></span><span class="token class-name">Context</span><span class="token operator">&lt;</span><span class="token lifetime-annotation symbol">'_</span><span class="token operator">></span><span class="token punctuation">)</span> <span class="token punctuation">-></span> <span class="token class-name">Poll</span><span class="token operator">&lt;</span><span class="token keyword">Self</span><span class="token punctuation">::</span><span class="token class-name">Output</span><span class="token operator">></span> <span class="token punctuation">{</span>
+        <span class="token keyword">self</span><span class="token punctuation">.</span>fut<span class="token punctuation">.</span><span class="token function">as_mut</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">poll</span><span class="token punctuation">(</span>cx<span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span></code></pre>
+<p>With the custom implementation of <code>DelayQueue</code>, the <code>rust-runtime</code> compiled successfully to WASM, and we managed to port our controllers to use it!</p>
+<pre class="language-rust" tabindex="0"><code class="language-rust"><span class="token keyword">async</span> <span class="token keyword">fn</span> <span class="token function-definition function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">let</span> client <span class="token operator">=</span> <span class="token class-name">Client</span><span class="token punctuation">::</span><span class="token function">default</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">let</span> simple_pods<span class="token punctuation">:</span> <span class="token class-name">Api</span><span class="token operator">&lt;</span><span class="token class-name">SimplePod</span><span class="token operator">></span> <span class="token operator">=</span> <span class="token class-name">Api</span><span class="token punctuation">::</span><span class="token function">namespaced</span><span class="token punctuation">(</span>client<span class="token punctuation">.</span><span class="token function">clone</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"default"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">let</span> pods<span class="token punctuation">:</span> <span class="token class-name">Api</span><span class="token operator">&lt;</span><span class="token class-name">Pod</span><span class="token operator">></span> <span class="token operator">=</span> <span class="token class-name">Api</span><span class="token punctuation">::</span><span class="token function">namespaced</span><span class="token punctuation">(</span>client<span class="token punctuation">.</span><span class="token function">clone</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"default"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token class-name">Controller</span><span class="token punctuation">::</span><span class="token function">new</span><span class="token punctuation">(</span>simple_pods<span class="token punctuation">,</span> <span class="token class-name">ListParams</span><span class="token punctuation">::</span><span class="token function">default</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">.</span><span class="token function">owns</span><span class="token punctuation">(</span>pods<span class="token punctuation">,</span> <span class="token class-name">ListParams</span><span class="token punctuation">::</span><span class="token function">default</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span>reconcile<span class="token punctuation">,</span> error_policy<span class="token punctuation">,</span> <span class="token class-name">Context</span><span class="token punctuation">::</span><span class="token function">new</span><span class="token punctuation">(</span><span class="token class-name">Data</span> <span class="token punctuation">{</span> client <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">.</span><span class="token function">for_each</span><span class="token punctuation">(</span><span class="token closure-params"><span class="token closure-punctuation punctuation">|</span>res<span class="token closure-punctuation punctuation">|</span></span> <span class="token keyword">async</span> <span class="token keyword">move</span> <span class="token punctuation">{</span> <span class="token keyword">match</span> res <span class="token punctuation">{</span>
+            <span class="token class-name">Ok</span><span class="token punctuation">(</span><span class="token punctuation">(</span>obj<span class="token punctuation">,</span> _<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token macro property">println!</span><span class="token punctuation">(</span><span class="token string">"Reconciled {:?}"</span><span class="token punctuation">,</span> obj<span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token class-name">Err</span><span class="token punctuation">(</span>e<span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token macro property">println!</span><span class="token punctuation">(</span><span class="token string">"Reconcile error: {:?}"</span><span class="token punctuation">,</span> e<span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token punctuation">}</span><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token keyword">await</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<h2 id="show-me-the-code">Show me the code!</h2>
+<p>You can check out the complete code of controllers today here: <a href="https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/blob/master/ext-simple-pod/src/lib.rs">simple-pod controller</a></p>
+<p>If you want to look at all the different changes the project went through, look at these PRs:</p>
+<ol>
+<li><a href="https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/6">Event system and implementation of <code>watch</code> ABI</a></li>
+<li><a href="https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/7">Refactor of the host as event-driven application</a></li>
+<li><a href="https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/8"><code>async</code>/<code>await</code> + <code>watch</code> returns <code>Stream</code></a></li>
+<li><a href="https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/9">Non blocking HTTP proxy ABI</a></li>
+<li><a href="https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/10">Non blocking <code>delay</code> ABI</a></li>
+<li><a href="https://github.com/slinkydeveloper/extending-kubernetes-api-in-process-poc/pull/11">Kube runtime port</a></li>
+</ol>
+<h2 id="next-steps">Next steps</h2>
+<p>Now the controller module looks like a real Kubernetes controller: the difference is minimal to a controller targeting the usual deployment style. We also opened up a door for important optimizations, thanks to the <code>watch</code> ABI method. The host refactoring and the async ABI methods should also simplify the future interaction with Golang WASM controllers, because our ABI now resembles the asynchronous semantics of their WASM ABI.</p>
+<p>Our next goals are:</p>
+<ul>
+<li>Hack the Golang compiler to fit our ABI (or a similar one). For more info check out the <a href="../Kubernetes-controllers-A-New-Hope#Wait-where-is-Golang">previous blog post</a></li>
+<li>Perform a comparison in terms of resource utilization between this deployment style using WASM modules and the usual one of 1 container per controller.</li>
+<li>Figure out how to handle the different <code>ServiceAccount</code>s per controller</li>
+</ul>
+<p>Stay tuned!</p>
+
+<ul class="links-nextprev"><li class="links-nextprev-prev">← Previous<br> <a href="/slinkydeveloper.github.io/blog/Kubernetes-controllers-A-New-Hope/">Kubernetes Controllers - A new hope</a></li><li class="links-nextprev-next">Next →<br><a href="/slinkydeveloper.github.io/blog/Vert-x-Container-images-with-jlink/">Vert.x container images with jlink</a></li>
+</ul>
+
+			</heading-anchors>
+		</main>
+
+		<footer>
+			<p>
+				<em>Built with <a href="https://www.11ty.dev/">Eleventy v3.1.2</a></em>
+			</p>
+		</footer>
+
+		<!-- This page `/blog/Kubernetes-controllers-The-Empire-Strikes-Back/` was built on 2025-10-05T17:01:29.966Z -->
+		<script type="module" src="/slinkydeveloper.github.io/dist/cC8wS6ZjFU.js"></script>
+	</body>
+</html>
