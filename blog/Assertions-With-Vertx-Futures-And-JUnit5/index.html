@@ -228,6 +228,7 @@ header {
 	padding: 0;
 	margin: 0;
 	list-style: none;
+	flex-wrap: wrap;
 }
 .nav-item {
 	display: inline-block;
@@ -237,6 +238,22 @@ header {
 }
 .nav a[href][aria-current="page"] {
 	text-decoration: underline;
+}
+
+/* Mobile: better layout for nav items and social icons */
+@media (max-width: 768px) {
+	header {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+	.nav {
+		width: 100%;
+		justify-content: flex-start;
+		gap: 1em;
+	}
+	.nav-item {
+		font-size: 1.1em;
+	}
 }
 
 /* Posts list */
@@ -385,6 +402,21 @@ header {
 .timeline-item:last-child {
   -o-border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
   border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  .timeline-item {
+    color: rgba(255, 255, 255, 0.8);
+    border-left: 2px solid rgba(255, 255, 255, 0.3);
+  }
+  .timeline-item::after {
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: var(--background-color);
+  }
+  .timeline-item:last-child {
+    -o-border-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 60%, rgba(255, 255, 255, 0)) 1 100%;
+    border-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 60%, rgba(255, 255, 255, 0)) 1 100%;
+  }
 }
 /**
  * okaidia theme for JavaScript, CSS and HTML
@@ -681,7 +713,7 @@ testContext<span class="token punctuation">.</span><span class="token function">
 			</p>
 		</footer>
 
-		<!-- This page `/blog/Assertions-With-Vertx-Futures-And-JUnit5/` was built on 2025-10-05T17:01:29.965Z -->
+		<!-- This page `/blog/Assertions-With-Vertx-Futures-And-JUnit5/` was built on 2025-10-11T11:52:27.412Z -->
 		<script type="module" src="/slinkydeveloper.github.io/dist/cC8wS6ZjFU.js"></script>
 	</body>
 </html>

@@ -228,6 +228,7 @@ header {
 	padding: 0;
 	margin: 0;
 	list-style: none;
+	flex-wrap: wrap;
 }
 .nav-item {
 	display: inline-block;
@@ -237,6 +238,22 @@ header {
 }
 .nav a[href][aria-current="page"] {
 	text-decoration: underline;
+}
+
+/* Mobile: better layout for nav items and social icons */
+@media (max-width: 768px) {
+	header {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+	.nav {
+		width: 100%;
+		justify-content: flex-start;
+		gap: 1em;
+	}
+	.nav-item {
+		font-size: 1.1em;
+	}
 }
 
 /* Posts list */
@@ -385,6 +402,21 @@ header {
 .timeline-item:last-child {
   -o-border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
   border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  .timeline-item {
+    color: rgba(255, 255, 255, 0.8);
+    border-left: 2px solid rgba(255, 255, 255, 0.3);
+  }
+  .timeline-item::after {
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: var(--background-color);
+  }
+  .timeline-item:last-child {
+    -o-border-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 60%, rgba(255, 255, 255, 0)) 1 100%;
+    border-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 60%, rgba(255, 255, 255, 0)) 1 100%;
+  }
 }
 /**
  * okaidia theme for JavaScript, CSS and HTML
@@ -640,25 +672,13 @@ pre[class*="language-diff-"] {
 <p>This is only a way to implement the tree routing and also remember that I haven't written the insertion algorithm for the tree router, so I do all association between nodes manually.</p>
 <h2 id="two-common-api-scenarios">Two common API scenarios</h2>
 <p>I've created two benchmarks: an example of ecommerce API and a social network API. This examples are really similar, they only differ in number of routes and how many regular expression are contained in said routes. Below you can see how this &quot;fake&quot; routers are composed.</p>
-<figure>
-  <a href="/slinkydeveloper.github.io/images/tree-vs-router/ecommerce-tree.png" class="image-popup"><img src="content/images/tree-vs-router/ecommerce-tree.png" alt="image"></a>
-  <figcaption>Router created for ECommerceBenchmark</figcaption>
-</figure>
-<figure>
-  <a href="/slinkydeveloper.github.io/images/tree-vs-router/social-tree.png" class="image-popup"><img src="content/images/tree-vs-router/social-tree.png" alt="image"></a>
-  <figcaption>Router created for SocialNetworkBenchmark</figcaption>
-</figure>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/vcv9bYyrYE-661.avif 661w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/vcv9bYyrYE-661.webp 661w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/vcv9bYyrYE-661.png" alt="Router created for ECommerceBenchmark" title="Router created for ECommerceBenchmark" width="661" height="381"></picture></p>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/lXCUlzpuuU-926.avif 926w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/lXCUlzpuuU-926.webp 926w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/lXCUlzpuuU-926.png" alt="Router created for SocialNetworkBenchmark" title="Router created for SocialNetworkBenchmark" width="926" height="601"></picture></p>
 <h2 id="maybe-skip-list-is-better">Maybe Skip List is better?</h2>
 <p>The first benchmarks I wrote are simple accesses to routes. I wrote one benchmark for every route (that I store in <code>compatiblePaths</code>) and every data structure. Below you can find results of <a href="https://github.com/slinkydeveloper/tree-list-routing-java-bench/blob/master/src/main/java/io/slinkydeveloper/bench/ECommerceBenchmark.java"><code>ECommerceBenchmark</code></a>:</p>
-<figure>
-  <a href="/slinkydeveloper.github.io/images/tree-vs-router/basic_complex.png" class="image-popup"><img src="content/images/tree-vs-router/basic_complex.png" alt="image"></a>
-  <figcaption>Benchmark results for ECommerceBenchmark based on requested URLs</figcaption>
-</figure>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/C7J3sfVjtz-1200.avif 1200w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/C7J3sfVjtz-1200.webp 1200w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/C7J3sfVjtz-1200.png" alt="Benchmark results for ECommerceBenchmark based on requested URLs" title="Benchmark results for ECommerceBenchmark based on requested URLs" width="1200" height="600"></picture></p>
 <p>The first observation is that the constant paths in skip list are faster than in the tree router. This is caused by skip list optimization: when we get the same elements multiple times the skip list optimizes its links to access more quickly to its values. But the performances for skip lists falls in favor of tree when we use regular expressions, because of course we give a smaller string to the regular expression engine. With the <code>/health</code> path we have a little difference because in tree we are at the first level, while in <code>/user/newUser</code> we are one level deeper than <code>/health</code>. This results are confirmed by the <a href="https://github.com/slinkydeveloper/tree-list-routing-java-bench/blob/master/src/main/java/io/slinkydeveloper/bench/SocialNetworkBenchmark.java"><code>SocialNetworkBenchmark</code></a> with the same configuration:</p>
-<figure>
-  <a href="/slinkydeveloper.github.io/images/tree-vs-router/basic_social.png" class="image-popup"><img src="content/images/tree-vs-router/basic_social.png" alt="image"></a>
-  <figcaption>Benchmark results for SocialNetworkBenchmark based on requested URLs</figcaption>
-</figure>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/LrT8uAv_7E-2000.avif 2000w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/LrT8uAv_7E-2000.webp 2000w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/LrT8uAv_7E-2000.png" alt="Benchmark results for SocialNetworkBenchmark based on requested URLs" title="Benchmark results for SocialNetworkBenchmark based on requested URLs" width="2000" height="600"></picture></p>
 <p>So maybe skip lists are so fast that trees are not competitive in this application field? I've done two considerations:</p>
 <ol>
 <li>In a real case situation a router doesn't receive <strong>12.000.000 same requests</strong> in one second, but maybe if it receives 1.000 same requests (for example the <code>/feed</code> request) the skip list optimization helps a lot</li>
@@ -666,34 +686,19 @@ pre[class*="language-diff-"] {
 </ol>
 <h2 id="and-if-i-add-some-spice">And if I add some spice?</h2>
 <p>To confuse the skip list I've created a more <em>real</em> scenario: The benchmark function does 10 random requests and then the request assigned. This process complicates things a bit for the skip list, because it loses the optimization:</p>
-<figure>
-  <a href="/slinkydeveloper.github.io/images/tree-vs-router/with_load_complex.png" class="image-popup"><img src="content/images/tree-vs-router/with_load_complex.png" alt="image"></a>
-  <figcaption>Benchmark results for ECommerceBenchmark based on requested URLs with 10 random requests</figcaption>
-</figure>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/GDfA4afE2t-1200.avif 1200w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/GDfA4afE2t-1200.webp 1200w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/GDfA4afE2t-1200.png" alt="Benchmark results for ECommerceBenchmark based on requested URLs with 10 random requests" title="Benchmark results for ECommerceBenchmark based on requested URLs with 10 random requests" width="1200" height="600"></picture></p>
 <p>And of course it's a win for the tree. The fun fact is that tree defeats the skip list also in first paths.</p>
 <p>For the social benchmark the random function that chooses the 10 requests is little bit hacky: Some paths (for example the <code>/feed</code>) have more chances than other ones. But the results remain the same:</p>
-<figure>
-  <a href="/slinkydeveloper.github.io/images/tree-vs-router/with_load_social.png" class="image-popup"><img src="content/images/tree-vs-router/with_load_social.png" alt="image"></a>
-  <figcaption>Benchmark results for SocialNetworkBenchmark based on requested URLs with 10 random requests</figcaption>
-</figure>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/kLMVRSlZZx-2000.avif 2000w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/kLMVRSlZZx-2000.webp 2000w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/kLMVRSlZZx-2000.png" alt="Benchmark results for SocialNetworkBenchmark based on requested URLs with 10 random requests" title="Benchmark results for SocialNetworkBenchmark based on requested URLs with 10 random requests" width="2000" height="600"></picture></p>
 <p>The results on <code>SocialNetworkBenchmark</code> are impressive because with some paths we have 3x or more performances for tree router, but we have an unstable situation at the same level.</p>
 <p>There's also an important consideration to do: When we go deeper, tree performances slope down, so to write a good tree router we need a good combination of access optimizations and insertion algorithm that avoids creating uselessly deep nodes.</p>
 <p>You can find below the final results with and without load (&quot;with load&quot; values conveniently scaled x11):</p>
-<figure>
-  <a href="/slinkydeveloper.github.io/images/tree-vs-router/complex_complete.png" class="image-popup"><img src="content/images/tree-vs-router/complex_complete.png" alt="image"></a>
-  <figcaption>Final benchmark results for ECommerceBenchmark</figcaption>
-</figure>
-<figure>
-  <a href="/slinkydeveloper.github.io/images/tree-vs-router/social_complete.png" class="image-popup"><img src="content/images/tree-vs-router/social_complete.png" alt="image"></a>
-  <figcaption>Final benchmark results for SocialNetworkBenchmark</figcaption>
-</figure>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/VSsz3-QqnT-1200.avif 1200w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/VSsz3-QqnT-1200.webp 1200w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/VSsz3-QqnT-1200.png" alt="Final benchmark results for ECommerceBenchmark" title="Final benchmark results for ECommerceBenchmark" width="1200" height="600"></picture></p>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/jk0BerEdqB-2000.avif 2000w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/jk0BerEdqB-2000.webp 2000w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/jk0BerEdqB-2000.png" alt="Final benchmark results for SocialNetworkBenchmark" title="Final benchmark results for SocialNetworkBenchmark" width="2000" height="600"></picture></p>
 <h2 id="and-its-not-finished">And it's not finished!</h2>
 <p>For the two test cases and data structures I also wrote a <em>final benchmark</em> that accesses to <code>compatiblePaths</code> sequentially and in both cases it's a huge win for tree:</p>
-<figure class="half">
-	<a href="/slinkydeveloper.github.io/images/tree-vs-router/complex_average.png" class="image-popup"><img src="content/images/tree-vs-router/complex_average.png" alt="image"></a>
-	<a href="/slinkydeveloper.github.io/images/tree-vs-router/social_average.png" class="image-popup"><img src="content/images/tree-vs-router/social_average.png" alt="image"></a>
-	<figcaption>Final results (left e-commerce benchmark, right social benchmark)</figcaption>
-</figure>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/Xgyf1artm_-400.avif 400w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/Xgyf1artm_-400.webp 400w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/Xgyf1artm_-400.png" alt="E-commerce benchmark final results" title="E-commerce benchmark final results" width="400" height="800"></picture></p>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/WOyBXQJWEH-400.avif 400w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/WOyBXQJWEH-400.webp 400w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Routing-Tree-vs-SkipList/WOyBXQJWEH-400.png" alt="Social benchmark final results" title="Social benchmark final results" width="400" height="800"></picture></p>
 <p>But this is not a very realistic situation, because usually we have a situation like the social network benchmark with load: we have more frequent requests and less frequent requests, but it's unusual to get requests ordered in the router order sequentially.</p>
 <h2 id="so-whats-better">So, what's better?</h2>
 <p>That's an hard question, because these examples don't prove a lot. But, according to this data, it makes sense to start developing a tree router because we have good preconditions. In some situations with regular expressions we have seen up to 2x performances thanks to the tree router, but it's important to get good performances also with constant paths (remember that when we have query parameters like <code>/user?q=blabla</code> these URLs are splitted at the start of routing and the router treats this requests like constant paths).</p>
@@ -763,7 +768,7 @@ pre[class*="language-diff-"] {
 			</p>
 		</footer>
 
-		<!-- This page `/blog/Routing-Tree-vs-SkipList/` was built on 2025-10-05T17:01:29.967Z -->
+		<!-- This page `/blog/Routing-Tree-vs-SkipList/` was built on 2025-10-11T11:52:27.414Z -->
 		<script type="module" src="/slinkydeveloper.github.io/dist/cC8wS6ZjFU.js"></script>
 	</body>
 </html>

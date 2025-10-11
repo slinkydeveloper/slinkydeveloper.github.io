@@ -228,6 +228,7 @@ header {
 	padding: 0;
 	margin: 0;
 	list-style: none;
+	flex-wrap: wrap;
 }
 .nav-item {
 	display: inline-block;
@@ -237,6 +238,22 @@ header {
 }
 .nav a[href][aria-current="page"] {
 	text-decoration: underline;
+}
+
+/* Mobile: better layout for nav items and social icons */
+@media (max-width: 768px) {
+	header {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+	.nav {
+		width: 100%;
+		justify-content: flex-start;
+		gap: 1em;
+	}
+	.nav-item {
+		font-size: 1.1em;
+	}
 }
 
 /* Posts list */
@@ -385,6 +402,21 @@ header {
 .timeline-item:last-child {
   -o-border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
   border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  .timeline-item {
+    color: rgba(255, 255, 255, 0.8);
+    border-left: 2px solid rgba(255, 255, 255, 0.3);
+  }
+  .timeline-item::after {
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: var(--background-color);
+  }
+  .timeline-item:last-child {
+    -o-border-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 60%, rgba(255, 255, 255, 0)) 1 100%;
+    border-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 60%, rgba(255, 255, 255, 0)) 1 100%;
+  }
 }
 /**
  * okaidia theme for JavaScript, CSS and HTML
@@ -648,7 +680,7 @@ In short: <strong>We're flooding our Kubernetes clusters with applications that 
 <p>A list of supported languages is available <a href="https://webassembly.org/getting-started/developers-guide/">here</a> and <a href="https://stackoverflow.com/questions/43540878/what-languages-can-be-compiled-to-webassembly-wasm">here</a>. Wasm is flexible enough that it can be executed with ahead of time (AOT) compilation or with a just in time (JIT) interpreter.</p>
 <p>Although WebAssembly sounds like a web or browser technology, in the last years several people are experimenting with this technology <a href="https://webassembly.org/docs/use-cases/#outside-the-browser">outside the browser</a>. Most notably, CloudFlare Function as a Service offering called Workers <a href="https://blog.cloudflare.com/introducing-wrangler-cli/">uses Wasm</a> to run C/Rust code using Google's V8 isolations.</p>
 <p>With WebAssembly, our plugin system looks like:</p>
-<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Kubernetes-controllers-A-New-Hope/uIktsbDx55-311.avif 311w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Kubernetes-controllers-A-New-Hope/uIktsbDx55-311.webp 311w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Kubernetes-controllers-A-New-Hope/uIktsbDx55-311.png" alt="" width="311" height="201"></picture></p>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Kubernetes-controllers-A-New-Hope/uIktsbDx55-311.avif 311w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Kubernetes-controllers-A-New-Hope/uIktsbDx55-311.webp 311w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Kubernetes-controllers-A-New-Hope/uIktsbDx55-311.png" alt="Kubernetes controllers architecture" title="Kubernetes controllers architecture" width="311" height="201"></picture></p>
 <p>When we develop a controller, the compiled artifact is a binary Wasm module. A Wasm engine loads this module, eventually compiles it in AOT cases, and executes it.</p>
 <p>At this point, we need to define the interaction semantics between the host and the plugins. In order to do that, we define the <a href="https://en.wikipedia.org/wiki/Application_binary_interface">ABI (Application Binary Interface)</a> of our plugin system: the functions the host <em>imports</em> in our plugin and the functions the plugin <em>exports</em> in our host.</p>
 <h2 id="show-me-your-abi">Show me your ABI!</h2>
@@ -712,7 +744,7 @@ e allocate</code></pre>
 <p>In Wasm the module cannot access to the host memory, but the host can access to the module memory and copy bytes inside it. Because the Wasm module might have a memory allocator, a GC or any other mechanism to manage memory, the module should export a function that allocates memory to let the host copy bytes back to the module.</p>
 <p><code>request</code> is the function to perform a <strong>blocking and buffered</strong> HTTP request, while all the other imports come from WASI. The user interacts with our hacked version of the Kubernetes client, which under the hood invokes <code>request</code> to perform HTTP requests using <a href="https://github.com/seanmonstar/reqwest"><code>reqwest</code> crate</a>. All our APIs are blocking because currently there is no out of the box <code>async/await</code> support in Wasm modules, I'll cover this limitation later.</p>
 <p>The <code>request</code> flow should give you an idea of what it takes to implement an ABI:</p>
-<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Kubernetes-controllers-A-New-Hope/Wb3bENoqDY-1061.avif 1061w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Kubernetes-controllers-A-New-Hope/Wb3bENoqDY-1061.webp 1061w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Kubernetes-controllers-A-New-Hope/Wb3bENoqDY-1061.png" alt="" width="1061" height="471"></picture></p>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Kubernetes-controllers-A-New-Hope/Wb3bENoqDY-1061.avif 1061w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Kubernetes-controllers-A-New-Hope/Wb3bENoqDY-1061.webp 1061w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Kubernetes-controllers-A-New-Hope/Wb3bENoqDY-1061.png" alt="Kubernetes controllers flow" title="Kubernetes controllers flow" width="1061" height="471"></picture></p>
 <p>The host takes care of handling the authentication, in order to avoid the controller having to have access to files at all.</p>
 <h3 id="the-controller">The controller</h3>
 <p>An example code for the controller looks like:</p>
@@ -811,7 +843,7 @@ e getsp</code></pre>
 			</p>
 		</footer>
 
-		<!-- This page `/blog/Kubernetes-controllers-A-New-Hope/` was built on 2025-10-05T17:01:29.966Z -->
+		<!-- This page `/blog/Kubernetes-controllers-A-New-Hope/` was built on 2025-10-11T11:52:27.413Z -->
 		<script type="module" src="/slinkydeveloper.github.io/dist/cC8wS6ZjFU.js"></script>
 	</body>
 </html>

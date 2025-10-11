@@ -228,6 +228,7 @@ header {
 	padding: 0;
 	margin: 0;
 	list-style: none;
+	flex-wrap: wrap;
 }
 .nav-item {
 	display: inline-block;
@@ -237,6 +238,22 @@ header {
 }
 .nav a[href][aria-current="page"] {
 	text-decoration: underline;
+}
+
+/* Mobile: better layout for nav items and social icons */
+@media (max-width: 768px) {
+	header {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+	.nav {
+		width: 100%;
+		justify-content: flex-start;
+		gap: 1em;
+	}
+	.nav-item {
+		font-size: 1.1em;
+	}
 }
 
 /* Posts list */
@@ -385,6 +402,21 @@ header {
 .timeline-item:last-child {
   -o-border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
   border-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0)) 1 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  .timeline-item {
+    color: rgba(255, 255, 255, 0.8);
+    border-left: 2px solid rgba(255, 255, 255, 0.3);
+  }
+  .timeline-item::after {
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: var(--background-color);
+  }
+  .timeline-item:last-child {
+    -o-border-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 60%, rgba(255, 255, 255, 0)) 1 100%;
+    border-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 60%, rgba(255, 255, 255, 0)) 1 100%;
+  }
 }
 /**
  * okaidia theme for JavaScript, CSS and HTML
@@ -609,23 +641,11 @@ pre[class*="language-diff-"] {
 <p>The second option was a pure experiment: user creates the router and its internal tree doesn't change during the application execution. In this case you have a <em>simpler implementation</em> and an immutable list (in some cases faster than a mutable one). I've also refactored only the <code>SocialNetworkBenchmark</code>, because we have similar results on <code>ECommerceBenchmark</code>.</p>
 <h2 id="results">Results</h2>
 <p>And, as in the previous articles, here comes the graphs:</p>
-<figure>
-  <a href="/slinkydeveloper.github.io/images/tree-vs-router-2/basic_social.png" class="image-popup"><img src="content/images/tree-vs-router-2/basic_social.png" alt="image"></a>
-  <figcaption>Benchmark results for SocialNetworkBenchmark based on requested URLs</figcaption>
-</figure>
-<figure>
-  <a href="/slinkydeveloper.github.io/images/tree-vs-router-2/with_load_social.png" class="image-popup"><img src="content/images/tree-vs-router-2/with_load_social.png" alt="image"></a>
-  <figcaption>Benchmark results for SocialNetworkBenchmark based on requested URLs with 10 random requests</figcaption>
-</figure>
-<figure>
-  <a href="/slinkydeveloper.github.io/images/tree-vs-router-2/social_complete.png" class="image-popup"><img src="content/images/tree-vs-router-2/social_complete.png" alt="image"></a>
-  <figcaption>Final benchmark results for SocialNetworkBenchmark ("with load" values properly scaled)</figcaption>
-</figure>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Routing-With-Eclipse-Collections/bH4qkzRZJB-2000.avif 2000w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Routing-With-Eclipse-Collections/bH4qkzRZJB-2000.webp 2000w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Routing-With-Eclipse-Collections/bH4qkzRZJB-2000.png" alt="Benchmark results for SocialNetworkBenchmark based on requested URLs" title="Benchmark results for SocialNetworkBenchmark based on requested URLs" width="2000" height="600"></picture></p>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Routing-With-Eclipse-Collections/2n2qc6tlUX-2000.avif 2000w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Routing-With-Eclipse-Collections/2n2qc6tlUX-2000.webp 2000w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Routing-With-Eclipse-Collections/2n2qc6tlUX-2000.png" alt="Benchmark results for SocialNetworkBenchmark based on requested URLs with 10 random requests" title="Benchmark results for SocialNetworkBenchmark based on requested URLs with 10 random requests" width="2000" height="600"></picture></p>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Routing-With-Eclipse-Collections/MEaLy53n4f-2000.avif 2000w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Routing-With-Eclipse-Collections/MEaLy53n4f-2000.webp 2000w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Routing-With-Eclipse-Collections/MEaLy53n4f-2000.png" alt="Final benchmark results for SocialNetworkBenchmark (&quot;with load&quot; values properly scaled)" title="Final benchmark results for SocialNetworkBenchmark (&quot;with load&quot; values properly scaled)" width="2000" height="600"></picture></p>
 <p>And in the end the <em>&quot;final test&quot;</em> graph (now it does only random requests, not sequentially):</p>
-<figure>
-  <a href="/slinkydeveloper.github.io/images/tree-vs-router-2/social_average.png" class="image-popup"><img src="content/images/tree-vs-router-2/social_average.png" alt="image"></a>
-  <figcaption>Final benchmark results for SocialNetworkBenchmark</figcaption>
-</figure>
+<p><picture><source type="image/avif" srcset="/slinkydeveloper.github.io/blog/Routing-With-Eclipse-Collections/oVtRXOXvep-400.avif 400w"><source type="image/webp" srcset="/slinkydeveloper.github.io/blog/Routing-With-Eclipse-Collections/oVtRXOXvep-400.webp 400w"><img loading="lazy" decoding="async" src="/slinkydeveloper.github.io/blog/Routing-With-Eclipse-Collections/oVtRXOXvep-400.png" alt="Final benchmark results for SocialNetworkBenchmark" title="Final benchmark results for SocialNetworkBenchmark" width="400" height="800"></picture></p>
 <p>I have some considerations about these results:</p>
 <ul>
 <li>Eclipse Collections are fast to iterate, faster than JDK's collections, so probably they are good for our use case. In particular, pay attention to particular events generated from benchmark data:
@@ -653,7 +673,7 @@ pre[class*="language-diff-"] {
 			</p>
 		</footer>
 
-		<!-- This page `/blog/Routing-With-Eclipse-Collections/` was built on 2025-10-05T17:01:29.967Z -->
+		<!-- This page `/blog/Routing-With-Eclipse-Collections/` was built on 2025-10-11T11:52:27.414Z -->
 		<script type="module" src="/slinkydeveloper.github.io/dist/cC8wS6ZjFU.js"></script>
 	</body>
 </html>
