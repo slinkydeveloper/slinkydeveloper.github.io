@@ -83,7 +83,7 @@ Although WebAssembly sounds like a web or browser technology, in the last years 
 
 With WebAssembly, our plugin system looks like:
 
-![](../../public/img/kubernetes-controllers-a-new-hope/kubernetes-controllers-a-new-hope-3.png)
+![Kubernetes controllers architecture](../../public/img/kubernetes-controllers-a-new-hope/kubernetes-controllers-a-new-hope-3.png "Kubernetes controllers architecture")
 
 When we develop a controller, the compiled artifact is a binary Wasm module. A Wasm engine loads this module, eventually compiles it in AOT cases, and executes it.
 
@@ -186,7 +186,7 @@ In Wasm the module cannot access to the host memory, but the host can access to 
 
 The `request` flow should give you an idea of what it takes to implement an ABI:
 
-![](../../public/img/kubernetes-controllers-a-new-hope/kubernetes-controllers-a-new-hope-4.png)
+![Kubernetes controllers flow](../../public/img/kubernetes-controllers-a-new-hope/kubernetes-controllers-a-new-hope-4.png "Kubernetes controllers flow")
 
 The host takes care of handling the authentication, in order to avoid the controller having to have access to files at all.
 

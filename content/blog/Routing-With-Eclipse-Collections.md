@@ -20,25 +20,15 @@ The second option was a pure experiment: user creates the router and its interna
 ## Results
 And, as in the previous articles, here comes the graphs:
 
-<figure>
-  <a href="{{ site.url }}/images/tree-vs-router-2/basic_social.png" class="image-popup"><img src="{{ site.url }}/images/tree-vs-router-2/basic_social.png" alt="image"></a>
-  <figcaption>Benchmark results for SocialNetworkBenchmark based on requested URLs</figcaption>
-</figure>
-<figure>
-  <a href="{{ site.url }}/images/tree-vs-router-2/with_load_social.png" class="image-popup"><img src="{{ site.url }}/images/tree-vs-router-2/with_load_social.png" alt="image"></a>
-  <figcaption>Benchmark results for SocialNetworkBenchmark based on requested URLs with 10 random requests</figcaption>
-</figure>
-<figure>
-  <a href="{{ site.url }}/images/tree-vs-router-2/social_complete.png" class="image-popup"><img src="{{ site.url }}/images/tree-vs-router-2/social_complete.png" alt="image"></a>
-  <figcaption>Final benchmark results for SocialNetworkBenchmark ("with load" values properly scaled)</figcaption>
-</figure>
+![Benchmark results for SocialNetworkBenchmark based on requested URLs](../../public/img/tree-vs-router-2/basic_social.png "Benchmark results for SocialNetworkBenchmark based on requested URLs")
+
+![Benchmark results for SocialNetworkBenchmark based on requested URLs with 10 random requests](../../public/img/tree-vs-router-2/with_load_social.png "Benchmark results for SocialNetworkBenchmark based on requested URLs with 10 random requests")
+
+![Final benchmark results for SocialNetworkBenchmark ("with load" values properly scaled)](../../public/img/tree-vs-router-2/social_complete.png "Final benchmark results for SocialNetworkBenchmark (\"with load\" values properly scaled)")
 
 And in the end the _"final test"_ graph (now it does only random requests, not sequentially):
 
-<figure>
-  <a href="{{ site.url }}/images/tree-vs-router-2/social_average.png" class="image-popup"><img src="{{ site.url }}/images/tree-vs-router-2/social_average.png" alt="image"></a>
-  <figcaption>Final benchmark results for SocialNetworkBenchmark</figcaption>
-</figure>
+![Final benchmark results for SocialNetworkBenchmark](../../public/img/tree-vs-router-2/social_average.png "Final benchmark results for SocialNetworkBenchmark")
 
 I have some considerations about these results:
 

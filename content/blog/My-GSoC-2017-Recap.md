@@ -13,18 +13,16 @@ Mixing the two things I said, Google Summer of Code is perfect for me!
 ## Small story of my GSoC 2017 project
 
 As my [project page](https://summerofcode.withgoogle.com/projects/#5472433315250176) says, my  object is implement the api design driven development techniques inside vertx-web. Actually the first idea was to implement OpenAPI 2 (fka Swagger) and RAML, then [this happened](https://swagger.io/mulesoft-joins-the-openapi-initiative/).
-<p class="image-pull-right">
-<img src="http://2434zd29misd3e4a4f1e73ki-wpengine.netdna-ssl.com/wp-content/uploads/2017/04/SwaggerOnlyBeOne.png" alt="">
-</p>
+
+![Swagger logo](http://2434zd29misd3e4a4f1e73ki-wpengine.netdna-ssl.com/wp-content/uploads/2017/04/SwaggerOnlyBeOne.png "Swagger logo")
 
 With OpenAPI 3 at horizon we decided to focus on it, because, as for Swagger 2, OpenAPI 3 have converters from old specification versions to newest one. As my mentor says, we are pioneers of OAS 3 :smile:. For OpenAPI 3 parsing, we decided to use [Kaizen-OpenAPI-Parser](https://github.com/RepreZen/KaiZen-OpenApi-Parser) and I often helped this new project with [pull requests](https://github.com/RepreZen/KaiZen-OpenApi-Parser/pulls?utf8=%E2%9C%93&q=author%3Aslinkydeveloper%20).
 But I kept the idea to abstract as much as possible the router factory and the validation methods to enable future implementations of new api specification standards. I've also created an interface for users to validate HTTP requests without writing an api spec. Also, to complete my work, I wrote a lot of unit tests
 At the end of implementation of validation and router factory for OAS 3, I wrote a lot of documentation and also a [blog post on Eclipse Vert.x blog](http://vertx.io/blog/openapi-fka-swagger-3-support-in-eclipse-vert-x-now-in-test-stage/)
 
 After the first evaluation phase, I refactored the code splitting it in different maven packages. Then I started focusing on code generation: [swagger-codegen](https://github.com/swagger-api/swagger-codegen/issues/4669#issuecomment-320597504) doesn't support for now OAS 3, and they don't know when they will release OAS 3 support, so we decided to create our generator. Basing on [my mentor's project](https://github.com/pmlopes/slush-vertx), I started creating the code generator. I've done huge changes from original project, to enable it to add different generators to same project and support different languages and package managers. I've also take advantage of this work to generate new unit tests for OAS 3 router factory and validation (with a tremendous first run :cry:).
-<p class="image-pull-left">
-<img src="{{ site.url }}/images/80124719.jpg" alt="">
-</p>
+
+![GSoC 2017](../../public/img/80124719.jpg "GSoC 2017")
 
 I've also done other pull requests to vertx-web complementary to my work. I [added a method to get query parameters](https://github.com/vert-x3/vertx-web/pull/581) and I [enabled `Route` object to contain multiple handlers (like Express middlewares)](https://github.com/vert-x3/vertx-web/pull/652).
 

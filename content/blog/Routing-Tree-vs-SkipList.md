@@ -59,30 +59,18 @@ This is only a way to implement the tree routing and also remember that I haven'
 ## Two common API scenarios
 I've created two benchmarks: an example of ecommerce API and a social network API. This examples are really similar, they only differ in number of routes and how many regular expression are contained in said routes. Below you can see how this "fake" routers are composed.
 
-<figure>
-  <a href="{{ site.url }}/images/tree-vs-router/ecommerce-tree.png" class="image-popup"><img src="{{ site.url }}/images/tree-vs-router/ecommerce-tree.png" alt="image"></a>
-  <figcaption>Router created for ECommerceBenchmark</figcaption>
-</figure>
+![Router created for ECommerceBenchmark](../../public/img/tree-vs-router/ecommerce-tree.png "Router created for ECommerceBenchmark")
 
-<figure>
-  <a href="{{ site.url }}/images/tree-vs-router/social-tree.png" class="image-popup"><img src="{{ site.url }}/images/tree-vs-router/social-tree.png" alt="image"></a>
-  <figcaption>Router created for SocialNetworkBenchmark</figcaption>
-</figure>
+![Router created for SocialNetworkBenchmark](../../public/img/tree-vs-router/social-tree.png "Router created for SocialNetworkBenchmark")
 
 ## Maybe Skip List is better?
 The first benchmarks I wrote are simple accesses to routes. I wrote one benchmark for every route (that I store in `compatiblePaths`) and every data structure. Below you can find results of [`ECommerceBenchmark`](https://github.com/slinkydeveloper/tree-list-routing-java-bench/blob/master/src/main/java/io/slinkydeveloper/bench/ECommerceBenchmark.java):
 
-<figure>
-  <a href="{{ site.url }}/images/tree-vs-router/basic_complex.png" class="image-popup"><img src="{{ site.url }}/images/tree-vs-router/basic_complex.png" alt="image"></a>
-  <figcaption>Benchmark results for ECommerceBenchmark based on requested URLs</figcaption>
-</figure>
+![Benchmark results for ECommerceBenchmark based on requested URLs](../../public/img/tree-vs-router/basic_complex.png "Benchmark results for ECommerceBenchmark based on requested URLs")
 
 The first observation is that the constant paths in skip list are faster than in the tree router. This is caused by skip list optimization: when we get the same elements multiple times the skip list optimizes its links to access more quickly to its values. But the performances for skip lists falls in favor of tree when we use regular expressions, because of course we give a smaller string to the regular expression engine. With the `/health` path we have a little difference because in tree we are at the first level, while in `/user/newUser` we are one level deeper than `/health`. This results are confirmed by the [`SocialNetworkBenchmark`](https://github.com/slinkydeveloper/tree-list-routing-java-bench/blob/master/src/main/java/io/slinkydeveloper/bench/SocialNetworkBenchmark.java) with the same configuration:
 
-<figure>
-  <a href="{{ site.url }}/images/tree-vs-router/basic_social.png" class="image-popup"><img src="{{ site.url }}/images/tree-vs-router/basic_social.png" alt="image"></a>
-  <figcaption>Benchmark results for SocialNetworkBenchmark based on requested URLs</figcaption>
-</figure>
+![Benchmark results for SocialNetworkBenchmark based on requested URLs](../../public/img/tree-vs-router/basic_social.png "Benchmark results for SocialNetworkBenchmark based on requested URLs")
 
 So maybe skip lists are so fast that trees are not competitive in this application field? I've done two considerations:
 
@@ -92,19 +80,13 @@ So maybe skip lists are so fast that trees are not competitive in this applicati
 ## And if I add some spice?
 To confuse the skip list I've created a more _real_ scenario: The benchmark function does 10 random requests and then the request assigned. This process complicates things a bit for the skip list, because it loses the optimization:
 
-<figure>
-  <a href="{{ site.url }}/images/tree-vs-router/with_load_complex.png" class="image-popup"><img src="{{ site.url }}/images/tree-vs-router/with_load_complex.png" alt="image"></a>
-  <figcaption>Benchmark results for ECommerceBenchmark based on requested URLs with 10 random requests</figcaption>
-</figure>
+![Benchmark results for ECommerceBenchmark based on requested URLs with 10 random requests](../../public/img/tree-vs-router/with_load_complex.png "Benchmark results for ECommerceBenchmark based on requested URLs with 10 random requests")
 
 And of course it's a win for the tree. The fun fact is that tree defeats the skip list also in first paths.
 
 For the social benchmark the random function that chooses the 10 requests is little bit hacky: Some paths (for example the `/feed`) have more chances than other ones. But the results remain the same:
 
-<figure>
-  <a href="{{ site.url }}/images/tree-vs-router/with_load_social.png" class="image-popup"><img src="{{ site.url }}/images/tree-vs-router/with_load_social.png" alt="image"></a>
-  <figcaption>Benchmark results for SocialNetworkBenchmark based on requested URLs with 10 random requests</figcaption>
-</figure>
+![Benchmark results for SocialNetworkBenchmark based on requested URLs with 10 random requests](../../public/img/tree-vs-router/with_load_social.png "Benchmark results for SocialNetworkBenchmark based on requested URLs with 10 random requests")
 
 The results on `SocialNetworkBenchmark` are impressive because with some paths we have 3x or more performances for tree router, but we have an unstable situation at the same level.
 
@@ -112,24 +94,16 @@ There's also an important consideration to do: When we go deeper, tree performan
 
 You can find below the final results with and without load ("with load" values conveniently scaled x11):
 
-<figure>
-  <a href="{{ site.url }}/images/tree-vs-router/complex_complete.png" class="image-popup"><img src="{{ site.url }}/images/tree-vs-router/complex_complete.png" alt="image"></a>
-  <figcaption>Final benchmark results for ECommerceBenchmark</figcaption>
-</figure>
+![Final benchmark results for ECommerceBenchmark](../../public/img/tree-vs-router/complex_complete.png "Final benchmark results for ECommerceBenchmark")
 
-<figure>
-  <a href="{{ site.url }}/images/tree-vs-router/social_complete.png" class="image-popup"><img src="{{ site.url }}/images/tree-vs-router/social_complete.png" alt="image"></a>
-  <figcaption>Final benchmark results for SocialNetworkBenchmark</figcaption>
-</figure>
+![Final benchmark results for SocialNetworkBenchmark](../../public/img/tree-vs-router/social_complete.png "Final benchmark results for SocialNetworkBenchmark")
 
 ## And it's not finished!
 For the two test cases and data structures I also wrote a _final benchmark_ that accesses to `compatiblePaths` sequentially and in both cases it's a huge win for tree:
 
-<figure class="half">
-	<a href="{{ site.url }}/images/tree-vs-router/complex_average.png" class="image-popup"><img src="{{ site.url }}/images/tree-vs-router/complex_average.png" alt="image"></a>
-	<a href="{{ site.url }}/images/tree-vs-router/social_average.png" class="image-popup"><img src="{{ site.url }}/images/tree-vs-router/social_average.png" alt="image"></a>
-	<figcaption>Final results (left e-commerce benchmark, right social benchmark)</figcaption>
-</figure>
+![E-commerce benchmark final results](../../public/img/tree-vs-router/complex_average.png "E-commerce benchmark final results")
+
+![Social benchmark final results](../../public/img/tree-vs-router/social_average.png "Social benchmark final results")
 
 But this is not a very realistic situation, because usually we have a situation like the social network benchmark with load: we have more frequent requests and less frequent requests, but it's unusual to get requests ordered in the router order sequentially.
 

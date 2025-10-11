@@ -17,9 +17,8 @@ As I said in a [previous blog post](https://slinkydeveloper.github.io/articles/W
 
 When constructed, it generates all `ParameterValidationRule` and `ParameterTypeValidator` it needs: in fact, **It doesn't elaborate the api spec nor work with api spec Java models during the validation**. It does everything when It's constructed, so It iterates through various parameters and It generates objects needed for validation.
 
-<p class="image-pull-right">
-<img src="{{ site.url }}/images/messy_code_fry.jpg" alt="">
-</p>
+![Messy code meme](../../public/img/messy_code_fry.jpg "Messy code meme")
+
 If you read this class, It seems messy, because It's messy :smile:. This is because of complexity of OAS 3, that forced me to write some little tricks to support all things (like for example to manage the `deepObject` serialization style).
 
 To give a quick explanation of how this class elaborates parameters:

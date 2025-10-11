@@ -16,10 +16,7 @@ The validation framework is located inside maven module `vertx-web` and package 
 * `ParameterValidationRule` abstracts a parameter and validates if parameter exists, if can be empty, ...
 * `ParameterTypeValidator` abstracts the parameter type and validates the type
 
-<figure>
-  <a href="{{ site.url }}/images/vertx-web-validation-structure.png" class="image-popup"><img src="{{ site.url }}/images/vertx-web-validation-structure.png" alt="image"></a>
-  <figcaption>An example of BaseValidationHandler instance</figcaption>
-</figure>
+![An example of BaseValidationHandler instance](../../public/img/vertx-web-validation-structure.png "An example of BaseValidationHandler instance")
 
 Every exceptions of validation framework are encapsulated inside `ValidationException` class.
 
